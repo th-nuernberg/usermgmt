@@ -1,0 +1,31 @@
+student_default_qos = 'basic'
+staff_default_qos = 'advanced'
+student_qos = [
+    'interactive',
+    'basic',
+    'gpubasic',
+]
+staff_qos = [
+    'interactive',
+    'advanced',
+    'gpubasic',
+]
+valid_qos = [
+    'interactive',
+    'basic',
+    'advanced',
+    'ultimate',
+    'bigmem',
+    'gpubasic',
+    'gpuultimate',
+]
+valid_slurm_groups = [
+    'staff',
+    'student',
+]
+student_gid = 1002
+staff_gid = 1001
+faculty_gid = 1000
+sacctmgr_path = '/usr/local/bin/sacctmgr'
+ldap_path = ''
+ldap_domain_components = 'dc=informatik,dc=fh-nuernberg,dc=de'

@@ -1,0 +1,23 @@
+version: 1
+
+dn: cn=teststud123456,ou=people,dc=informatik,dc=fh-nuernberg,dc=de
+objectClass: inetOrgPerson
+objectClass: ldapPublicKey
+objectClass: organizationalPerson
+objectClass: person
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: slurmRole
+objectClass: top
+cn: teststud123456
+gidNumber: 1002
+homeDirectory: /home/teststud123456
+sn: Test
+uid: teststud123456
+uidNumber: 10999
+givenName: Test
+loginShell: /bin/bash
+slurmDefaultQos: basic
+slurmQos: basic
+slurmQos: gpubasic
+slurmQos: interactive
