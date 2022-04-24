@@ -1,7 +1,7 @@
 pub mod ldap {
     use tempfile::tempdir;
 
-    use crate::{MgmtConfig, Entity, util::io_util::{user_input, read_ldif_template, write_tmp_ldif}};
+    use crate::{MgmtConfig, Entity, util::io_util::{user_input, read_ldif_template, write_tmp_ldif}, Modifiable};
     use std::process::Command;
 
     pub struct LDAPConn {
@@ -133,7 +133,11 @@ pub mod ldap {
 
     }
     
-    pub fn modify_ldap_user(entity: &Entity, config: &MgmtConfig) {}
+    pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
+        // What to modify
+        // user, group, firstname, lastname, mail, default_qos, qos
+        
+    }
     
     pub fn list_ldap_users(ldap_conn: &LDAPConn) {
         // let ldap_bind="cn=ldapconnector,dc=informatik,dc=fh-nuernberg,dc=de";

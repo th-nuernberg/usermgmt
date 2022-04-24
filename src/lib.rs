@@ -5,7 +5,7 @@ use std::{fmt, str::FromStr};
 use serde::{Serialize, Deserialize};
 use clap::{Parser, Subcommand};
 
-use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user}, util::io_util::user_input};
+use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user}, util::io_util::user_input};
 extern crate confy;
 
 /// Add, delete, or modify users in LDAP and Slurm simultaneously
@@ -53,13 +53,34 @@ pub enum Commands {
         #[clap(short, long, default_value = "basic")]
         default_qos: String,
         /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
-        #[clap(short, long, max_values(10))]
+        #[clap(short, long, max_values(20))]
         qos: Vec<String>,
     },
     /// Modify a user in Slurm and/or LDAP
-    Modify { user: String },
+    Modify { 
+        /// A valid username e.g. wagnerdo.
+        user: String, 
+         /// Firstname of the user.
+        #[clap(short, long)]
+        firstname: Option<String>,
+        /// Lastname of the user.
+        #[clap(short, long)]
+        lastname: Option<String>,
+        /// User's e-mail address.
+        #[clap(short, long)]
+        mail: Option<String>,
+        /// Slurm default QOS for the user e.g. basic.
+        #[clap(short, long)]
+        default_qos: Option<String>,
+        /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
+        #[clap(short, long)]
+        qos: Vec<String>
+    },
     /// Delete a user from Slurm and/or LDAP
-    Delete { user: String },
+    Delete { 
+        /// A valid username e.g. wagnerdo.
+        user: String 
+    },
 }
 
 #[derive(Clone, PartialEq)]
@@ -170,6 +191,46 @@ impl Entity {
 
 }
 
+impl Default for Entity {
+    fn default() -> Self {
+        Entity {
+            username: "".to_string(),
+            firstname: "".to_string(),
+            lastname: "".to_string(),
+            mail: "".to_string(),
+            gid: -1,
+            group: Group::Student,
+            default_qos: "basic".to_string(),
+            qos: vec![],
+        }
+    }
+}
+
+pub struct Modifiable {
+    pub username: String,
+    pub firstname: Option<String>,
+    pub lastname: Option<String>,
+    pub mail: Option<String>,
+    pub default_qos: Option<String>,
+    pub qos: Vec<String>
+}
+
+impl Modifiable {
+    fn new(username: &String, firstname: &Option<String>, lastname: &Option<String>, 
+        mail: &Option<String>, default_qos: &Option<String>, qos: &Vec<String>) -> Self {
+
+        Modifiable { 
+            username: username.clone(),
+            firstname: firstname.clone(), 
+            lastname: lastname.clone(), 
+            mail: mail.clone(), 
+            default_qos: default_qos.clone(), 
+            qos: qos.clone() 
+        }
+    }
+}
+
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MgmtConfig {
     pub student_default_qos: String,
@@ -219,9 +280,13 @@ pub fn run_mgmt(args: Args, config: MgmtConfig) {
     // list_ldap_users();
     match &args.command {
         Commands::Add {user, group, firstname, lastname, mail, default_qos, qos } => {
-            add_user(user, group, firstname, lastname, mail, default_qos, qos, &is_slurm_only, &is_ldap_only, &config)
+            add_user(user, group, firstname, lastname, mail, default_qos, qos, 
+                    &is_slurm_only, &is_ldap_only, &config)
         }
-        Commands::Modify { user } => modify_user(user, &config),
+        Commands::Modify { user, firstname, lastname, mail, default_qos, qos } => {
+            modify_user(user, firstname, lastname, mail, default_qos, qos, 
+                        &is_slurm_only, &is_ldap_only, &config)
+        },
         Commands::Delete { user } => delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path),
     }
     // match command.as_str() {
@@ -245,7 +310,10 @@ fn is_valid_group(group: &String, valid_groups: &Vec<String>) -> bool {
     valid_groups.contains(group)
 }
 
-fn add_user(user: &String, group: &String, firstname: &String, lastname: &String, mail: &String, default_qos: &String, qos: &Vec<String>, is_slurm_only: &bool, is_ldap_only: &bool, config: &MgmtConfig) {
+fn add_user(user: &String, group: &String, firstname: &String, 
+            lastname: &String, mail: &String, default_qos: &String, 
+            qos: &Vec<String>, is_slurm_only: &bool, is_ldap_only: &bool, 
+            config: &MgmtConfig) {
     println!("Start add_user");
 
     // println!("{:#?}", config);
@@ -281,7 +349,29 @@ fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool, sacctmg
     println!("Finished delete_user");
 }
 
-fn modify_user(user: &String, config: &MgmtConfig) {}
+fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<String>, 
+                mail: &Option<String>, default_qos: &Option<String>, qos: &Vec<String>, 
+                is_slurm_only: &bool, is_ldap_only: &bool, config: &MgmtConfig) {
+    
+    // to do
+    // we need a struct that contains all elements to be modified
+    // we do this by checking if we get some in the optional
+    println!("Start modify_user for {}", user);
+
+    let modifiable = Modifiable::new(user, firstname, lastname, mail, default_qos, qos);
+
+    let sacctmgr_path = config.sacctmgr_path.clone(); 
+    // let entity = Entity::new(user, group, firstname, lastname, mail, default_qos, qos, config);
+
+    if !is_ldap_only {
+        modify_slurm_user(&modifiable, &sacctmgr_path);
+    }
+
+    if !is_slurm_only {
+        modify_ldap_user(&modifiable, &config);
+    }
+    println!("Finished modify_user");
+}
 
 
 /// Another method for adding users. 

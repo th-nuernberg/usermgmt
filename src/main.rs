@@ -4,7 +4,7 @@ use usermgmt::{MgmtConfig, Args, run_mgmt};
 extern crate confy;
 
 //TODO
-// add user modification
+// implement ldap user modification
 // refactor lib into cli.rs and config.rs
 
 fn main() {

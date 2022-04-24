@@ -1,7 +1,7 @@
 pub mod slurm {
-    use std::process::Command;
+    use std::{process::Command};
 
-    use crate::{Entity, MgmtConfig};
+    use crate::{Entity, MgmtConfig, Modifiable};
 
     pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
@@ -45,7 +45,29 @@ pub mod slurm {
 
     }
 
-    pub fn modify_slurm_user(entity: Entity, config: MgmtConfig) {}
+    pub fn modify_slurm_user(modifiable: &Modifiable, sacctmgr_path: &str) {
+
+        println!("Modifying user qos");
+        if let Some(m) = &modifiable.default_qos {
+            
+            let entity = Entity {
+                username: modifiable.username.clone(),
+                default_qos: m.to_string(),
+                ..Default::default()
+            };
+            modify_qos(&entity, sacctmgr_path, true)
+        }
+
+        if !modifiable.qos.is_empty() {
+
+            let entity = Entity {
+                username: modifiable.username.clone(),
+                qos: modifiable.qos.clone(),
+                ..Default::default()
+            };
+            modify_qos(&entity, sacctmgr_path, false)
+        }
+    }
 
     fn modify_qos(entity: &Entity, sacctmgr_path: &str, default_qos: bool) {
         
