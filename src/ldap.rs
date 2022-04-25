@@ -77,7 +77,7 @@ pub mod ldap {
             None => panic!( "No users found or LDAP query failed. Can not assign uid." )
         }
 
-        let template = read_ldif_template();
+        let template = read_ldif_template(&config.ldif_template_path);
         let mut custom_elems: Vec<String> = Vec::new();
 
         custom_elems.push(format!("dn: uid={},{}", entity.username, ldap_conn.ldap_base));
@@ -227,38 +227,6 @@ pub mod ldap {
             println!("{}", String::from_utf8_lossy(&output.stderr));
         }
         
-    }
-    
-    pub fn list_ldap_users(ldap_conn: &LDAPConn) {
-        // let ldap_bind="cn=ldapconnector,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let ldap_pass="bieristgut";
-        // let ldap_base="ou=people,dc=informatik,dc=fh-nuernberg,dc=de";
-        // ldapsearch -LLL -D {ldap_bind} -x -w {ldap_pass} -b {ldap_base} -o ldif-wrap=no \"(objectclass=slurmRole)\" uid gidNumber slurmQos slurmDefaultQos");
-    
-        let output = Command::new("ldapsearch")
-            .arg("-LLL")
-            .arg("-D")
-            .arg(&ldap_conn.ldap_bind)
-            .arg("-x")
-            .arg("-w")
-            .arg(&ldap_conn.ldap_pass)
-            .arg("-b")
-            .arg(&ldap_conn.ldap_base)
-            .arg("-o")
-            .arg("ldif-wrap=no")
-            .arg("(objectclass=slurmRole)")
-            .arg("uid")
-            .arg("gidNumber")
-            .arg("slurmQos")
-            .arg("slurmDefaultQos")
-            .output()
-            .expect("Unable to execute ldapsearch command.");
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    
-        if !output.status.success() {
-            println!("Error during ldapsearch execution");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
-        }
     }
 
     /// Check if username already exists in ldap. 

@@ -27,5 +27,5 @@ student_gid = 1002
 staff_gid = 1001
 faculty_gid = 1000
 sacctmgr_path = '/usr/local/bin/sacctmgr'
-ldap_path = ''
 ldap_domain_components = 'dc=informatik,dc=fh-nuernberg,dc=de'
+ldif_template_path = './ldif'

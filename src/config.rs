@@ -14,8 +14,8 @@ pub mod config {
         pub staff_gid: i32,
         pub faculty_gid: i32,
         pub sacctmgr_path: String,
-        pub ldap_path: String,
         pub ldap_domain_components: String,
+        pub ldif_template_path: String,
     }
 
     impl Default for MgmtConfig {
@@ -34,8 +34,8 @@ pub mod config {
                 staff_gid: 1001,
                 faculty_gid: 1000,
                 sacctmgr_path: "/usr/local/bin/sacctmgr".to_string(),
-                ldap_path: "".to_string(),
                 ldap_domain_components: "dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
+                ldif_template_path: "./ldif".to_string(),
             }
         }
     }

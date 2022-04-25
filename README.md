@@ -17,14 +17,13 @@ Currently the following `AttributeTypes` are supported:
 - `slurmDefaultQos`: Specifies the user's default QOS. Can only exist once per user. 
 - `slurmQos`: Specifies the QOS available to the user. Can be added multiple times to a specific user. 
 
-## Build and Run 🦀 
-tbd
+## Build and Install 🦀 
+You can build the `usermgmt` tool using Cargo:
+```
+cargo build
+```
 
-## Configuration
-tbd
-
-## Usage
-tbd
+The following examples show how you can run the program with Cargo: 
 
 ```shell
 # Add a user
@@ -34,6 +33,16 @@ cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 # Delete the user
 cargo run -- delete teststaff123
 ```
+
+The tool is installed as follows:
+tbd
+
+## Configuration
+tbd
+
+## Usage
+tbd
+
 
 Make sure that you are executing the `usermgmt` tool with a user who has administrative rights for `sacctmgr`. 
 You can check available users and their admin level via `sacctmgr list user`. 
