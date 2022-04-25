@@ -18,6 +18,7 @@ Currently the following `AttributeTypes` are supported:
 - `slurmQos`: Specifies the QOS available to the user. Can be added multiple times to a specific user. 
 
 ## Build and Install 🦀 
+
 You can build the `usermgmt` tool using Cargo:
 ```
 cargo build
@@ -30,25 +31,55 @@ The following examples show how you can run the program with Cargo:
 cargo run -- --help
 # Add a user
 cargo run -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau
-# Modify the user
+# Modify user
 cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
-# Delete the user
+# Delete user
 cargo run -- delete teststaff123
 ```
 
-The tool is installed as follows:
-tbd
+### Create Debian Package
+
+We use [cargo-deb](https://github.com/kornelski/cargo-deb) to automatically create a Debian package. 
+
+The package creation and installation steps are listed below:
+
+```shell
+# Install cargo-deb
+cargo install cargo-deb
+# Create Debian package in Debian package target/debian/<project_name>_<version>_<arch>.deb
+cargo deb
+# Install package
+dpkg -i target/debian/*.deb.
+```
 
 ## Configuration
 tbd
 
 ## Usage
-tbd
 
+The following examples show the basic usage of the `usermgmt` tool:
+```shell
+# Show available arguments
+usermgmt --help
+# Show help for modify subcommand
+usermgmt modify --help
+# Add a user
+usermgmt add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+# Modify user
+modify teststaff123 --firstname Martha --mail bla@blubb.de --default-qos interactive
+# Delete user
+usermgmt delete teststaff123
+```
 
-Make sure that you are executing the `usermgmt` tool with a user who has administrative rights for `sacctmgr`. 
+When you attempt LDAP operations, you will be prompted for a username and a password. 
+Make sure the user has sufficient rights to add,modify, and delete entities in LDAP. 
+
+## Pitfalls 
+
+Make sure you execute the `usermgmt` tool with a user who has administrative rights for `sacctmgr`. 
 You can check available users and their admin level via `sacctmgr list user`. 
 
 ## External Dependencies
+
 - [Slurm Account Manager](https://slurm.schedmd.com/sacctmgr.html) as part of Slurmdbd
 - [LDAP Utils](https://wiki.debian.org/LDAP/LDAPUtils)
