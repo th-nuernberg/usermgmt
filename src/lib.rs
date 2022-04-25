@@ -79,7 +79,7 @@ impl Entity {
         let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
 
         if qos.is_empty() || !is_valid_qos(&qos, &valid_qos) {
-            println!("Specified QOS are either invalid or empty. Using defaults specified in config.");
+            println!("Specified QOS are either invalid or empty. Using defaults specified in conf.toml.");
             match group {
                 Group::Staff => qos = &staff_qos,
                 Group::Student => qos = &student_qos,

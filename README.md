@@ -26,6 +26,8 @@ cargo build
 The following examples show how you can run the program with Cargo: 
 
 ```shell
+# Show available arguments
+cargo run -- --help
 # Add a user
 cargo run -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau
 # Modify the user

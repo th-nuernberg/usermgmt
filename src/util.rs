@@ -16,7 +16,7 @@ pub mod io_util {
         let file_path = template_file_basedir + "/template.ldif";
         
         if Path::new(&file_path).exists() {
-            println!("Template already exists at {}. Not creating a new one", file_path);
+            println!("Template already exists at {file_path}. Not creating a new one.");
             return Ok(file_path);
         }
         let mut file = File::create(&file_path)?;

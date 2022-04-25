@@ -10,6 +10,8 @@ extern crate confy;
 
 //TODO
 // make deb package
+// remove unnecessary println
+// maybe make outputs a bit more colorful
 // maybe make slurmQos and slurmDefaultQos atributetype names configurable
 
 fn main() {
