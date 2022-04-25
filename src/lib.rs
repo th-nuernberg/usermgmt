@@ -1,87 +1,89 @@
 mod util;
 mod ldap;
 mod slurm;
+pub mod config;
+pub mod cli;
 use std::{fmt, str::FromStr};
-use serde::{Serialize, Deserialize};
-use clap::{Parser, Subcommand};
+use cli::cli::Commands;
+use config::config::MgmtConfig;
 
 use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user}, util::io_util::user_input};
 extern crate confy;
 
-/// Add, delete, or modify users in LDAP and Slurm simultaneously
-#[derive(Parser, Debug)]
-#[clap(author = "Author: Dominik Wagner", version = "0.1.0", 
-        about = "Slurm and LDAP user management", long_about = None)]
-pub struct Args {
-    //     #[clap(short, long)]
-    // pub command: String,
+// /// Add, delete, or modify users in LDAP and Slurm simultaneously
+// #[derive(Parser, Debug)]
+// #[clap(author = "Author: Dominik Wagner", version = "0.1.0", 
+//         about = "Slurm and LDAP user management", long_about = None)]
+// pub struct Args {
+//     //     #[clap(short, long)]
+//     // pub command: String,
 
-    /// Operation to conduct on the user. Either add, delete or modify.
-    #[clap(subcommand)]
-    pub command: Commands,
-    // /// Username e.g. wagnerdo.
-    // #[clap(short, long)]
-    // pub user: String,
+//     /// Operation to conduct on the user. Either add, delete or modify.
+//     #[clap(subcommand)]
+//     pub command: Commands,
+//     // /// Username e.g. wagnerdo.
+//     // #[clap(short, long)]
+//     // pub user: String,
 
-    /// Manage the user in Slurm only.
-    #[clap(long)]
-    pub slurm_only: bool,
-    /// Manage the user in LDAP only.
-    #[clap(long)]
-    pub ldap_only: bool,
-}
+//     /// Manage the user in Slurm only.
+//     #[clap(long)]
+//     pub slurm_only: bool,
+//     /// Manage the user in LDAP only.
+//     #[clap(long)]
+//     pub ldap_only: bool,
+// }
 
-#[derive(Subcommand, Debug)]
-pub enum Commands {
-    /// Add a user to Slurm and/or LDAP
-    Add { 
-        /// Username e.g. wagnerdo.
-        user: String,
-        /// Unix group the user belongs to e.g. staff.
-        #[clap(short, long, default_value = "student")]
-        group: String,
-        /// Firstname of the user.
-        #[clap(short, long)]
-        firstname: String,
-        /// Lastname of the user.
-        #[clap(short, long)]
-        lastname: String,
-        /// User's e-mail address.
-        #[clap(short, long, default_value = "")]
-        mail: String,
-        /// Slurm default QOS for the user e.g. basic.
-        #[clap(short, long, default_value = "basic")]
-        default_qos: String,
-        /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
-        #[clap(short, long, max_values(20))]
-        qos: Vec<String>,
-    },
-    /// Modify a user in Slurm and/or LDAP
-    Modify { 
-        /// A valid username e.g. wagnerdo.
-        user: String, 
-         /// Firstname of the user.
-        #[clap(short, long)]
-        firstname: Option<String>,
-        /// Lastname of the user.
-        #[clap(short, long)]
-        lastname: Option<String>,
-        /// User's e-mail address.
-        #[clap(short, long)]
-        mail: Option<String>,
-        /// Slurm default QOS for the user e.g. basic.
-        #[clap(short, long)]
-        default_qos: Option<String>,
-        /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
-        #[clap(short, long)]
-        qos: Vec<String>
-    },
-    /// Delete a user from Slurm and/or LDAP
-    Delete { 
-        /// A valid username e.g. wagnerdo.
-        user: String 
-    },
-}
+// #[derive(Subcommand, Debug)]
+// pub enum Commands {
+//     /// Add a user to Slurm and/or LDAP
+//     Add { 
+//         /// Username e.g. wagnerdo.
+//         user: String,
+//         /// Unix group the user belongs to e.g. staff.
+//         #[clap(short, long, default_value = "student")]
+//         group: String,
+//         /// Firstname of the user.
+//         #[clap(short, long)]
+//         firstname: String,
+//         /// Lastname of the user.
+//         #[clap(short, long)]
+//         lastname: String,
+//         /// User's e-mail address.
+//         #[clap(short, long, default_value = "")]
+//         mail: String,
+//         /// Slurm default QOS for the user e.g. basic.
+//         #[clap(short, long, default_value = "basic")]
+//         default_qos: String,
+//         /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
+//         #[clap(short, long, max_values(20))]
+//         qos: Vec<String>,
+//     },
+//     /// Modify a user in Slurm and/or LDAP
+//     Modify { 
+//         /// A valid username e.g. wagnerdo.
+//         user: String, 
+//          /// Firstname of the user.
+//         #[clap(short, long)]
+//         firstname: Option<String>,
+//         /// Lastname of the user.
+//         #[clap(short, long)]
+//         lastname: Option<String>,
+//         /// User's e-mail address.
+//         #[clap(short, long)]
+//         mail: Option<String>,
+//         /// Slurm default QOS for the user e.g. basic.
+//         #[clap(short, long)]
+//         default_qos: Option<String>,
+//         /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
+//         #[clap(short, long)]
+//         qos: Vec<String>
+//     },
+//     /// Delete a user from Slurm and/or LDAP
+//     Delete { 
+//         /// A valid username e.g. wagnerdo.
+//         user: String 
+//     },
+// }
 
 #[derive(Clone, PartialEq)]
 pub enum Group {
@@ -231,46 +233,46 @@ impl Modifiable {
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct MgmtConfig {
-    pub student_default_qos: String,
-    pub staff_default_qos: String,
-    pub student_qos: Vec<String>,
-    pub staff_qos: Vec<String>,
-    pub valid_qos: Vec<String>,
-    pub valid_slurm_groups: Vec<String>,
-    pub student_gid: i32,
-    pub staff_gid: i32,
-    pub faculty_gid: i32,
-    pub sacctmgr_path: String,
-    pub ldap_path: String,
-    pub ldap_domain_components: String,
-}
+// #[derive(Debug, Serialize, Deserialize, Clone)]
+// pub struct MgmtConfig {
+//     pub student_default_qos: String,
+//     pub staff_default_qos: String,
+//     pub student_qos: Vec<String>,
+//     pub staff_qos: Vec<String>,
+//     pub valid_qos: Vec<String>,
+//     pub valid_slurm_groups: Vec<String>,
+//     pub student_gid: i32,
+//     pub staff_gid: i32,
+//     pub faculty_gid: i32,
+//     pub sacctmgr_path: String,
+//     pub ldap_path: String,
+//     pub ldap_domain_components: String,
+// }
 
-impl Default for MgmtConfig {
-    fn default() -> Self {
-        MgmtConfig {
-            student_default_qos: "basic".to_string(), 
-            staff_default_qos: "advanced".to_string(),
-            student_qos: vec!["interactive".to_string(), "basic".to_string(), "gpubasic".to_string()],
-            staff_qos: vec!["interactive".to_string(), "advanced".to_string(), "gpubasic".to_string()],
-            valid_qos: vec!["interactive".to_string(), "basic".to_string(), 
-                             "advanced".to_string(), "ultimate".to_string(), 
-                            "bigmem".to_string(), "gpubasic".to_string(), 
-                            "gpuultimate".to_string()],
-            valid_slurm_groups: vec!["staff".to_string(), "student".to_string()],
-            student_gid: 1002,
-            staff_gid: 1001,
-            faculty_gid: 1000,
-            sacctmgr_path: "/usr/local/bin/sacctmgr".to_string(),
-            ldap_path: "".to_string(),
-            ldap_domain_components: "dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
-        }
-    }
-}
+// impl Default for MgmtConfig {
+//     fn default() -> Self {
+//         MgmtConfig {
+//             student_default_qos: "basic".to_string(), 
+//             staff_default_qos: "advanced".to_string(),
+//             student_qos: vec!["interactive".to_string(), "basic".to_string(), "gpubasic".to_string()],
+//             staff_qos: vec!["interactive".to_string(), "advanced".to_string(), "gpubasic".to_string()],
+//             valid_qos: vec!["interactive".to_string(), "basic".to_string(), 
+//                              "advanced".to_string(), "ultimate".to_string(), 
+//                             "bigmem".to_string(), "gpubasic".to_string(), 
+//                             "gpuultimate".to_string()],
+//             valid_slurm_groups: vec!["staff".to_string(), "student".to_string()],
+//             student_gid: 1002,
+//             staff_gid: 1001,
+//             faculty_gid: 1000,
+//             sacctmgr_path: "/usr/local/bin/sacctmgr".to_string(),
+//             ldap_path: "".to_string(),
+//             ldap_domain_components: "dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
+//         }
+//     }
+// }
 
 /// Main function that handles user management
-pub fn run_mgmt(args: Args, config: MgmtConfig) {
+pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
     // let command = &args.command;
     let is_slurm_only = args.slurm_only.clone();
     let is_ldap_only = args.slurm_only.clone();
@@ -287,7 +289,7 @@ pub fn run_mgmt(args: Args, config: MgmtConfig) {
             modify_user(user, firstname, lastname, mail, default_qos, qos, 
                         &is_slurm_only, &is_ldap_only, &config)
         },
-        Commands::Delete { user } => delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path),
+        Commands::Delete { user } => delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config),
     }
     // match command.as_str() {
     //     "add" => add_user(args, &config),
@@ -327,24 +329,21 @@ fn add_user(user: &String, group: &String, firstname: &String,
     }
 
     if !is_slurm_only {
-        add_ldap_user(&entity);
+        add_ldap_user(&entity, &config);
     }
     println!("Finished add_user");
 }
 
-fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool, sacctmgr_path: &String) {
+fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool, 
+                sacctmgr_path: &String, config: &MgmtConfig) {
     println!("Start delete_user");
-
-    // let is_slurm_only = args.slurm_only.clone();
-    // let is_ldap_only = args.slurm_only.clone();
-    // let sacctmgr_path = config.sacctmgr_path.clone(); 
 
     if !is_ldap_only {
         delete_slurm_user(user, sacctmgr_path);
     }
 
     if !is_slurm_only {
-        delete_ldap_user(user);
+        delete_ldap_user(user, &config);
     }
     println!("Finished delete_user");
 }
@@ -353,15 +352,11 @@ fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<Stri
                 mail: &Option<String>, default_qos: &Option<String>, qos: &Vec<String>, 
                 is_slurm_only: &bool, is_ldap_only: &bool, config: &MgmtConfig) {
     
-    // to do
-    // we need a struct that contains all elements to be modified
-    // we do this by checking if we get some in the optional
     println!("Start modify_user for {}", user);
 
     let modifiable = Modifiable::new(user, firstname, lastname, mail, default_qos, qos);
 
     let sacctmgr_path = config.sacctmgr_path.clone(); 
-    // let entity = Entity::new(user, group, firstname, lastname, mail, default_qos, qos, config);
 
     if !is_ldap_only {
         modify_slurm_user(&modifiable, &sacctmgr_path);

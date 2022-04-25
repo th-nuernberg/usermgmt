@@ -37,6 +37,17 @@ pub mod io_util {
         Ok(file_path)
     }
 
+    pub fn write_to_tmp_file(temp_dir: &TempDir, content: Vec<String>) -> Result<PathBuf, Box<dyn Error>> {
+        let file_path = temp_dir.path().join("tmp.file");
+        let mut file = File::create(&file_path)?;
+        println!("Writing temporary file to {:?}", file_path);
+        for s in content.iter() {
+            writeln!(file, "{}", s)?;
+            println!("{}", s);
+        }
+        Ok(file_path)
+    }
+
     // The output is wrapped in a Result to allow matching on errors
     // Returns an Iterator to the Reader of the lines of the file.
     fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>

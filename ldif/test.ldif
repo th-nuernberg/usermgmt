@@ -1,0 +1,12 @@
+dn: cn=vinczepa67912,ou=people,dc=informatik,dc=fh-nuernberg,dc=de
+changetype: modify
+replace: slurmDefaultQos
+slurmDefaultQos: basic
+-
+delete: slurmQos
+-
+add: slurmQos
+slurmQos: basic
+slurmQos: interactive
+slurmQos: gpubasic
+-

@@ -1,7 +1,7 @@
 pub mod slurm {
     use std::{process::Command};
 
-    use crate::{Entity, MgmtConfig, Modifiable};
+    use crate::{Entity, Modifiable};
 
     pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)

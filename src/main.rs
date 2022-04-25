@@ -1,11 +1,13 @@
 use std::path::Path;
 use clap::StructOpt;
-use usermgmt::{MgmtConfig, Args, run_mgmt};
+use usermgmt::config::config::MgmtConfig;
+use usermgmt::run_mgmt;
+use usermgmt::cli::cli::Args;
 extern crate confy;
 
 //TODO
-// implement ldap user modification
-// refactor lib into cli.rs and config.rs
+// make deb package
+// maybe make slurmQos and slurmDefaultQos atributetype names configurable
 
 fn main() {
     let path = Path::new("conf.toml");
@@ -17,7 +19,7 @@ fn main() {
             // println!("{:?}", args);
             run_mgmt(args, config);
         },
-        Err(e) => println!("Config error: {:?}", e),
+        Err(e) => println!("Configuration error: {:?}", e),
     }
 }
 
