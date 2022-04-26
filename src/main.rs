@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::Path;
 use clap::StructOpt;
+use env_logger::Env;
+use log::error;
 use usermgmt::config::config::MgmtConfig;
 use usermgmt::run_mgmt;
 use usermgmt::cli::cli::Args;
@@ -9,12 +11,16 @@ use std::error::Error;
 extern crate confy;
 
 //TODO
-// make deb package
 // remove unnecessary println
 // maybe make outputs a bit more colorful
 // maybe make slurmQos and slurmDefaultQos atributetype names configurable
 
 fn main() {
+
+    env_logger::Builder::from_env(Env::default()
+        .default_filter_or("info"))
+        .format_timestamp(None).init();
+
     #[cfg(debug_assertions)]
     let config_file_basedir: String = ".".to_owned();
 
@@ -30,20 +36,19 @@ fn main() {
     let mut ldif_template_path: String = "".to_string();
     match maybe_ldif_template_path {
         Ok(p) => ldif_template_path = p,
-        Err(e) => println!("Configuration error: {:?}", e),
+        Err(e) => error!("Configuration error: {:?}", e),
     }
 
     // Load or create the main configuration file conf.toml
     let cfg : Result<MgmtConfig, confy::ConfyError> = confy::load_path(path);
     match cfg {
         Ok(mut config) => {
-            // println!("Config ok: {:?}", config);
             let args = Args::parse();
-            // println!("{:?}", args);
             config.ldif_template_path = ldif_template_path;
+
             run_mgmt(args, config);
         },
-        Err(e) => println!("Configuration error: {:?}", e),
+        Err(e) => error!("Configuration error: {:?}", e),
     }
 }
 

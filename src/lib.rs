@@ -6,6 +6,7 @@ mod slurm;
 use std::{fmt, str::FromStr};
 use cli::cli::Commands;
 use config::config::MgmtConfig;
+use log::{debug, warn, info};
 
 use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user}};
 extern crate confy;
@@ -63,15 +64,11 @@ impl Entity {
         let student_default_qos = &config.student_default_qos;
 
         let mut default_qos = default_qos;
+        let mut group_str = group.to_lowercase();
         let mut qos: &Vec<String> = qos; 
 
-
-        let mut group_str = group.to_lowercase();
-        // let mut default_qos = args.default_qos;
-        // let mut qos = args.qos;
-        
         if !is_valid_group(&group_str, &config.valid_slurm_groups) {
-            println!("Invalid group specified: {}. Group field will be student", group_str);
+            warn!("Invalid group specified: {}. Group field will be student", group_str);
             group_str = "student".to_string();
         }
 
@@ -79,7 +76,7 @@ impl Entity {
         let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
 
         if qos.is_empty() || !is_valid_qos(&qos, &valid_qos) {
-            println!("Specified QOS are either invalid or empty. Using defaults specified in conf.toml.");
+            info!("Specified QOS are either invalid or empty. Using defaults specified in conf.toml.");
             match group {
                 Group::Staff => qos = &staff_qos,
                 Group::Student => qos = &student_qos,
@@ -88,7 +85,7 @@ impl Entity {
         } 
 
         if !is_valid_qos(&vec![default_qos.clone()], &valid_qos) {
-            println!("Specified default QOS is invalid. Using the value specified in config.");
+            warn!("Specified default QOS is invalid. Using the value specified in config.");
             match group {
                 Group::Staff => default_qos = &staff_default_qos,
                 Group::Student => default_qos = &student_default_qos,
@@ -108,6 +105,7 @@ impl Entity {
         }
     }
 
+    /// Convert Group enum into integer gid
     fn map_groupname_to_gid(group : Group, config: &MgmtConfig) -> Result<i32, ()> {
         match group {
             Group::Staff => Ok(config.staff_gid),
@@ -115,7 +113,6 @@ impl Entity {
             Group::Faculty => Ok(config.faculty_gid)
         }
     }
-
 }
 
 impl Default for Entity {
@@ -133,6 +130,7 @@ impl Default for Entity {
     }
 }
 
+/// Defines options that can be modified
 pub struct Modifiable {
     pub username: String,
     pub firstname: Option<String>,
@@ -177,6 +175,8 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
     }
 }
 
+/// Check if a Vector contains invalid QOS values
+/// Valid QOS are defined in conf.toml
 fn is_valid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> bool {
     for q in qos {
         if !valid_qos.contains(q) { 
@@ -194,10 +194,8 @@ fn add_user(user: &String, group: &String, firstname: &String,
             lastname: &String, mail: &String, default_qos: &String, 
             qos: &Vec<String>, is_slurm_only: &bool, is_ldap_only: &bool, 
             config: &MgmtConfig) {
-    println!("Start add_user");
+    debug!("Start add_user");
 
-    // println!("{:#?}", config);
-    // println!("{:#?}", args);
     let sacctmgr_path = config.sacctmgr_path.clone(); 
 
     let entity = Entity::new(user, group, firstname, lastname, mail, default_qos, qos, config);
@@ -209,12 +207,12 @@ fn add_user(user: &String, group: &String, firstname: &String,
     if !is_slurm_only {
         add_ldap_user(&entity, &config);
     }
-    println!("Finished add_user");
+    debug!("Finished add_user");
 }
 
 fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool, 
                 sacctmgr_path: &String, config: &MgmtConfig) {
-    println!("Start delete_user");
+    debug!("Start delete_user");
 
     if !is_ldap_only {
         delete_slurm_user(user, sacctmgr_path);
@@ -223,14 +221,14 @@ fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool,
     if !is_slurm_only {
         delete_ldap_user(user, &config);
     }
-    println!("Finished delete_user");
+    debug!("Finished delete_user");
 }
 
 fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<String>, 
                 mail: &Option<String>, default_qos: &Option<String>, qos: &Vec<String>, 
                 is_slurm_only: &bool, is_ldap_only: &bool, config: &MgmtConfig) {
     
-    println!("Start modify_user for {}", user);
+    debug!("Start modify_user for {}", user);
 
     let modifiable = Modifiable::new(user, firstname, lastname, mail, default_qos, qos);
 
@@ -243,5 +241,5 @@ fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<Stri
     if !is_slurm_only {
         modify_ldap_user(&modifiable, &config);
     }
-    println!("Finished modify_user");
+    debug!("Finished modify_user");
 }

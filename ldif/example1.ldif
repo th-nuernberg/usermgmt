@@ -1,4 +1,4 @@
-dn: cn=vinczepa67912,ou=people,dc=informatik,dc=fh-nuernberg,dc=de
+dn: cn=teststud123456,ou=people,dc=informatik,dc=fh-nuernberg,dc=de
 changetype: modify
 replace: slurmDefaultQos
 slurmDefaultQos: basic

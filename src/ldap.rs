@@ -1,9 +1,12 @@
+/// LDAP operations 
 pub mod ldap {
+    use log::{debug, error, warn, info};
     use tempfile::tempdir;
 
     use crate::{MgmtConfig, Entity, util::io_util::{user_input, read_ldif_template, write_tmp_ldif, write_to_tmp_file}, Modifiable};
     use std::{process::Command};
 
+    /// Defines fields necessary to establish an LDAP connection
     pub struct LDAPConn {
         pub ldap_bind: String,
         pub ldap_pass: String,
@@ -29,7 +32,7 @@ pub mod ldap {
         }
 
         fn ask_credentials() -> (String, String) {
-            println!("Enter your LDAP user name (defaults to admin):");
+            println!("Enter your LDAP username (defaults to admin):");
             let mut username = user_input();
             if username.len() < 1 {
                 username = "admin".to_string();
@@ -42,8 +45,8 @@ pub mod ldap {
     impl Default for LDAPConn {
         fn default() -> Self {
             LDAPConn {
-                ldap_bind: "cn=ldapconnector,dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
-                ldap_pass: "bieristgut".to_string(),
+                ldap_bind: "cn=connector,dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
+                ldap_pass: "".to_string(),
                 ldap_base: "ou=people,dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
                 ldap_dc: "dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
             }
@@ -51,22 +54,13 @@ pub mod ldap {
     }
 
     pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
-        // let ldap_bind="cn=admin,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let ldap_base="ou=people,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let cmd=format!("ldapadd -x -w {ldap_pass} -D {ldap_bind} -f ldif/student1.ldif");
+
         let ldap_conn = LDAPConn::new(&Some(config.ldap_domain_components.clone()));
 
         if username_exists(&ldap_conn, &entity.username) {
-            println!("User {} already exists in LDAP. Skipping creation.", &entity.username);
+            warn!("User {} already exists in LDAP. Skipping LDAP user creation.", &entity.username);
             return
         }
-
-        // let maybe_dn = find_dn_by_uid(&ldap_conn, &entity.username);
-        // let dn: String;
-        // match maybe_dn {
-        //     Some(maybe_dn) => dn = maybe_dn,
-        //     None => panic!("Unable to find DN for user {}", entity.username)
-        // }
 
         let uid_result = find_next_available_uid(&ldap_conn, entity.group.clone());
         let uid_number : i32;
@@ -74,7 +68,10 @@ pub mod ldap {
             Some(r) => {
                 uid_number = r
             },
-            None => panic!( "No users found or LDAP query failed. Can not assign uid." )
+            None => {
+                error!( "No users found or LDAP query failed. Unable to assign uid. Aborting..." );
+                return
+            }
         }
 
         let template = read_ldif_template(&config.ldif_template_path);
@@ -110,58 +107,81 @@ pub mod ldap {
             .arg(tmp_file)
             .output()
             .expect("Unable to execute ldapadd command.");
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+        debug!("add_ldap_user: {}", String::from_utf8_lossy(&output.stdout));
     
-        if !output.status.success() {
-            println!("ldapadd execution error");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
+        if output.status.success() {
+            info!("Added user {} to LDAP.", entity.username);
+        } else {
+            warn!("LDAP user creation did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("ldapadd stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("ldapadd stderr: {}", err);
+            }
         }
     }
 
     pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
-        // let ldap_bind="cn=admin,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let ldap_base="ou=people,dc=informatik,dc=fh-nuernberg,dc=de";
-        // ldapdelete -x -w {ldap_pass} -D {ldap_bind} "uid=user2,{ldap_base}"
+
         let ldap_conn = LDAPConn::new(&Some(config.ldap_domain_components.clone()));
         let maybe_dn = find_dn_by_uid(&ldap_conn, username);
         let dn: String;
+        
         match maybe_dn {
             Some(maybe_dn) => dn = maybe_dn,
-            None => panic!("Unable to find DN for user {}", username)
+            None => {
+                error!("Unable to find DN for user {}. Maybe the user does not exist in LDAP or you used invalid credentials.", username);
+                return
+            }
         }
 
         let output = Command::new("ldapdelete")
-        .arg("-x")
-        .arg("-w")
-        .arg(ldap_conn.ldap_pass)
-        .arg("-D")
-        .arg(ldap_conn.ldap_bind)
-        .arg(format!("{}", dn))
-        .output()
-        .expect("Unable to execute ldapdelete command.");
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+            .arg("-x")
+            .arg("-w")
+            .arg(ldap_conn.ldap_pass)
+            .arg("-D")
+            .arg(ldap_conn.ldap_bind)
+            .arg(format!("{}", dn))
+            .output()
+            .expect("Unable to execute ldapdelete command.");
+        
+        debug!("delete_ldap_user: {}", String::from_utf8_lossy(&output.stdout));
 
-        if !output.status.success() {
-            println!("ldapdelete execution error");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
+        if output.status.success() {
+            info!("Deleted {username} from LDAP.")
+        } else {
+            warn!("LDAP user deletion did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("ldapdelete stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("ldapdelete stderr: {}", err);
+            }
         }
-
     }
     
     pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
-        // let ldap_bind="cn=admin,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let ldap_base="ou=people,dc=informatik,dc=fh-nuernberg,dc=de";
-        // ldapmodify -x -w {ldap_pass} -D {ldap_bind} -f /tmp/entrymods 
+
         let ldap_conn = LDAPConn::new(&Some(config.ldap_domain_components.clone()));
 
         let mut modifiable_elems: Vec<String> = Vec::new();
 
         let maybe_dn = find_dn_by_uid(&ldap_conn, &modifiable.username);
         let dn: String;
+        
         match maybe_dn {
             Some(maybe_dn) => dn = maybe_dn,
-            None => panic!("Unable to find DN for user {}", modifiable.username)
+            None => {
+                error!("Unable to find DN for user {}. Maybe the user does not exist in LDAP or you used invalid credentials.", modifiable.username);
+                return
+            }
         }
+        
         modifiable_elems.push(format!("dn: {}", dn));
         modifiable_elems.push("changetype: modify".to_string());
 
@@ -186,9 +206,6 @@ pub mod ldap {
         }
 
         if let Some(default_qos) = &modifiable.default_qos {
-            // changetype: modify 
-            // replace: mail 
-            // mail: modme@terminator.rs.itd.umich.edu 
             modifiable_elems.push("replace: slurmDefaultQos".to_string());
             modifiable_elems.push(format!("slurmDefaultQos: {}", default_qos));
             modifiable_elems.push("-".to_string());
@@ -220,13 +237,22 @@ pub mod ldap {
             .arg(tmp_file)
             .output()
             .expect("Unable to execute ldapmodify command.");
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-
-        if !output.status.success() {
-            println!("ldapmodify execution error");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
-        }
         
+        debug!("modify_ldap_user: {}", String::from_utf8_lossy(&output.stdout));
+
+        if output.status.success() {    
+            info!("Modified user {} in LDAP", modifiable.username);   
+        } else {
+            warn!("LDAP user modification did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("ldapmodify stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("ldapmodify stderr: {}", err);
+            } 
+        }
     }
 
     /// Check if username already exists in ldap. 
@@ -248,11 +274,9 @@ pub mod ldap {
             .output()
             .expect("Unable to execute ldapsearch command. Is the path specified in your config correct?");
         
-        // println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
         let search_result = String::from_utf8_lossy(&output.stdout);
         let search_result_split = search_result.split("\n");
         
-        // let mut uids : Vec<i32> = Vec::new();
         for s in search_result_split {
             if s.contains("uid:") {
                 let split : Vec<&str> = s.split(" ").collect();
@@ -282,10 +306,21 @@ pub mod ldap {
             .output()
             .expect("Unable to execute ldapsearch command. Is the path specified in your config correct?");
         
-        // println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
         let search_result = String::from_utf8_lossy(&output.stdout);
         let search_result_split = search_result.split("\n");
-        // let mut uids : Vec<i32> = Vec::new();
+
+        if !output.status.success() { 
+            warn!("LDAP search query did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("ldapsearch stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("ldapsearch stderr: {}", err);
+            }    
+        }
+
         for s in search_result_split {
             if s.contains("dn:") {
                 let split : Vec<&str> = s.split(" ").collect();
@@ -297,9 +332,6 @@ pub mod ldap {
 
     /// Do an LDAP search to determine the next available uid
     fn find_next_available_uid(ldap_conn: &LDAPConn, group: crate::Group) -> Option<i32> {
-        // ldapsearch -LLL -D ${ldap_bind} -x -w ${ldap_pass} -b $ldap_base -o ldif-wrap=no "(objectclass=*)" uidNumber
-        // let ldap_bind="cn=admin,dc=informatik,dc=fh-nuernberg,dc=de";
-        // let ldap_base="ou=people,dc=informatik,dc=fh-nuernberg,dc=de";
 
         let output = Command::new("ldapsearch")
             .arg("-LLL")
@@ -317,7 +349,6 @@ pub mod ldap {
             .output()
             .expect("Unable to execute ldapsearch command. Is the path specified in your config correct?");
         
-        // println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
         let search_result = String::from_utf8_lossy(&output.stdout);
         let search_result_split = search_result.split("\n");
         
@@ -338,7 +369,7 @@ pub mod ldap {
         let max_value = uids.iter().max();
         match max_value {
             Some(max) => {
-                println!( "Next available uid is: {}", max + 1);
+                debug!( "Next available uid is: {}", max + 1);
                 Some(max + 1)
             },
             None => {

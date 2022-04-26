@@ -1,5 +1,6 @@
 pub mod io_util {
     use std::fs::{File, self};
+    use log::{debug};
     use tempfile::TempDir;
     use std::io::{self, BufRead, Write};
     use std::error::Error;
@@ -16,7 +17,7 @@ pub mod io_util {
         let file_path = template_file_basedir + "/template.ldif";
         
         if Path::new(&file_path).exists() {
-            println!("Template already exists at {file_path}. Not creating a new one.");
+            debug!("LDIF template already exists at {file_path}. Not creating a new one.");
             return Ok(file_path);
         }
         let mut file = File::create(&file_path)?;
@@ -32,10 +33,10 @@ pub mod io_util {
         template_content.push("objectClass: top".to_string());
         template_content.push("loginShell: /bin/bash".to_string());
 
-        println!("Creating LDIF template at {file_path}:");
+        debug!("Creating LDIF template at {file_path}:");
         for s in template_content.iter() {
             writeln!(file, "{}", s)?;
-            println!("{}", s);
+            debug!("{}", s);
         }
         Ok(file_path)
     }
@@ -47,7 +48,6 @@ pub mod io_util {
             // Consumes the iterator, returns an (Optional) String
             for line in lines {
                 if let Ok(elem) = line {
-                    // println!("{}", elem);
                     template.push(elem);
                 }
             }
@@ -58,28 +58,28 @@ pub mod io_util {
     pub fn write_tmp_ldif(temp_dir: &TempDir, template_vec: Vec<String>, custom_elems: Vec<String>) -> Result<PathBuf, Box<dyn Error>> {
         let file_path = temp_dir.path().join("tmp.ldif");
         let mut file = File::create(&file_path)?;
-        println!("Writing temporary ldif file to {:?}", file_path);
+        debug!("Writing temporary ldif file to {:?}:", file_path);
         // let mut file = tempfile()?;
         for s in custom_elems.iter() {
             writeln!(file, "{}", s)?;
-            println!("{}", s);
+            debug!("{}", s);
         }
 
         for s in template_vec.iter() {
             writeln!(file, "{}", s)?;
-            println!("{}", s);
+            debug!("{}", s);
         }
-        println!("write_tmp_ldif finished");
+        debug!("write_tmp_ldif finished");
         Ok(file_path)
     }
 
     pub fn write_to_tmp_file(temp_dir: &TempDir, content: Vec<String>) -> Result<PathBuf, Box<dyn Error>> {
         let file_path = temp_dir.path().join("tmp.file");
         let mut file = File::create(&file_path)?;
-        println!("Writing temporary file to {:?}", file_path);
+        debug!("Writing temporary file to {:?}", file_path);
         for s in content.iter() {
             writeln!(file, "{}", s)?;
-            println!("{}", s);
+            debug!("{}", s);
         }
         Ok(file_path)
     }

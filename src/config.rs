@@ -1,3 +1,4 @@
+/// Definition of configuration options
 pub mod config {
     use serde::{Serialize, Deserialize};
 

@@ -1,61 +1,84 @@
 pub mod slurm {
     use std::{process::Command};
 
+    use log::{debug,error, warn, info};
+
     use crate::{Entity, Modifiable};
 
     pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
-        .arg("add")
-        .arg("user")
-        .arg(entity.username.clone())
-        .arg(format!("Account={}", entity.group.to_string()))
-        .arg("--immediate")
-        .output()
-        .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
+            .arg("add")
+            .arg("user")
+            .arg(entity.username.clone())
+            .arg(format!("Account={}", entity.group.to_string()))
+            .arg("--immediate")
+            .output()
+            .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
     
-        println!("add_slurm_user stdout: {}", String::from_utf8_lossy(&output.stdout));
+        debug!("add_slurm_user: {}", String::from_utf8_lossy(&output.stdout));
     
-        if !output.status.success() {
-            // println!("Error during sacctmgr execution");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
+        if output.status.success() {
+            info!("Added user {} to Slurm", entity.username);
+        } else {
+            warn!("Slurm user creation did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("sacctmgr stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("sacctmgr stderr: {}", err);
+            }
         }
 
-        println!("Modifying user qos");
+        debug!("Modifying user qos");
         modify_qos(entity, sacctmgr_path, true);
         modify_qos(entity, sacctmgr_path, false);
     
     }
 
     pub fn delete_slurm_user(user: &str, sacctmgr_path: &str) {
-        // 		cmd = f'sacctmgr delete user {candidate} --immediate'
+
         let output = Command::new(sacctmgr_path)
-        .arg("delete")
-        .arg("user")
-        .arg(user)
-        .arg("--immediate")
-        .output()
-        .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
+            .arg("delete")
+            .arg("user")
+            .arg(user)
+            .arg("--immediate")
+            .output()
+            .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
+        
+        debug!("delete_slurm_user: {}", String::from_utf8_lossy(&output.stdout));
     
-        println!("delete_slurm_user stdout: {}", String::from_utf8_lossy(&output.stdout));
-    
-        if !output.status.success() {
-            // println!("Error during sacctmgr execution");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
+        if output.status.success() {
+            info!("Deleted user {} from Slurm", user);
+        } else {
+            warn!("Slurm user deletion did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("sacctmgr stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("sacctmgr stderr: {}", err);
+            }
         }
 
     }
 
     pub fn modify_slurm_user(modifiable: &Modifiable, sacctmgr_path: &str) {
 
-        println!("Modifying user qos");
-        if let Some(m) = &modifiable.default_qos {
-            
-            let entity = Entity {
-                username: modifiable.username.clone(),
-                default_qos: m.to_string(),
-                ..Default::default()
-            };
-            modify_qos(&entity, sacctmgr_path, true)
+        debug!("Start modifying user qos");
+        match &modifiable.default_qos {
+            Some(m) => {
+                let entity = Entity {
+                    username: modifiable.username.clone(),
+                    default_qos: m.to_string(),
+                    ..Default::default()
+                };
+                info!("Modifying default QOS for user {} in Slurm to {}.", modifiable.username, m);
+                modify_qos(&entity, sacctmgr_path, true);
+            },
+            None => info!("Did not modify default QOS for user {} in Slurm, since nothing was specified.", modifiable.username)
         }
 
         if !modifiable.qos.is_empty() {
@@ -66,6 +89,8 @@ pub mod slurm {
                 ..Default::default()
             };
             modify_qos(&entity, sacctmgr_path, false)
+        } else {
+            info!("Did not modify QOS for user {} in Slurm, since nothing was specified.", modifiable.username);
         }
     }
 
@@ -80,22 +105,30 @@ pub mod slurm {
         }
 
         let output = Command::new(sacctmgr_path)
-        .arg("modify")
-        .arg("user")
-        .arg(entity.username.clone())
-        .arg("set")
-        .arg(qos_str)
-        .arg("--immediate")
-        .output()
-        .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
+            .arg("modify")
+            .arg("user")
+            .arg(entity.username.clone())
+            .arg("set")
+            .arg(qos_str)
+            .arg("--immediate")
+            .output()
+            .expect("Unable to execute sacctmgr command. Is the path specified in your config correct?");
+        
+        debug!("modify_qos: {}", String::from_utf8_lossy(&output.stdout));
     
-        println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    
-        if !output.status.success() {
-            // println!("Error during sacctmgr execution");
-            println!("{}", String::from_utf8_lossy(&output.stderr));
+        if output.status.success() {
+            debug!("Modified QOS for user {} in Slurm", entity.username);
+        } else {
+            warn!("Slurm QOS modification did not return with success.");
+            let out = String::from_utf8_lossy(&output.stdout);
+            if out.len() > 0 {
+                warn!("sacctmgr stdout: {}", out);
+            }
+            let err = String::from_utf8_lossy(&output.stderr);
+            if err.len() > 0 {
+                error!("sacctmgr stderr: {}", err);
+            }
         }
-    
     }
 }
 
