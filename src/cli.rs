@@ -4,7 +4,7 @@ pub mod cli {
 
     /// Add, delete, or modify users in LDAP and Slurm simultaneously
     #[derive(Parser, Debug)]
-    #[clap(author = "Author: Dominik Wagner", version = "0.1.2", 
+    #[clap(author = "Author: Dominik Wagner", version = "0.1.3", 
             about = "Simultaneous Slurm and LDAP user management", long_about = None)]
     pub struct Args {
         /// Operation to conduct on the user. Either add, delete or modify.
@@ -60,7 +60,7 @@ pub mod cli {
             #[clap(short, long)]
             default_qos: Option<String>,
             /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
-            #[clap(short, long)]
+            #[clap(short, long, max_values(20))]
             qos: Vec<String>
         },
         /// Delete a user from Slurm and/or LDAP
