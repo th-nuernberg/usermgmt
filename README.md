@@ -2,7 +2,7 @@
 
 The [Slurm](https://slurm.schedmd.com/overview.html) cluster management system lacks direct LDAP integration, which can make user management quite cumbersome. 
 Slurm is not automatically aware of any users in the system and what their resource limits in the cluster should be. 
-Hence, a new user must be added to the LDAP instance and the Slurm database, which requires double bookkeeping and is error-prune (e.g. user might exist in Slurm but has been deleted in LDAP or vice versa). 
+Hence, a new user must be added to the LDAP instance and the Slurm database, which requires double bookkeeping and is error-prone (e.g. user might exist in Slurm but has been deleted in LDAP or vice versa). 
 
 Ideally, the LDAP instance is the single source of truth for what individual users are able to do on the system and even configurations specific to Slurm (e.g. resource limits) should be managed via LDAP. 
 

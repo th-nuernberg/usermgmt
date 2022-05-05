@@ -10,11 +10,6 @@ use usermgmt::util::io_util::make_ldif_template;
 use std::error::Error;
 extern crate confy;
 
-//TODO
-// remove unnecessary println
-// maybe make outputs a bit more colorful
-// maybe make slurmQos and slurmDefaultQos atributetype names configurable
-
 fn main() {
 
     env_logger::Builder::from_env(Env::default()

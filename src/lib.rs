@@ -186,6 +186,18 @@ fn is_valid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> bool {
     true
 }
 
+fn filter_invalid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> Vec<String> {
+    let mut filtered_qos: Vec<String> = Vec::new();
+    for q in qos {
+        if is_valid_qos(&vec![q.clone()], valid_qos) {
+            filtered_qos.push(q.clone());
+        } else {
+            warn!("QOS {q} is invalid and will be removed!")
+        }
+    }
+    filtered_qos
+}
+
 fn is_valid_group(group: &String, valid_groups: &Vec<String>) -> bool {
     valid_groups.contains(group)
 }
@@ -225,12 +237,23 @@ fn delete_user(user: &String, is_slurm_only: &bool, is_ldap_only: &bool,
 }
 
 fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<String>, 
-                mail: &Option<String>, default_qos: &Option<String>, qos: &Vec<String>, 
+                mail: &Option<String>, mut default_qos: &Option<String>, qos: &Vec<String>, 
                 is_slurm_only: &bool, is_ldap_only: &bool, config: &MgmtConfig) {
     
     debug!("Start modify_user for {}", user);
+    match default_qos {
+        Some(s) => {
+            if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
+                warn!("Specified default QOS {s} is invalid and will be removed!");
+                default_qos = &None;
+            }
+        },
+        _ => (),
+    }
 
-    let modifiable = Modifiable::new(user, firstname, lastname, mail, default_qos, qos);
+    let filtered_qos = filter_invalid_qos(qos, &config.valid_qos);
+    let modifiable = Modifiable::new(user, firstname, lastname, mail, 
+                                                default_qos, &filtered_qos);
 
     let sacctmgr_path = config.sacctmgr_path.clone(); 
 
