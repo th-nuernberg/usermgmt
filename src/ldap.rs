@@ -231,7 +231,6 @@ pub mod ldap {
     fn make_modification_vec<'a>(modifiable: &'a Modifiable, old_qos: &'a Vec<String>) -> Vec<Mod<&'a str>> {
         let mut modifications: Vec<Mod<&str>> = Vec::new();
 
-        // let mod_vec = vec![Mod::Replace("userPassword", HashSet::from([newpassword])),];
         if let Some(firstname) = &modifiable.firstname {
             modifications.push(Mod::Replace("givenName", HashSet::from([&*firstname.as_str()])))
         }

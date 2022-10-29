@@ -1,9 +1,0 @@
-objectClass: inetOrgPerson
-objectClass: ldapPublicKey
-objectClass: organizationalPerson
-objectClass: person
-objectClass: posixAccount
-objectClass: shadowAccount
-objectClass: slurmRole
-objectClass: top
-loginShell: /bin/bash

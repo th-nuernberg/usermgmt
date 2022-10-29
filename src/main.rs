@@ -24,21 +24,11 @@ fn main() {
     let path_string = config_file_basedir + "/conf.toml";
     let path = Path::new(&path_string);
 
-    // // Try to create the template.ldif file required to execute LDAP commands
-    // let maybe_ldif_template_path : Result<String, Box<dyn Error>> = make_ldif_template();
-    // let mut ldif_template_path: String = "".to_string();
-    // match maybe_ldif_template_path {
-    //     Ok(p) => ldif_template_path = p,
-    //     Err(e) => error!("Configuration error: {:?}", e),
-    // }
-
     // Load or create the main configuration file conf.toml
     let cfg : Result<MgmtConfig, confy::ConfyError> = confy::load_path(path);
     match cfg {
         Ok(config) => {
             let args = Args::parse();
-            // config.ldif_template_path = ldif_template_path;
-
             run_mgmt(args, config);
         },
         Err(e) => error!("Configuration error: {:?}", e),
