@@ -73,7 +73,7 @@ pub mod ldap {
             if username.len() < 1 {
                 username = "admin".to_string();
             }
-            let mut password = rpassword::prompt_password("Enter your LDAP password: ").unwrap();
+            let password = rpassword::prompt_password("Enter your LDAP password: ").unwrap();
             (username, password)
         }
     }
