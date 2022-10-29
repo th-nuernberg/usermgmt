@@ -34,9 +34,7 @@ objectclass_common = [
     'top',       
 ]
 compute_nodes = [
-    'ml0.informatik.fh-nuernberg.de',
-    'ml1.informatik.fh-nuernberg.de',
-    'ml2.informatik.fh-nuernberg.de',
+    'ml0.test.de',
 ]
 login_shell = '/bin/bash'
 student_gid = 1002
@@ -46,4 +44,3 @@ sacctmgr_path = '/usr/local/bin/sacctmgr'
 ldap_domain_components = 'dc=informatik,dc=fh-nuernberg,dc=de'
 ldap_org_unit = 'people'
 ldap_server = 'ldap://localhost:389'
-ldif_template_path = './ldif'

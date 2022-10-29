@@ -20,7 +20,6 @@ pub mod config {
         pub ldap_domain_components: String,
         pub ldap_org_unit: String,
         pub ldap_server: String,
-        pub ldif_template_path: String,
     }
 
     impl Default for MgmtConfig {
@@ -47,7 +46,6 @@ pub mod config {
                 ldap_domain_components: "dc=informatik,dc=fh-nuernberg,dc=de".to_string(),
                 ldap_org_unit: "people".to_string(),
                 ldap_server: "ldap://localhost:389".to_string(),
-                ldif_template_path: "./ldif".to_string(),
             }
         }
     }
