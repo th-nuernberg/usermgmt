@@ -15,7 +15,6 @@ pub mod io_util {
     }
 
     pub fn hashset_from_vec_str(data: &[String]) -> HashSet<&str> {
-        // HashSet::from_iter(data.iter().cloned())
         data.iter().map(|s| s.as_str()).collect::<HashSet<&str>>()
     }
 

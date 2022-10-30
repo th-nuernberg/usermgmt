@@ -184,10 +184,8 @@ pub mod dir {
         }
     }
 
+    /// Establish SSH connection to home host, make user directory and set quota
     fn handle_home(entity: &Entity, config: &MgmtConfig, ssh_username: &str, ssh_password: &str) {
-        //  Establish ssh connection to augustiner
-        // make home dir under /home/
-        // Set quota setquota -u someuser 20G 22G 0 0 /dev/sdb4
         debug!("Start handling home directory");
 
         if config.home_host.is_empty() {
