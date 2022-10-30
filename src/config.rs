@@ -1,7 +1,6 @@
 /// Definition of configuration options
 pub mod config {
-    use serde::{Serialize, Deserialize};
-
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct MgmtConfig {
@@ -13,7 +12,7 @@ pub mod config {
         pub valid_slurm_groups: Vec<String>,
         pub objectclass_common: Vec<String>,
         pub compute_nodes: Vec<String>,
-        pub login_shell: String, 
+        pub login_shell: String,
         pub student_gid: i32,
         pub staff_gid: i32,
         pub faculty_gid: i32,
@@ -25,7 +24,7 @@ pub mod config {
         pub nfs_host: String,
         pub quota_softlimit: String,
         pub quota_hardlimit: String,
-        pub quota_nfs_softlimit: String, 
+        pub quota_nfs_softlimit: String,
         pub quota_nfs_hardlimit: String,
         pub quota_home_softlimit: String,
         pub quota_home_hardlimit: String,
@@ -42,15 +41,25 @@ pub mod config {
     impl Default for MgmtConfig {
         fn default() -> Self {
             MgmtConfig {
-                student_default_qos: "basic".to_string(), 
+                student_default_qos: "basic".to_string(),
                 staff_default_qos: "advanced".to_string(),
                 student_qos: vec!["interactive".to_string(), "basic".to_string()],
                 staff_qos: vec!["interactive".to_string(), "advanced".to_string()],
-                valid_qos: vec!["interactive".to_string(), "basic".to_string(), "advanced".to_string()],
-                objectclass_common: vec!["inetOrgPerson".to_string(), "ldapPublicKey".to_string(),
-                                        "organizationalPerson".to_string(), "person".to_string(), 
-                                        "posixAccount".to_string(), "shadowAccount".to_string(), 
-                                        "slurmRole".to_string(), "top".to_string()],
+                valid_qos: vec![
+                    "interactive".to_string(),
+                    "basic".to_string(),
+                    "advanced".to_string(),
+                ],
+                objectclass_common: vec![
+                    "inetOrgPerson".to_string(),
+                    "ldapPublicKey".to_string(),
+                    "organizationalPerson".to_string(),
+                    "person".to_string(),
+                    "posixAccount".to_string(),
+                    "shadowAccount".to_string(),
+                    "slurmRole".to_string(),
+                    "top".to_string(),
+                ],
                 valid_slurm_groups: vec!["staff".to_string(), "student".to_string()],
                 login_shell: "/bin/bash".to_string(),
                 student_gid: 1002,

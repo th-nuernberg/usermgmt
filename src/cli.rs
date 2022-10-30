@@ -24,7 +24,7 @@ pub mod cli {
     #[derive(Subcommand, Debug)]
     pub enum Commands {
         /// Add a user to Slurm and/or LDAP
-        Add { 
+        Add {
             /// Username e.g. wagnerdo.
             user: String,
             /// Unix group the user belongs to e.g. staff.
@@ -45,14 +45,14 @@ pub mod cli {
             /// Path to SSH publickey.
             #[clap(short, long, default_value = "")]
             publickey: String,
-            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). 
+            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml).
             #[clap(short, long, max_values(20))]
             qos: Vec<String>,
         },
         /// Modify a user in Slurm and/or LDAP
-        Modify { 
+        Modify {
             /// A valid username e.g. wagnerdo.
-            user: String, 
+            user: String,
             /// Firstname of the user.
             #[clap(short, long)]
             firstname: Option<String>,
@@ -68,16 +68,14 @@ pub mod cli {
             /// Path to SSH publickey.
             #[clap(short, long)]
             publickey: Option<String>,
-            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed. 
+            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed.
             #[clap(short, long, max_values(20))]
-            qos: Vec<String>
+            qos: Vec<String>,
         },
         /// Delete a user from Slurm and/or LDAP
-        Delete { 
+        Delete {
             /// A valid username e.g. wagnerdo.
-            user: String 
+            user: String,
         },
     }
 }
-
-
