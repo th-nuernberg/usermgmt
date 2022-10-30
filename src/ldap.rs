@@ -70,7 +70,7 @@ pub mod ldap {
         fn ask_credentials() -> (String, String) {
             println!("Enter your LDAP username (defaults to admin):");
             let mut username = user_input();
-            if username.len() < 1 {
+            if username.is_empty() {
                 username = "admin".to_string();
             }
             let password = rpassword::prompt_password("Enter your LDAP password: ").unwrap();

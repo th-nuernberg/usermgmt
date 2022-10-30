@@ -1,6 +1,7 @@
 pub mod util;
 pub mod config;
 pub mod cli;
+pub mod dir;
 mod ldap;
 mod slurm;
 use std::{fmt, str::FromStr, fs};
@@ -8,7 +9,7 @@ use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, warn, info, error};
 
-use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user}};
+use crate::{slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user}, ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user}, dir::dir::add_user_directories};
 extern crate confy;
 
 #[derive(Clone, PartialEq)]
@@ -21,9 +22,9 @@ pub enum Group {
 impl fmt::Display for Group {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Group::Staff => write!(f, "Staff"),
-            Group::Student => write!(f, "Student"),
-            Group::Faculty => write!(f, "Faculty"),
+            Group::Staff => write!(f, "staff"),
+            Group::Student => write!(f, "student"),
+            Group::Faculty => write!(f, "faculty"),
         }
     }
 }
@@ -178,17 +179,20 @@ impl Modifiable {
 pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
 
     let is_slurm_only = args.slurm_only.clone();
-    let is_ldap_only = args.slurm_only.clone();
-    let sacctmgr_path = config.sacctmgr_path.clone(); 
+    let is_ldap_only = args.ldap_only.clone();
+    let directories_only = args.dirs_only.clone();
+    let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
         Commands::Add {user, group, firstname, lastname, 
             mail, default_qos, publickey, qos } => {
+
             add_user(user, group, firstname, lastname, mail, default_qos, publickey, qos, 
-                    &is_slurm_only, &is_ldap_only, &config)
+                    &is_slurm_only, &is_ldap_only, &directories_only, &config)
         }
         Commands::Modify { user, firstname, lastname, 
             mail, default_qos, publickey, qos } => {
+
             modify_user(user, firstname, lastname, mail, default_qos, publickey, qos, 
                         &is_slurm_only, &is_ldap_only, &config)
         },
@@ -226,6 +230,7 @@ fn is_valid_group(group: &String, valid_groups: &Vec<String>) -> bool {
 fn add_user(user: &String, group: &String, firstname: &String, 
             lastname: &String, mail: &String, default_qos: &String, publickey: &String, 
             qos: &Vec<String>, is_slurm_only: &bool, is_ldap_only: &bool, 
+            directories_only :&bool, 
             config: &MgmtConfig) {
     debug!("Start add_user");
 
@@ -233,13 +238,20 @@ fn add_user(user: &String, group: &String, firstname: &String,
 
     let entity = Entity::new(user, group, firstname, lastname, mail, default_qos, publickey, qos, config);
 
-    if !is_ldap_only {
+    if !is_ldap_only && !directories_only {
         add_slurm_user(&entity, &sacctmgr_path);
     }
 
-    if !is_slurm_only {
+    if !is_slurm_only && !directories_only {
         add_ldap_user(&entity, &config);
     }
+    
+    if config.include_dir_mgmt {
+        add_user_directories(&entity, &config);
+    } else {
+        debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
+    }
+    
     debug!("Finished add_user");
 }
 
@@ -306,3 +318,4 @@ fn modify_user(user: &String, firstname: &Option<String>, lastname: &Option<Stri
     }
     debug!("Finished modify_user");
 }
+

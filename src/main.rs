@@ -24,7 +24,7 @@ fn main() {
     let path_string = config_file_basedir + "/conf.toml";
     let path = Path::new(&path_string);
 
-    // Load or create the main configuration file conf.toml
+    // Load (or create if nonexistent) configuration file conf.toml
     let cfg : Result<MgmtConfig, confy::ConfyError> = confy::load_path(path);
     match cfg {
         Ok(config) => {
@@ -34,9 +34,6 @@ fn main() {
         Err(e) => error!("Configuration error: {:?}", e),
     }
 }
-
-
-
 
 
 
