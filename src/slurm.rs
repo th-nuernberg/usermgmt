@@ -10,7 +10,7 @@ pub mod slurm {
             .arg("add")
             .arg("user")
             .arg(entity.username.clone())
-            .arg(format!("Account={}", entity.group.to_string()))
+            .arg(format!("Account={}", entity.group))
             .arg("--immediate")
             .output()
             .expect(

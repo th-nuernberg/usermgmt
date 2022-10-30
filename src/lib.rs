@@ -93,28 +93,28 @@ impl Entity {
         let group = Group::from_str(&group_str).unwrap();
         let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
 
-        if qos.is_empty() || !is_valid_qos(&qos, &valid_qos) {
+        if qos.is_empty() || !is_valid_qos(qos, valid_qos) {
             info!(
                 "Specified QOS are either invalid or empty. Using defaults specified in conf.toml."
             );
             match group {
-                Group::Staff => qos = &staff_qos,
-                Group::Student => qos = &student_qos,
-                Group::Faculty => qos = &staff_qos,
+                Group::Staff => qos = staff_qos,
+                Group::Student => qos = student_qos,
+                Group::Faculty => qos = staff_qos,
             }
         }
 
-        if !is_valid_qos(&vec![default_qos.clone()], &valid_qos) {
+        if !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
             warn!("Specified default QOS is invalid. Using the value specified in config.");
             match group {
-                Group::Staff => default_qos = &staff_default_qos,
-                Group::Student => default_qos = &student_default_qos,
-                Group::Faculty => default_qos = &staff_default_qos,
+                Group::Staff => default_qos = staff_default_qos,
+                Group::Student => default_qos = student_default_qos,
+                Group::Faculty => default_qos = staff_default_qos,
             }
         }
 
         let mut pubkey_from_file = "".to_string();
-        if publickey.len() > 0 {
+        if !publickey.is_empty() {
             debug!("Received publickey file path {}", publickey);
             let pubkey_result = fs::read_to_string(publickey);
             match pubkey_result {
@@ -199,9 +199,9 @@ impl Modifiable {
 
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
-    let is_slurm_only = args.slurm_only.clone();
-    let is_ldap_only = args.ldap_only.clone();
-    let directories_only = args.dirs_only.clone();
+    let is_slurm_only = args.slurm_only;
+    let is_ldap_only = args.ldap_only;
+    let directories_only = args.dirs_only;
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
@@ -316,11 +316,11 @@ fn add_user(
     }
 
     if !is_slurm_only && !directories_only {
-        add_ldap_user(&entity, &config);
+        add_ldap_user(&entity, config);
     }
 
     if config.include_dir_mgmt {
-        add_user_directories(&entity, &config);
+        add_user_directories(&entity, config);
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
     }
@@ -342,7 +342,7 @@ fn delete_user(
     }
 
     if !is_slurm_only {
-        delete_ldap_user(user, &config);
+        delete_ldap_user(user, config);
     }
     debug!("Finished delete_user");
 }
@@ -375,7 +375,7 @@ fn modify_user(
     match publickey {
         Some(pubk) => {
             debug!("Matched pubkey file {}", pubk);
-            if pubk.len() > 0 {
+            if !pubk.is_empty() {
                 debug!("Reading publickey from {}", pubk);
                 let pubkey_result = fs::read_to_string(pubk);
                 match pubkey_result {
@@ -406,7 +406,7 @@ fn modify_user(
     }
 
     if !is_slurm_only {
-        modify_ldap_user(&modifiable, &config);
+        modify_ldap_user(&modifiable, config);
     }
     debug!("Finished modify_user");
 }

@@ -125,13 +125,13 @@ pub mod ldap {
                     Err(e) => error!("{}", e),
                 }
                 let un = &*entity.username.to_owned();
-                let gid = &*format!("{}", entity.gid).to_owned();
-                let uid = &*format!("{}", uid_number).to_owned();
+                let gid = &*format!("{}", entity.gid);
+                let uid = &*format!("{}", uid_number);
                 let ln = &*entity.lastname.to_owned();
                 let gn = &*entity.firstname.to_owned();
                 let mail = &*entity.mail.to_owned();
                 let def_qos = &*entity.default_qos.to_owned();
-                let home = &*format!("/home/{}", entity.username).to_owned();
+                let home = &*format!("/home/{}", entity.username);
                 let qos = entity.qos.to_owned();
                 let pubkey = &*entity.publickey.to_owned();
 
@@ -331,7 +331,7 @@ pub mod ldap {
                 debug!("Search under {}", ldap_config.ldap_base);
                 // Search for all uidNumbers under base dn
                 let search_result = ldap.search(
-                    &*&ldap_config.ldap_base,
+                    &ldap_config.ldap_base,
                     Scope::OneLevel,
                     "(objectclass=*)",
                     vec!["uidNumber"],
@@ -394,7 +394,7 @@ pub mod ldap {
                             Some(entry) => {
                                 let sr = SearchEntry::construct(entry);
                                 debug!("SR for deletion: {:?}", sr);
-                                dn_result = Some(sr.dn.clone());
+                                dn_result = Some(sr.dn);
                             }
                             None => error!("No LDAP entry found for user {}", username),
                         }

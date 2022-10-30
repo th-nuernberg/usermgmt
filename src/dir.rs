@@ -71,7 +71,7 @@ pub mod dir {
             let mut sess = Session::new().unwrap();
             sess.handshake(&tcp).unwrap();
 
-            sess.userauth_password(&ssh_username, &ssh_password)
+            sess.userauth_password(ssh_username, ssh_password)
                 .unwrap();
 
             // Create directory
@@ -108,10 +108,8 @@ pub mod dir {
             if owner_exit_codes.iter().all(|&x| x == 0) {
                 if quota_exit_codes.iter().all(|&x| x == 0) {
                     info!("Successfully created directories on compute nodes.");
-                } else {
-                    if can_set_quota {
-                        error!("Not all compute nodes returned exit code 0 during quota setup!");
-                    }
+                } else if can_set_quota {
+                    error!("Not all compute nodes returned exit code 0 during quota setup!");
                 }
             } else {
                 error!("Not all compute nodes returned exit code 0 during ownership change!");
@@ -149,7 +147,7 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(ssh_username, ssh_password)
             .unwrap();
 
         // Create directory
@@ -214,7 +212,7 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(ssh_username, ssh_password)
             .unwrap();
 
         // Create directory
@@ -271,7 +269,7 @@ pub mod dir {
 
         debug!("make_directory - command output: {}", s);
         debug!("make_directory - command exit status: {}", exit_status);
-        return exit_status;
+        exit_status
     }
 
     fn make_home_directory(sess: &Session, username: &str) -> i32 {
@@ -288,7 +286,7 @@ pub mod dir {
 
         debug!("make_home_directory - command output: {}", s);
         debug!("make_home_directory - command exit status: {}", exit_status);
-        return exit_status;
+        exit_status
     }
 
     fn change_ownership(sess: &Session, directory: &str, username: &str, group: &str) -> i32 {
@@ -304,7 +302,7 @@ pub mod dir {
 
         debug!("change_ownership - command output: {}", s);
         debug!("change_ownership - command exit status: {}", exit_status);
-        return exit_status;
+        exit_status
     }
 
     fn set_quota(
@@ -329,6 +327,6 @@ pub mod dir {
 
         debug!("change_ownership - command output: {}", s);
         debug!("change_ownership - command exit status: {}", exit_status);
-        return exit_status;
+        exit_status
     }
 }
