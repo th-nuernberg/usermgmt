@@ -24,8 +24,7 @@ pub mod io_util {
         let result = if group == crate::Group::Student {
             uids.into_iter().filter(|&i| i >= 10000).collect::<Vec<_>>()
         } else {
-            uids
-                .into_iter()
+            uids.into_iter()
                 .filter(|&i| (1000..10000).contains(&i))
                 .collect::<Vec<_>>()
         };

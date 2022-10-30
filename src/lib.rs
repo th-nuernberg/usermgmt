@@ -382,7 +382,6 @@ fn modify_user(
         }
     }
 
-
     let filtered_qos = filter_invalid_qos(qos, &config.valid_qos);
     debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
     let modifiable = Modifiable::new(

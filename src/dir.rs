@@ -71,8 +71,7 @@ pub mod dir {
             let mut sess = Session::new().unwrap();
             sess.handshake(&tcp).unwrap();
 
-            sess.userauth_password(ssh_username, ssh_password)
-                .unwrap();
+            sess.userauth_password(ssh_username, ssh_password).unwrap();
 
             // Create directory
             let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
@@ -147,8 +146,7 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(ssh_username, ssh_password)
-            .unwrap();
+        sess.userauth_password(ssh_username, ssh_password).unwrap();
 
         // Create directory
         let directory = format!("{}/{}", config.nfs_root_dir, entity.username);
@@ -212,8 +210,7 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(ssh_username, ssh_password)
-            .unwrap();
+        sess.userauth_password(ssh_username, ssh_password).unwrap();
 
         // Create directory
         let directory = format!("/home/{}", entity.username);
