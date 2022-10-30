@@ -183,7 +183,7 @@ impl Modifiable {
         mail: &Option<String>,
         default_qos: &Option<String>,
         publickey: &Option<String>,
-        qos: &Vec<String>,
+        qos: &[String],
     ) -> Self {
         Modifiable {
             username: username.clone(),
@@ -192,7 +192,7 @@ impl Modifiable {
             mail: mail.clone(),
             default_qos: default_qos.clone(),
             publickey: publickey.clone(),
-            qos: qos.clone(),
+            qos: qos.to_vec(),
         }
     }
 }
@@ -256,7 +256,7 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
 
 /// Check if a Vector contains invalid QOS values
 /// Valid QOS are defined in conf.toml
-fn is_valid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> bool {
+fn is_valid_qos(qos: &Vec<String>, valid_qos: &[String]) -> bool {
     for q in qos {
         if !valid_qos.contains(q) {
             return false;
@@ -265,7 +265,7 @@ fn is_valid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> bool {
     true
 }
 
-fn filter_invalid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> Vec<String> {
+fn filter_invalid_qos(qos: &Vec<String>, valid_qos: &[String]) -> Vec<String> {
     let mut filtered_qos: Vec<String> = Vec::new();
     for q in qos {
         if is_valid_qos(&vec![q.clone()], valid_qos) {
@@ -277,7 +277,7 @@ fn filter_invalid_qos(qos: &Vec<String>, valid_qos: &Vec<String>) -> Vec<String>
     filtered_qos
 }
 
-fn is_valid_group(group: &String, valid_groups: &Vec<String>) -> bool {
+fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
     valid_groups.contains(group)
 }
 
@@ -360,32 +360,28 @@ fn modify_user(
     config: &MgmtConfig,
 ) {
     debug!("Start modify_user for {}", user);
-    match default_qos {
-        Some(s) => {
-            if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
-                warn!("Specified default QOS {s} is invalid and will be removed!");
-                default_qos = &None;
-            }
+
+    if let Some(s) = default_qos {
+        if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
+            warn!("Specified default QOS {s} is invalid and will be removed!");
+            default_qos = &None;
         }
-        _ => (),
     }
 
     let mut pubkey_from_file = None;
 
-    match publickey {
-        Some(pubk) => {
-            debug!("Matched pubkey file {}", pubk);
-            if !pubk.is_empty() {
-                debug!("Reading publickey from {}", pubk);
-                let pubkey_result = fs::read_to_string(pubk);
-                match pubkey_result {
-                    Ok(result) => pubkey_from_file = Some(result),
-                    Err(e) => error!("Unable to read publickey from file! {}", e),
-                }
+    if let Some(pubk) = publickey {
+        debug!("Matched pubkey file {}", pubk);
+        if !pubk.is_empty() {
+            debug!("Reading publickey from {}", pubk);
+            let pubkey_result = fs::read_to_string(pubk);
+            match pubkey_result {
+                Ok(result) => pubkey_from_file = Some(result),
+                Err(e) => error!("Unable to read publickey from file! {}", e),
             }
         }
-        _ => (),
     }
+
 
     let filtered_qos = filter_invalid_qos(qos, &config.valid_qos);
     debug!("Received pubkey as modifiable {:?}", pubkey_from_file);

@@ -20,16 +20,15 @@ pub mod io_util {
     }
 
     pub fn get_new_uid(uids: Vec<i32>, group: crate::Group) -> Option<i32> {
-        let result;
         // students start at 10000, staff at 1000
-        if group == crate::Group::Student {
-            result = uids.into_iter().filter(|&i| i >= 10000).collect::<Vec<_>>();
+        let result = if group == crate::Group::Student {
+            uids.into_iter().filter(|&i| i >= 10000).collect::<Vec<_>>()
         } else {
-            result = uids
+            uids
                 .into_iter()
                 .filter(|&i| (1000..10000).contains(&i))
-                .collect::<Vec<_>>();
-        }
+                .collect::<Vec<_>>()
+        };
 
         let max_value = result.iter().max();
         match max_value {

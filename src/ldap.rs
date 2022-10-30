@@ -39,11 +39,10 @@ pub mod ldap {
                 }
             }
 
-            let org_unit_str;
-            match org_unit {
-                Some(ou) => org_unit_str = ou.to_owned(),
-                None => org_unit_str = "people".to_string(),
-            }
+            let org_unit_str = match org_unit {
+                Some(ou) => ou.to_owned(),
+                None => "people".to_string(),
+            };
 
             let ldap_bind: String;
             let ldap_base: String;
@@ -109,14 +108,13 @@ pub mod ldap {
         }
 
         let uid_result = find_next_available_uid(&ldap_config, entity.group.clone());
-        let uid_number: i32;
-        match uid_result {
-            Some(r) => uid_number = r,
+        let uid_number = match uid_result {
+            Some(r) => r,
             None => {
                 error!("No users found or LDAP query failed. Unable to assign uid. Aborting...");
                 return;
             }
-        }
+        };
 
         match make_ldap_connection(&ldap_config.ldap_server) {
             Ok(mut ldap) => {

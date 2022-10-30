@@ -218,12 +218,11 @@ pub mod dir {
         // Create directory
         let directory = format!("/home/{}", entity.username);
 
-        let dir_exit_code;
-        if config.use_homedir_helper {
-            dir_exit_code = make_home_directory(&sess, &entity.username);
+        let dir_exit_code = if config.use_homedir_helper {
+            make_home_directory(&sess, &entity.username)
         } else {
-            dir_exit_code = make_directory(&sess, &directory);
-        }
+            make_directory(&sess, &directory)
+        };
 
         if dir_exit_code == 0 {
             // Give ownership to user
