@@ -6,5 +6,5 @@
         - creating directories on NFS and compute nodes
         - setting quotas
         - creating home directory
-- v0.3.1 - 10/31/2022:
+- v0.3.2 - 10/31/2022:
    - Minor changes
