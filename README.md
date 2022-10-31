@@ -314,6 +314,17 @@ git push origin <version>
 
 `<version>` is the version of your release (e.g. `v0.3.0`).  
 
+### Build for Mac M1
+
+
+```bash
+cargo build --release --target aarch64-apple-darwin
+cp README.md target/aarch64-apple-darwin
+cp README.md target/aarch64-apple-darwin
+cd target/aarch64-apple-darwin
+
+```
+
 ## Todo
 
 - Add functionality to delete directories

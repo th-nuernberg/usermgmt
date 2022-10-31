@@ -54,3 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.9] - 2022-10-31
 ### Removed
 - Broken `aarch64-apple-darwin` target (missing openssl lib)
+
+## [0.3.10] - 2022-10-31
+### Removed
+- Broken `aarch64-unknown-linux-gnu` target (missing openssl lib)
