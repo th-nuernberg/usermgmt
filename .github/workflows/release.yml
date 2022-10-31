@@ -24,28 +24,18 @@ jobs:
         include:
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            build_tool: cross
           - target: aarch64-apple-darwin
             os: macos-latest
-            build_tool: cross
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            build_tool: cargo
           - target: x86_64-apple-darwin
             os: macos-latest
-            build_tool: cargo
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
-      - name: Install cross-compilation tools
-        uses: taiki-e/setup-cross-toolchain-action@v1
-        with:
-          target: ${{ matrix.target }}
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: usermgmt
-          build_tool: ${{ matrix.build_tool }}
-          target: ${{ matrix.target }}
           include: LICENSE,README.md
-          tar: unix
+          target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}

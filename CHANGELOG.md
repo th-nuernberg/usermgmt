@@ -46,3 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.7] - 2022-10-31
 ### Added
 - Add cross-compilation tools
+
+## [0.3.8] - 2022-10-31
+### Removed
+- Cross-compilation tools
