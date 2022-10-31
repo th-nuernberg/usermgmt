@@ -4,7 +4,7 @@ pub mod cli {
 
     /// Add, delete, or modify users in LDAP and Slurm simultaneously
     #[derive(Parser, Debug)]
-    #[clap(author = "Author: Dominik Wagner", version = "0.3.5", 
+    #[clap(author = "Author: Dominik Wagner", version = "0.3.6", 
             about = "Simultaneous user management for Slurm and LDAP", long_about = None)]
     pub struct Args {
         /// Operation to conduct on the user. Either add, delete or modify.
