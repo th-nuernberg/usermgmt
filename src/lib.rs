@@ -95,7 +95,7 @@ impl Entity {
 
         if qos.is_empty() || !is_valid_qos(qos, valid_qos) {
             info!(
-                "Specified QOS are either invalid or empty. Using defaults specified in conf.toml."
+                "Specified QOS are either invalid or empty. Using defaults in conf.toml."
             );
             match group {
                 Group::Staff => qos = staff_qos,
