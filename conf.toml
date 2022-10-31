@@ -3,29 +3,55 @@ staff_default_qos = 'advanced'
 student_qos = [
     'interactive',
     'basic',
-    'gpubasic',
 ]
 staff_qos = [
     'interactive',
     'advanced',
-    'gpubasic',
 ]
 valid_qos = [
     'interactive',
     'basic',
     'advanced',
-    'ultimate',
-    'bigmem',
-    'gpubasic',
-    'gpuultimate',
 ]
 valid_slurm_groups = [
     'staff',
     'student',
 ]
+objectclass_common = [
+    'inetOrgPerson',
+    'ldapPublicKey',
+    'organizationalPerson',
+    'person',
+    'posixAccount',
+    'shadowAccount',
+    'slurmRole',
+    'top',       
+]
+compute_nodes = [
+    'm0.host.de',
+    'ml1.host.de',
+]
+default_ssh_user = 'serveradmin'
+home_host = 'home.server.de'
+nfs_host = 'nfs.server.de'
+nfs_root_dir = '/mnt/md0/scratch'
+compute_node_root_dir = '/mnt/md0/user'
+filesystem = '/mnt/md0'
+home_filesystem = '/dev/sdb4'
+nfs_filesystem = '/dev/sda1'
+quota_softlimit = '200G'
+quota_hardlimit = '220G'
+quota_nfs_softlimit = '200G'
+quota_nfs_hardlimit = '220G'
+quota_home_softlimit = '20G'
+quota_home_hardlimit = '22G'
+login_shell = '/bin/bash'
 student_gid = 1002
 staff_gid = 1001
 faculty_gid = 1000
 sacctmgr_path = '/usr/local/bin/sacctmgr'
-ldap_domain_components = 'dc=informatik,dc=fh-nuernberg,dc=de'
-ldif_template_path = './ldif'
+ldap_domain_components = 'cn=department,dc=company,dc=com'
+ldap_org_unit = 'people'
+ldap_server = 'ldap://localhost:389'
+include_dir_mgmt = true
+use_homedir_helper = true
