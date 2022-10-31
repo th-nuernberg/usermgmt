@@ -1,5 +1,4 @@
-![Build](https://github.com/th-nuernberg/usermgmt/actions/workflows/build.yml/badge.svg)
-
+![Build](https://github.com/th-nuernberg/usermgmt/actions/workflows/build.yml/badge.svg) ![Release](https://github.com/th-nuernberg/usermgmt/actions/workflows/release.yml/badge.svg)
 
 # Simultaneous User Management for LDAP and Slurm
 
