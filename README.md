@@ -1,3 +1,6 @@
+![Build](https://github.com/th-nuernberg/usermgmt/actions/workflows/build.yml/badge.svg)
+
+
 # Simultaneous User Management for LDAP and Slurm
 
 The [Slurm](https://slurm.schedmd.com/overview.html) cluster management system lacks direct LDAP integration, which can make user management quite cumbersome. 
