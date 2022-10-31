@@ -29,3 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.3] - 2022-10-31
 ### Added
 - Add changelog and github actions
+
+## [0.3.4] - 2022-10-31
+### Added
+- Add `aarch64-apple-darwin` to release
+- Add `LICENSE` and `README.md` to release

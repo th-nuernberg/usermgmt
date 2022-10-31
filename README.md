@@ -298,6 +298,22 @@ Make sure the user has sufficient rights to add, modify, and delete entities in 
 
 - [Slurm Account Manager](https://slurm.schedmd.com/sacctmgr.html) as part of slurmdbd. Make sure this is installed on the host you're executing this tool from. 
 
+## Release
+
+You need to include the current version of your release in the `CHANGELOG.md` because the [github action](https://github.com/taiki-e/upload-rust-binary-action) picks it up from there. 
+
+Also change the version number in `Cargo.toml` and `src/cli.rs` to keep everything consistent. 
+
+To add a release, you need to tag the branch with the current version and then push the tag:
+
+```bash
+git tag <version> main
+
+git push origin <version>
+```
+
+`<version>` is the version of your release (e.g. `v0.3.0`).  
+
 ## Todo
 
 - Add functionality to delete directories
