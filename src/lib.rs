@@ -1,9 +1,9 @@
 pub mod cli;
 pub mod config;
 pub mod dir;
-pub mod util;
 mod ldap;
 mod slurm;
+pub mod util;
 use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
@@ -94,9 +94,7 @@ impl Entity {
         let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
 
         if qos.is_empty() || !is_valid_qos(qos, valid_qos) {
-            info!(
-                "Specified QOS are either invalid or empty. Using defaults in conf.toml."
-            );
+            info!("Specified QOS are either invalid or empty. Using defaults in conf.toml.");
             match group {
                 Group::Staff => qos = staff_qos,
                 Group::Student => qos = student_qos,
