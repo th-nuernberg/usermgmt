@@ -1,0 +1,10 @@
+- v0.2.0 - 10/29/2022:
+    - Publickeys can now be added and modified via the CLI
+    - Switch from calling [LDAP Utils](https://wiki.debian.org/LDAP/LDAPUtils) to native [ldap3](https://docs.rs/ldap3/latest/ldap3/) library (code looks much cleaner and there is no need for LDAP Utils being installed anymore)
+- v0.3.0 - 10/30/2022:
+    - Directory management is now possible. Functionalities include:
+        - creating directories on NFS and compute nodes
+        - setting quotas
+        - creating home directory
+- v0.3.1 - 10/31/2022:
+   - Minor changes
