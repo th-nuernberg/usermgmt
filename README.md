@@ -316,13 +316,20 @@ git push origin <version>
 
 ### Build for Mac M1
 
+Cross compilation for the M1 target via github actions currently fails due to missing dependencies for OpenSSL, but you can build the application natively on an M1:
 
 ```bash
 cargo build --release --target aarch64-apple-darwin
-cp README.md target/aarch64-apple-darwin
-cp README.md target/aarch64-apple-darwin
-cd target/aarch64-apple-darwin
+```
 
+If you want to make a release file similar to the ones created automatically via the github action do:
+
+```bash
+cp README.md target/aarch64-apple-darwin/release
+cp LICENSE target/aarch64-apple-darwin/release
+
+cd target/aarch64-apple-darwin/release
+tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ```
 
 ## Todo
