@@ -312,7 +312,7 @@ fn add_user(
         config,
     );
 
-    if !is_ldap_only && !directories_only {
+    if !is_ldap_only || !directories_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::add_slurm_user(&entity, config);
@@ -322,12 +322,14 @@ fn add_user(
         }
     }
 
-    if !is_slurm_only && !directories_only {
+    if !is_slurm_only || !directories_only {
         add_ldap_user(&entity, config);
     }
 
     if config.include_dir_mgmt {
-        add_user_directories(&entity, config);
+        if !is_slurm_only || !is_ldap_only {
+            add_user_directories(&entity, config);
+        }
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
     }

@@ -31,6 +31,7 @@ compute_nodes = [
     'm0.host.de',
     'ml1.host.de',
 ]
+head_node = 'head.node.de'
 default_ssh_user = 'serveradmin'
 home_host = 'home.server.de'
 nfs_host = 'nfs.server.de'
@@ -53,5 +54,8 @@ sacctmgr_path = '/usr/local/bin/sacctmgr'
 ldap_domain_components = 'cn=department,dc=company,dc=com'
 ldap_org_unit = 'people'
 ldap_server = 'ldap://localhost:389'
+ldap_readonly_user = 'readonlyuser'
+ldap_readonly_pw = 'secret'
 include_dir_mgmt = true
 use_homedir_helper = true
+run_slurm_remote = true

@@ -347,7 +347,5 @@ tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ## Todo
 
 - Add functionality to delete directories
-- list users
 - Find better config location for mac/win target (maybe ./conf.toml and install at /Users/$USER/usermgmt)
 - installer script for mac (wget tar.gz from gh, copy to target folder, run once, add to path)
-- Run sacctmgr commands remotely so we can use this as a client application

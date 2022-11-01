@@ -294,16 +294,6 @@ pub mod ldap {
                                     
                                     let mut output_str = "".to_string();
                                     for a in attrs.iter() {
-                                        // let uid = &search_result.attrs["uid"][0];
-                                        // let uid_number = &search_result.attrs["uidNumber"][0];
-                                        // let gn = &search_result.attrs["givenName"][0];
-                                        // let sn = &search_result.attrs["sn"][0];
-                                        // if search_result.attrs.contains_key(&k) {
-                                        //     let mail = &search_result.attrs["mail"][0];
-                                        // }
-                                        // let default_qos = &search_result.attrs["slurmDefaultQos"][0];
-                                        // let qos = &search_result.attrs["slurmQos"];
-                                        // let qos_joined = qos.join("|");
                                         if search_result.attrs.contains_key(*a) {
                                             if *a == "slurmQos" {
                                                 let qos = &search_result.attrs["slurmQos"];
@@ -314,7 +304,6 @@ pub mod ldap {
                                                 output_str += &format!("{}={},", a, elem);
                                             }
                                         }
-                                        // let output_str = format!("uid={uid},uidNumber={uid_number},givenName={gn},sn={sn},mail={mail},slurmDefaultQos={default_qos},slurmQos={qos_joined}");
                                     }
                                     println!("{}", output_str);
                                 }

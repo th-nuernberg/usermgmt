@@ -112,7 +112,7 @@ pub mod local {
         let output = Command::new(sacctmgr_path)
         .arg("list")
         .arg("users")
-        .arg("format=User%15,DefaultAccount,Admin%15")
+        .arg("format=User%30,DefaultAccount,Admin%15")
         .output()
         .expect(
             "Unable to execute sacctmgr command. Is the path specified in your config correct?",
@@ -259,7 +259,7 @@ pub mod remote {
 
     pub fn list_users(config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-        let cmd = "sacctmgr list users format=User%15,DefaultAccount,Admin%15";
+        let cmd = "sacctmgr list users format=User%30,DefaultAccount,Admin%15";
 
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);

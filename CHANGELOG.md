@@ -58,3 +58,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.10] - 2022-10-31
 ### Removed
 - Broken `aarch64-unknown-linux-gnu` target (missing openssl lib)
+
+## [0.4.0] - 2022-11-01
+### Added
+- Slurm remote execution via SSH 
+- Options for listing users in Slurm and/or LDAP
+
+### Changed
+- Fix for broken `--slurm-only` and `--ldap-only` flags during user creation
+- Config file location now depends on the target OS, as well as debug assertions
