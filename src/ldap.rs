@@ -278,29 +278,44 @@ pub mod ldap {
                 match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
                     Ok(_bind) => {
                         debug!("LDAP connection established to {}. Will search under {}", ldap_config.ldap_bind, ldap_config.ldap_base);
+                        let attrs = vec!["uid","uidNumber", "givenName", "sn", "mail", "slurmDefaultQos", "slurmQos"];
                         // Search for all entities under base dn
                         let search_result = ldap.search(
                             &ldap_config.ldap_base,
                             Scope::OneLevel,
                             "(objectclass=*)",
-                            vec!["uid","uidNumber", "givenName", "sn", "mail", "slurmDefaultQos", "slurmQos"],
+                            attrs.clone(),
                         );
                         match search_result {
                             // Parse search results and print
                             Ok(result) => {
                                 for elem in result.0.iter() {
                                     let search_result = SearchEntry::construct(elem.to_owned());
-
-                                    let uid = &search_result.attrs["uid"][0];
-                                    let uid_number = &search_result.attrs["uidNumber"][0];
-                                    let gn = &search_result.attrs["givenName"][0];
-                                    let sn = &search_result.attrs["sn"][0];
-                                    let mail = &search_result.attrs["mail"][0];
-                                    let default_qos = &search_result.attrs["slurmDefaultQos"][0];
-                                    let qos = &search_result.attrs["slurmQos"];
-                                    let qos_joined = qos.join("|");
-
-                                    let output_str = format!("uid={uid},uidNumber={uid_number},givenName={gn},sn={sn},mail={mail},slurmDefaultQos={default_qos},slurmQos={qos_joined}");
+                                    
+                                    let mut output_str = "".to_string();
+                                    for a in attrs.iter() {
+                                        // let uid = &search_result.attrs["uid"][0];
+                                        // let uid_number = &search_result.attrs["uidNumber"][0];
+                                        // let gn = &search_result.attrs["givenName"][0];
+                                        // let sn = &search_result.attrs["sn"][0];
+                                        // if search_result.attrs.contains_key(&k) {
+                                        //     let mail = &search_result.attrs["mail"][0];
+                                        // }
+                                        // let default_qos = &search_result.attrs["slurmDefaultQos"][0];
+                                        // let qos = &search_result.attrs["slurmQos"];
+                                        // let qos_joined = qos.join("|");
+                                        if search_result.attrs.contains_key(*a) {
+                                            if *a == "slurmQos" {
+                                                let qos = &search_result.attrs["slurmQos"];
+                                                let elem = qos.join("|"); 
+                                                output_str += &format!("{}={},", a, elem);
+                                            } else {
+                                                let elem = search_result.attrs[*a][0].clone();
+                                                output_str += &format!("{}={},", a, elem);
+                                            }
+                                        }
+                                        // let output_str = format!("uid={uid},uidNumber={uid_number},givenName={gn},sn={sn},mail={mail},slurmDefaultQos={default_qos},slurmQos={qos_joined}");
+                                    }
                                     println!("{}", output_str);
                                 }
                             }
