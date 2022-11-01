@@ -260,6 +260,60 @@ pub mod ldap {
         debug!("modify_ldap_user done");
     }
 
+    /// List all LDAP users and some attributes
+    pub fn list_ldap_users(config: &MgmtConfig) {
+        // ldapsearch -x -b "ou=people,dc=informatik,dc=fh-nuernberg,dc=de" -H ldap://localhost 
+        // -D "cn=ldapconnector,dc=informatik,dc=fh-nuernberg,dc=de" "objectClass=posixAccount" cn uid mail -W
+        let ldap_config = LDAPConfig::new(
+            &config.ldap_server,
+            &Some(config.ldap_domain_components.clone()),
+            &Some(config.ldap_org_unit.clone()),
+            &Some(config.ldap_readonly_user.clone()),
+            &Some(config.ldap_readonly_pw.clone()),
+        );
+
+        // Establish LDAP connection and bind
+        match make_ldap_connection(&ldap_config.ldap_server) {
+            Ok(mut ldap) => {
+                match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+                    Ok(_bind) => {
+                        debug!("LDAP connection established to {}. Will search under {}", ldap_config.ldap_bind, ldap_config.ldap_base);
+                        // Search for all entities under base dn
+                        let search_result = ldap.search(
+                            &ldap_config.ldap_base,
+                            Scope::OneLevel,
+                            "(objectclass=*)",
+                            vec!["uid","uidNumber", "givenName", "sn", "mail", "slurmDefaultQos", "slurmQos"],
+                        );
+                        match search_result {
+                            // Parse search results and print
+                            Ok(result) => {
+                                for elem in result.0.iter() {
+                                    let search_result = SearchEntry::construct(elem.to_owned());
+
+                                    let uid = &search_result.attrs["uid"][0];
+                                    let uid_number = &search_result.attrs["uidNumber"][0];
+                                    let gn = &search_result.attrs["givenName"][0];
+                                    let sn = &search_result.attrs["sn"][0];
+                                    let mail = &search_result.attrs["mail"][0];
+                                    let default_qos = &search_result.attrs["slurmDefaultQos"][0];
+                                    let qos = &search_result.attrs["slurmQos"];
+                                    let qos_joined = qos.join("|");
+
+                                    let output_str = format!("uid={uid},uidNumber={uid_number},givenName={gn},sn={sn},mail={mail},slurmDefaultQos={default_qos},slurmQos={qos_joined}");
+                                    println!("{}", output_str);
+                                }
+                            }
+                            Err(e) => error!("Error during LDAP search! {}", e),
+                        }
+                    }
+                    Err(e) => error!("{}", e),
+                }
+            }
+            Err(e) => error!("{}", e),
+        }
+    }
+
     fn make_modification_vec<'a>(
         modifiable: &'a Modifiable,
         old_qos: &'a Vec<String>,

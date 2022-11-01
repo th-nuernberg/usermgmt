@@ -1,9 +1,9 @@
 pub mod cli;
 pub mod config;
 pub mod dir;
+pub mod util;
 mod ldap;
 mod slurm;
-pub mod util;
 use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
@@ -12,7 +12,7 @@ use std::{fmt, fs, str::FromStr};
 use crate::{
     dir::dir::add_user_directories,
     ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
-    slurm::slurm::{add_slurm_user, delete_slurm_user, modify_slurm_user},
+    // slurm::local::{add_slurm_user, delete_slurm_user, modify_slurm_user},
 };
 extern crate confy;
 
@@ -248,6 +248,9 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
         ),
         Commands::Delete { user } => {
             delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config)
+        },
+        Commands::List { slurm_users, ldap_users} => {
+            list_users(&config, slurm_users, ldap_users)
         }
     }
 }
@@ -310,7 +313,13 @@ fn add_user(
     );
 
     if !is_ldap_only && !directories_only {
-        add_slurm_user(&entity, &sacctmgr_path);
+        if config.run_slurm_remote {
+            // Execute sacctmgr commands via SSH session
+            slurm::remote::add_slurm_user(&entity, config);
+        } else {
+            // Call sacctmgr binary directly via subprocess
+            slurm::local::add_slurm_user(&entity, &sacctmgr_path);
+        }
     }
 
     if !is_slurm_only && !directories_only {
@@ -336,7 +345,15 @@ fn delete_user(
     debug!("Start delete_user");
 
     if !is_ldap_only {
-        delete_slurm_user(user, sacctmgr_path);
+
+        if config.run_slurm_remote {
+            // Execute sacctmgr commands via SSH session
+            slurm::remote::delete_slurm_user(user, config);
+        } else {
+            // Call sacctmgr binary directly via subprocess
+            slurm::local::delete_slurm_user(user, &sacctmgr_path);
+        }
+
     }
 
     if !is_slurm_only {
@@ -395,11 +412,36 @@ fn modify_user(
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     if !is_ldap_only {
-        modify_slurm_user(&modifiable, &sacctmgr_path);
+        if config.run_slurm_remote {
+            // Execute sacctmgr commands via SSH session
+            slurm::remote::modify_slurm_user(&modifiable, config);
+        } else {
+            // Call sacctmgr binary directly via subprocess
+            slurm::local::modify_slurm_user(&modifiable, &sacctmgr_path);
+        }
     }
 
     if !is_slurm_only {
         modify_ldap_user(&modifiable, config);
     }
     debug!("Finished modify_user");
+}
+
+fn list_users(config: &MgmtConfig, slurm: &Option<bool>, ldap: &Option<bool>) {
+    match slurm {
+        Some(_) => {
+            if config.run_slurm_remote {
+                slurm::remote::list_users(config);
+            } else {
+                slurm::local::list_users(&config.sacctmgr_path);
+            }
+        },
+        None => (),
+    }
+    match ldap {
+        Some(_) => {
+            ldap::ldap::list_ldap_users(config);
+        },
+        None => (),
+    }
 }

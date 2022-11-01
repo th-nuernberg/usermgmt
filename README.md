@@ -87,6 +87,9 @@ cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 # Delete user
 cargo run -- delete teststaff123
 
+# List users in LDAP
+cargo run -- list ldap-users
+
 # Run with different log-level
 # Available are: error, warn, info, debug, and trace. 
 # Error represents the highest-priority log messages and trace the lowest. 
@@ -190,6 +193,10 @@ login_shell = '/bin/bash'
 ldap_org_unit = 'people'
 # Protocol, host and port of your LDAP server
 ldap_server = 'ldap://<hostname>:<port>'
+# Read only user for ldap search queries (e.g. usermgmt list ldap)
+ldap_readonly_user = 'readonlyuser'
+# Read only user password
+ldap_readonly_pw = 'secret'
 # Default user for SSH login during directory management. 
 # You can always enter a different username during application runtime
 default_ssh_user = 'serveradmin'
@@ -199,6 +206,9 @@ default_ssh_user = 'serveradmin'
 home_host = 'home.server.de'
 # Hostname of an nfs server to be used by cluster users
 nfs_host = 'nfs.server.de'
+# Slurm head node (where sacctmgr is installed)
+# Required when run_slurm_remote=true
+head_node = 'head.node.de'
 # Root directory of the shared folders on the nfs host
 nfs_root_dir = '/mnt/md0/scratch'
 # Root directory of user folders on each compute node
@@ -231,6 +241,8 @@ include_dir_mgmt = true
 # directory (recommended). When false, the directory will 
 # be created using mkdir and no skeleton configs (e.g. .bashrc) will be copied
 use_homedir_helper = true
+# Execute Slurm commands from a remote client via SSH or directly on the server
+run_slurm_remote = true
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
@@ -335,4 +347,7 @@ tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ## Todo
 
 - Add functionality to delete directories
+- list users
+- Find better config location for mac/win target (maybe ./conf.toml and install at /Users/$USER/usermgmt)
+- installer script for mac (wget tar.gz from gh, copy to target folder, run once, add to path)
 - Run sacctmgr commands remotely so we can use this as a client application

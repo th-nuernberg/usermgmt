@@ -20,8 +20,11 @@ pub mod config {
         pub ldap_domain_components: String,
         pub ldap_org_unit: String,
         pub ldap_server: String,
+        pub ldap_readonly_user: String,
+        pub ldap_readonly_pw: String,
         pub home_host: String,
         pub nfs_host: String,
+        pub head_node: String,
         pub quota_softlimit: String,
         pub quota_hardlimit: String,
         pub quota_nfs_softlimit: String,
@@ -36,6 +39,7 @@ pub mod config {
         pub default_ssh_user: String,
         pub include_dir_mgmt: bool,
         pub use_homedir_helper: bool,
+        pub run_slurm_remote: bool,
     }
 
     impl Default for MgmtConfig {
@@ -86,6 +90,10 @@ pub mod config {
                 home_filesystem: "".to_string(),
                 nfs_filesystem: "".to_string(),
                 default_ssh_user: "root".to_string(),
+                head_node: "".to_string(),
+                run_slurm_remote: false,
+                ldap_readonly_user: "".to_string(),
+                ldap_readonly_pw: "".to_string(),
             }
         }
     }

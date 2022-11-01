@@ -77,5 +77,14 @@ pub mod cli {
             /// A valid username e.g. wagnerdo.
             user: String,
         },
+        /// List users in Slurm and/or LDAP
+        List {
+            /// List users available in Slurm.
+            #[clap(long)]
+            slurm_users: Option<bool>,
+            /// List users available in LDAP.
+            #[clap(long)]
+            ldap_users: Option<bool>,
+        },
     }
 }
