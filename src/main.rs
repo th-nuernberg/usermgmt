@@ -12,11 +12,12 @@ fn main() {
         .format_timestamp(None)
         .init();
 
-    #[cfg(debug_assertions)]
-    let config_file_basedir: String = ".".to_owned();
-
-    #[cfg(not(debug_assertions))]
-    let config_file_basedir = "/etc/usermgmt".to_owned();
+    let config_file_basedir;
+    if cfg!(target_os = "linux") && cfg!(not(debug_assertions)) {
+        config_file_basedir = "/etc/usermgmt".to_owned();
+    } else {
+        config_file_basedir = ".".to_owned();
+    }
 
     fs::create_dir_all(&config_file_basedir).unwrap();
     let path_string = config_file_basedir + "/conf.toml";

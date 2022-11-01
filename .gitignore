@@ -1,3 +1,4 @@
 /target
 .vscode/
 conf_thn.toml
+.DS_Store

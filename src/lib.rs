@@ -427,21 +427,16 @@ fn modify_user(
     debug!("Finished modify_user");
 }
 
-fn list_users(config: &MgmtConfig, slurm: &Option<bool>, ldap: &Option<bool>) {
-    match slurm {
-        Some(_) => {
-            if config.run_slurm_remote {
-                slurm::remote::list_users(config);
-            } else {
-                slurm::local::list_users(&config.sacctmgr_path);
-            }
-        },
-        None => (),
+fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
+    if *slurm {
+        if config.run_slurm_remote {
+            slurm::remote::list_users(config);
+        } else {
+            slurm::local::list_users(&config.sacctmgr_path);
+        }
     }
-    match ldap {
-        Some(_) => {
-            ldap::ldap::list_ldap_users(config);
-        },
-        None => (),
+    
+    if *ldap {
+        ldap::ldap::list_ldap_users(config);
     }
 }

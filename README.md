@@ -88,7 +88,7 @@ cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 cargo run -- delete teststaff123
 
 # List users in LDAP
-cargo run -- list ldap-users
+cargo run -- list --ldap-users
 
 # Run with different log-level
 # Available are: error, warn, info, debug, and trace. 

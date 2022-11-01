@@ -81,10 +81,10 @@ pub mod cli {
         List {
             /// List users available in Slurm.
             #[clap(long)]
-            slurm_users: Option<bool>,
+            slurm_users: bool,
             /// List users available in LDAP.
             #[clap(long)]
-            ldap_users: Option<bool>,
+            ldap_users: bool,
         },
     }
 }
