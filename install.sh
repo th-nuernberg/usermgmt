@@ -17,16 +17,3 @@ wget https://github.com/th-nuernberg/usermgmt/releases/download/${version}/userm
 tar -xf usermgmt-${arch}-apple-darwin.tar.gz -C $target_dir || exit 1
 
 rm usermgmt-${arch}-apple-darwin.tar.gz
-
-if [[ ":$PATH:" == *":$target_dir:"* ]]; then
-  echo "Not setting path"
-else
-  echo "Adding $target_dir to PATH"
-  if [[ -f "/Users/$USER/.zshrc" ]]; then
-     echo 'export PATH=$PATH:'$target_dir >> ~/.zshrc
-  fi  
-  if [[ -f "/Users/$USER/.bashrc" ]]; then
-     echo 'export PATH=$PATH:'$target_dir >> ~/.bashrc
-  fi
-fi
-
