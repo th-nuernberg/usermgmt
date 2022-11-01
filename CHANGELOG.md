@@ -67,3 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Fix for broken `--slurm-only` and `--ldap-only` flags during user creation
 - Config file location now depends on the target OS, as well as debug assertions
+
+## [0.4.1] - 2022-11-01
+### Changed
+- Ask credentials during LDAP search, when no readonly user or password is supplied via config

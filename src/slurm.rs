@@ -110,18 +110,15 @@ pub mod local {
 
     pub fn list_users(sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
-        .arg("list")
-        .arg("users")
-        .arg("format=User%30,DefaultAccount,Admin%15")
-        .output()
-        .expect(
-            "Unable to execute sacctmgr command. Is the path specified in your config correct?",
-        );
+            .arg("list")
+            .arg("users")
+            .arg("format=User%30,DefaultAccount,Admin%15")
+            .output()
+            .expect(
+                "Unable to execute sacctmgr command. Is the path specified in your config correct?",
+            );
 
-        println!(
-            "{}",
-            String::from_utf8_lossy(&output.stdout)
-        );
+        println!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
     fn modify_qos(entity: &Entity, sacctmgr_path: &str, default_qos: bool) {
@@ -171,7 +168,7 @@ pub mod remote {
     use ssh2::Session;
 
     use crate::config::config::MgmtConfig;
-    use crate::{Entity, Modifiable, util::io_util::user_input};
+    use crate::{util::io_util::user_input, Entity, Modifiable};
 
     pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
@@ -182,14 +179,24 @@ pub mod remote {
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password).unwrap();
+        sess.userauth_password(&ssh_username, &ssh_password)
+            .unwrap();
 
-        let cmd = format!("{} add user {} Account={} --immediate", config.sacctmgr_path, entity.username, entity.group);
+        let cmd = format!(
+            "{} add user {} Account={} --immediate",
+            config.sacctmgr_path, entity.username, entity.group
+        );
         let exit_code = run_command(&sess, &cmd);
 
         match exit_code {
-            0  => info!("Successfully created Slurm user {}:{}.", entity.username, entity.group),
-            _  => error!("Failed to create Slurm user. Command '{}' did not exit with 0.", cmd)
+            0 => info!(
+                "Successfully created Slurm user {}:{}.",
+                entity.username, entity.group
+            ),
+            _ => error!(
+                "Failed to create Slurm user. Command '{}' did not exit with 0.",
+                cmd
+            ),
         };
     }
 
@@ -202,14 +209,18 @@ pub mod remote {
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password).unwrap();
+        sess.userauth_password(&ssh_username, &ssh_password)
+            .unwrap();
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
         let exit_code = run_command(&sess, &cmd);
 
         match exit_code {
-            0  => info!("Successfully deleted Slurm user {}.", user),
-            _  => error!("Failed to delete Slurm user. Command '{}' did not exit with 0.", cmd)
+            0 => info!("Successfully deleted Slurm user {}.", user),
+            _ => error!(
+                "Failed to delete Slurm user. Command '{}' did not exit with 0.",
+                cmd
+            ),
         };
     }
 
@@ -222,7 +233,8 @@ pub mod remote {
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password).unwrap();
+        sess.userauth_password(&ssh_username, &ssh_password)
+            .unwrap();
 
         debug!("Start modifying user default qos");
         match &modifiable.default_qos {
@@ -254,7 +266,6 @@ pub mod remote {
                 modifiable.username
             );
         }
-  
     }
 
     pub fn list_users(config: &MgmtConfig) {
@@ -267,7 +278,8 @@ pub mod remote {
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password).unwrap();
+        sess.userauth_password(&ssh_username, &ssh_password)
+            .unwrap();
 
         let mut channel = sess.channel_session().unwrap();
         channel.exec(cmd).unwrap();
@@ -288,7 +300,6 @@ pub mod remote {
     }
 
     fn modify_qos(entity: &Entity, config: &MgmtConfig, sess: &Session, default_qos: bool) {
-
         let mut qos_str: String = "defaultQos=".to_owned();
         if default_qos {
             qos_str += &entity.default_qos;
@@ -297,12 +308,21 @@ pub mod remote {
             qos_str = format!("qos={}", qos_joined);
         }
 
-        let cmd = format!("{} modify user {} set {} --immediate", config.sacctmgr_path, entity.username, qos_str);
-        let exit_code = run_command(&sess, &cmd);
+        let cmd = format!(
+            "{} modify user {} set {} --immediate",
+            config.sacctmgr_path, entity.username, qos_str
+        );
+        let exit_code = run_command(sess, &cmd);
 
         match exit_code {
-            0  => info!("Successfully modified QOS of user {} in Slurm.", entity.username),
-            _  => error!("Failed to modify Slurm user! Command '{}' did not exit with 0.", cmd)
+            0 => info!(
+                "Successfully modified QOS of user {} in Slurm.",
+                entity.username
+            ),
+            _ => error!(
+                "Failed to modify Slurm user! Command '{}' did not exit with 0.",
+                cmd
+            ),
         };
     }
 
@@ -320,5 +340,4 @@ pub mod remote {
         debug!("command exit status: {}", exit_status);
         exit_status
     }
-
 }

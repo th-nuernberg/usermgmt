@@ -262,14 +262,20 @@ pub mod ldap {
 
     /// List all LDAP users and some attributes
     pub fn list_ldap_users(config: &MgmtConfig) {
-        // ldapsearch -x -b "ou=people,dc=informatik,dc=fh-nuernberg,dc=de" -H ldap://localhost 
-        // -D "cn=ldapconnector,dc=informatik,dc=fh-nuernberg,dc=de" "objectClass=posixAccount" cn uid mail -W
+        let mut ldap_user = Some(config.ldap_readonly_user.clone());
+        let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
+
+        if config.ldap_readonly_user.is_empty() || config.ldap_readonly_pw.is_empty() {
+            ldap_user = None;
+            ldap_pass = None;
+        }
+
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
             &Some(config.ldap_domain_components.clone()),
             &Some(config.ldap_org_unit.clone()),
-            &Some(config.ldap_readonly_user.clone()),
-            &Some(config.ldap_readonly_pw.clone()),
+            &ldap_user,
+            &ldap_pass,
         );
 
         // Establish LDAP connection and bind
@@ -277,8 +283,19 @@ pub mod ldap {
             Ok(mut ldap) => {
                 match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
                     Ok(_bind) => {
-                        debug!("LDAP connection established to {}. Will search under {}", ldap_config.ldap_bind, ldap_config.ldap_base);
-                        let attrs = vec!["uid","uidNumber", "givenName", "sn", "mail", "slurmDefaultQos", "slurmQos"];
+                        debug!(
+                            "LDAP connection established to {}. Will search under {}",
+                            ldap_config.ldap_bind, ldap_config.ldap_base
+                        );
+                        let attrs = vec![
+                            "uid",
+                            "uidNumber",
+                            "givenName",
+                            "sn",
+                            "mail",
+                            "slurmDefaultQos",
+                            "slurmQos",
+                        ];
                         // Search for all entities under base dn
                         let search_result = ldap.search(
                             &ldap_config.ldap_base,
@@ -291,13 +308,13 @@ pub mod ldap {
                             Ok(result) => {
                                 for elem in result.0.iter() {
                                     let search_result = SearchEntry::construct(elem.to_owned());
-                                    
+
                                     let mut output_str = "".to_string();
                                     for a in attrs.iter() {
                                         if search_result.attrs.contains_key(*a) {
                                             if *a == "slurmQos" {
                                                 let qos = &search_result.attrs["slurmQos"];
-                                                let elem = qos.join("|"); 
+                                                let elem = qos.join("|");
                                                 output_str += &format!("{}={},", a, elem);
                                             } else {
                                                 let elem = search_result.attrs[*a][0].clone();

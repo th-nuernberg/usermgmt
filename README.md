@@ -114,7 +114,7 @@ cargo deb
 # Install package
 dpkg -i target/debian/*.deb
 # For previously installed packages, don't forget to update your conf.toml,
-# in case there were config changes
+# in case there have been config changes
 cp conf.toml /etc/usermgmt
 ```
 

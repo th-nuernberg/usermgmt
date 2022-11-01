@@ -1,9 +1,9 @@
 pub mod cli;
 pub mod config;
 pub mod dir;
-pub mod util;
 mod ldap;
 mod slurm;
+pub mod util;
 use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
@@ -248,10 +248,11 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
         ),
         Commands::Delete { user } => {
             delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config)
-        },
-        Commands::List { slurm_users, ldap_users} => {
-            list_users(&config, slurm_users, ldap_users)
         }
+        Commands::List {
+            slurm_users,
+            ldap_users,
+        } => list_users(&config, slurm_users, ldap_users),
     }
 }
 
@@ -347,15 +348,13 @@ fn delete_user(
     debug!("Start delete_user");
 
     if !is_ldap_only {
-
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::delete_slurm_user(user, config);
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::delete_slurm_user(user, &sacctmgr_path);
+            slurm::local::delete_slurm_user(user, sacctmgr_path);
         }
-
     }
 
     if !is_slurm_only {
@@ -437,7 +436,7 @@ fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
             slurm::local::list_users(&config.sacctmgr_path);
         }
     }
-    
+
     if *ldap {
         ldap::ldap::list_ldap_users(config);
     }
