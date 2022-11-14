@@ -1,5 +1,5 @@
-name: Release
 # https://github.com/marketplace/actions/build-and-upload-rust-binary-to-github-releases#example-workflow-basic-usage
+name: Release
 permissions:
   contents: write
 

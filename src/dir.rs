@@ -7,7 +7,7 @@ pub mod dir {
     use util::io_util::user_input;
 
     use crate::config::config::MgmtConfig;
-    use crate::{util, Entity};
+    use crate::{util, Entity, Group};
 
     pub fn add_user_directories(entity: &Entity, config: &MgmtConfig) {
         let (username, password) = ask_credentials(&config.default_ssh_user);
@@ -149,7 +149,11 @@ pub mod dir {
         sess.userauth_password(ssh_username, ssh_password).unwrap();
 
         // Create directory
-        let directory = format!("{}/{}", config.nfs_root_dir, entity.username);
+        let mut group_dir = "staff";
+        if entity.group == Group::Student {
+            group_dir = "students"
+        }
+        let directory = format!("{}/{}/{}", config.nfs_root_dir, group_dir, entity.username);
         let dir_exit_code = make_directory(&sess, &directory);
 
         if dir_exit_code == 0 {
