@@ -72,6 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Ask credentials during LDAP search, when no readonly user or password is supplied via config
 
-## [0.4.3] - 2022-11-14
+## [0.4.5] - 2022-11-14
 ### Changed
 - Adjust directory creation on NFS from `/nfs/scratch` to `/nfs/scratch/<students|staff>` 
