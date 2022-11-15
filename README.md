@@ -347,3 +347,5 @@ tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ## Todo
 
 - Add functionality to delete directories
+- Reuse SSH credentials in fully remote mode
+- Make error messages more informative (e.g. this appears when a user has been already added to Slurm `Failed to create Slurm user. Command '/usr/local/bin/sacctmgr add user...`
