@@ -29,7 +29,7 @@ Currently, `usermgmt` expects the following `AttributeTypes` to present in your 
 
 The LDAP instance needs an [auxiliary ObjectClass](https://ldap.com/object-classes/) (e.g. called `slurmRole`), which provides the [AttributeTypes](https://ldap.com/attribute-types/) `slurmDefaultQos` and `slurmQos`. 
 
-See documentations like [this](https://www.gurkengewuerz.de/openldap-neue-schema-hinzufuegen/?cookie-state-change=1638436473037) or [this](https://www.cyrill-gremaud.ch/how-to-add-new-schema-to-openldap-2-4/) for details about the creation of new schemas in LDAP. 
+See documentations like [this](https://www.gurkengewuerz.de/openldap-neue-schema-hinzufuegen/?cookie-state-change=1638436473037) for details about the creation of new schemas in LDAP. 
 
 ### Slurm
 The only dependency to Slurm is the `sacctmgr` ([Slurm Account Manager](https://slurm.schedmd.com/sacctmgr.html)), which interacts with the interface provided by `slurmdbd` (Slurm Database Daemon). 
