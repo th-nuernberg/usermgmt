@@ -313,7 +313,8 @@ fn add_user(
         config,
     );
 
-    if !is_ldap_only || !directories_only {
+    let wants_slurm = !is_ldap_only && !directories_only;
+    if wants_slurm {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::add_slurm_user(&entity, config);
@@ -323,12 +324,14 @@ fn add_user(
         }
     }
 
-    if !is_slurm_only || !directories_only {
+    let wants_ldap = !is_slurm_only && !directories_only;
+    if wants_ldap {
         add_ldap_user(&entity, config);
     }
 
     if config.include_dir_mgmt {
-        if !is_slurm_only || !is_ldap_only {
+        let wants_user_directories = !is_slurm_only && !is_ldap_only;
+        if wants_user_directories {
             add_user_directories(&entity, config);
         }
     } else {
