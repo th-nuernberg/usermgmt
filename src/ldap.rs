@@ -109,9 +109,10 @@ pub mod ldap {
 
         let uid_result = find_next_available_uid(&ldap_config, entity.group.clone());
         let uid_number = match uid_result {
-            Some(r) => r,
-            None => {
+            Ok(r) => r,
+            Err(e) => {
                 error!("No users found or LDAP query failed. Unable to assign uid. Aborting...");
+                error!("{}", e);
                 return;
             }
         };
@@ -385,9 +386,10 @@ pub mod ldap {
     }
 
     /// Do a LDAP search to determine the next available uid
-    fn find_next_available_uid(ldap_config: &LDAPConfig, group: crate::Group) -> Option<i32> {
-        let mut new_uid = None;
-
+    fn find_next_available_uid(
+        ldap_config: &LDAPConfig,
+        group: crate::Group,
+    ) -> Result<i32, String> {
         match make_ldap_connection(&ldap_config.ldap_server) {
             Ok(mut ldap) => {
                 debug!(
@@ -420,14 +422,13 @@ pub mod ldap {
                             uids.push(*uid);
                         }
                         // Find max uid and add 1
-                        new_uid = get_new_uid(uids, group);
+                        return get_new_uid(&uids, group);
                     }
-                    Err(e) => error!("Error during uid search! {}", e),
+                    Err(e) => Err(format!("Error during uid search! {}", e)),
                 }
             }
-            Err(e) => error!("Error during uid search! {}", e),
+            Err(e) => Err(format!("Error during uid search! {}", e)),
         }
-        new_uid
     }
 
     /// Search for a specific uid and return the corresponding dn.
