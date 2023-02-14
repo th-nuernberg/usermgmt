@@ -45,12 +45,14 @@ pub mod io_util {
         match max_value {
             Some(&&max) => {
                 debug!("Next available uid is: {}", max + 1);
-                if i32::MAX == max {
+
+                let (next_uid, has_overflow) = max.overflowing_add(1);
+
+                if has_overflow {
                     return Err(
                         "Next uid would cause an overflow for an unsigned integer 32".to_string(),
                     );
                 }
-                let next_uid = max + 1;
 
                 if group == Group::Staff && next_uid >= STUDENT_UID {
                     return Err(format!("Next uid for staff goes into uid range of students !. Students range starts at {}", STUDENT_UID));
