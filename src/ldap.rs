@@ -2,7 +2,7 @@
 pub mod ldap {
 
     use ldap3::controls::{MakeCritical, RelaxRules};
-    use ldap3::{LdapConn, LdapError, Mod, Scope, SearchEntry};
+    use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
     use log::{debug, error, info, warn};
     use maplit::hashset;
     use std::collections::HashSet;
@@ -155,9 +155,9 @@ pub mod ldap {
                     ],
                 );
 
-                match ldap_result {
+                match ldap_is_success(ldap_result) {
                     Ok(_) => info!("Added LDAP user {}", entity.username),
-                    Err(e) => error!("Unable to create LDAP user! {e}"),
+                    Err(error) => error!("Unable to create LDAP user! {error}"),
                 }
             }
             Err(e) => error!("{}", e),
@@ -191,7 +191,7 @@ pub mod ldap {
                             Err(e) => error!("{}", e),
                         }
                         // delete user by dn
-                        match ldap.delete(&dn) {
+                        match ldap_is_success(ldap.delete(&dn)) {
                             Ok(_) => info!("Successfully deleted DN {}", dn),
                             Err(e) => error!("User deletion in LDAP failed! {}", e),
                         }
@@ -242,7 +242,7 @@ pub mod ldap {
                             .with_controls(RelaxRules.critical())
                             .modify(&*dn, mod_vec);
 
-                        match res {
+                        match ldap_is_success(res) {
                             Ok(_) => {
                                 info!("Successfully modified user {} in LDAP", modifiable.username)
                             }
@@ -577,5 +577,20 @@ pub mod ldap {
             Err(e) => error!("{}", e),
         }
         username_exists
+    }
+
+    /// If ok is returned then ldap operation happened with zero error code, LDAP_SUCCESS
+    ///
+    /// Even if a call to ldap returns ok it has an error code inside it. Only if the code is zero
+    /// then the operation really happened successfully.
+    /// Link: https://docs.rs/ldap3/latest/ldap3/result/struct.LdapResult.html
+    fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapError> {
+        match to_check {
+            Ok(might_have_non_zero_error_code) => match might_have_non_zero_error_code.success() {
+                Ok(_with_zero_error_code) => Ok(()),
+                Err(error) => Err(error),
+            },
+            Err(error) => Err(error),
+        }
     }
 }
