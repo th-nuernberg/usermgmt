@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
+
 ## [0.1.0] - 2022-06-20
 ### Added
 - Usermanagement via subprocess calls to [LDAPUtils](https://wiki.debian.org/LDAP/LDAPUtils) and `sacctmgr`
