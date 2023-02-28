@@ -1,0 +1,10 @@
+services:
+  ldap:
+    image: osixia/openldap:1.5.0 
+    command: "--copy-service"
+    ports: 
+      - "389:389"
+      - "636:636"
+    volumes:
+      - "./bootstrap_lidfs:/container/service/slapd/assets/config/bootstrap/ldif/custom"
+      
