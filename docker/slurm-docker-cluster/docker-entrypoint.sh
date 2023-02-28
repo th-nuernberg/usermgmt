@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+echo 'Starting ssh server'
+/usr/sbin/sshd
+echo 'Ssh server started'
+
 if [ "$1" = "slurmdbd" ]
 then
     echo "---> Starting the MUNGE Authentication service (munged) ..."
