@@ -31,7 +31,8 @@ compute_nodes = [
     'm0.host.de',
     'ml1.host.de',
 ]
-head_node = 'head.node.de'
+# Static ip address of docker container as head node for development
+head_node = '172.25.0.13'
 default_ssh_user = 'serveradmin'
 home_host = 'home.server.de'
 nfs_host = 'nfs.server.de'
