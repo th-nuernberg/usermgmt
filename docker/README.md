@@ -9,11 +9,6 @@
 ./run_dev_docker.sh
 ```
 
-3. start script to populate the slurm database with needed specs
-```bash
-./slurm-docker-cluster/register_cluster.sh
-```
-
 For stopping all containers 
 ```bash
 ./tear_dev_docker_down.sh
@@ -24,8 +19,6 @@ For stopping all containers
 - This is accomplished via this [script](./slurm-docker-cluster/add_slurm_data.sh)
   If changes/addition of slurmdb data are required then make changes there.
   You need to build the docker file again to provide the docker container with its new version.
-  See 1. step above. So the 3. step above applies this version to the slurmdb at runtime finally.
-  
 
 ## Git clone of slurm-docker-cluster folder
 The [folder for slurm cluster](./slurm-docker-cluster) came from git clone 

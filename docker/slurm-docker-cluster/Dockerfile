@@ -98,7 +98,8 @@ RUN echo "root:password" | chpasswd
 RUN ssh-keygen -A
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-# Copied for providing script which is executed to provide intial specs and data at runtime of slurmdb 
+# Copied for providing script which is executed to provide intial specs and data. 
+# It is invoked by the docker-entrypoint script at runtime
 COPY add_slurm_data.sh /usr/local/bin/add_slurm_data.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

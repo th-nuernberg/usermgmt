@@ -1,6 +1,6 @@
 #!/bin/bash
-
-set -eu
+# no strict mode like set -eu
+# Reason: sacctmgr returns non zero if a spec to be added, like account student, is already there
 
 prefix='sacctmgr --immediate'
 

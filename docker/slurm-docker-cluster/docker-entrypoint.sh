@@ -39,12 +39,16 @@ then
     done
     echo "-- slurmdbd is now active ..."
 
+    echo "Adding specs and initial slurm data"
+    bash /usr/local/bin//add_slurm_data.sh
+    
     echo "---> Starting the Slurm Controller Daemon (slurmctld) ..."
     if /usr/sbin/slurmctld -V | grep -q '17.02' ; then
         exec gosu slurm /usr/sbin/slurmctld -Dvvv
     else
         exec gosu slurm /usr/sbin/slurmctld -i -Dvvv
     fi
+
 fi
 
 if [ "$1" = "slurmd" ]
