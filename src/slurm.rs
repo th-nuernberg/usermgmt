@@ -182,6 +182,7 @@ pub mod remote {
         sess.userauth_password(&ssh_username, &ssh_password)
             .unwrap();
 
+        dbg!();
         let cmd = format!(
             "{} add user {} Account={} --immediate",
             config.sacctmgr_path, entity.username, entity.group
@@ -270,7 +271,7 @@ pub mod remote {
 
     pub fn list_users(config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-        let cmd = "sacctmgr list users format=User%30,DefaultAccount,Admin%15";
+        let cmd = "sacctmgr list users";
 
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
