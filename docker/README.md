@@ -1,4 +1,5 @@
 # How to use docker development set up
+
 1. build docker image from local files. Only needs to be done once.
 ```bash
 ./docker_build_set_up.sh
@@ -7,6 +8,12 @@
 2. start docker container 
 ```bash
 ./run_dev_docker.sh
+```
+
+3. start script to populate the slurm database with needed specs
+
+```bash
+./slurm-docker-cluster/register_cluster.sh
 ```
 
 For stopping all containers 

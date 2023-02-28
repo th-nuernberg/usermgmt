@@ -1,3 +1,6 @@
+# this configuration is set up for development 
+# via docker container serving as end points for ldap and slurm nodes
+
 student_default_qos = 'basic'
 staff_default_qos = 'advanced'
 student_qos = [
@@ -51,7 +54,8 @@ login_shell = '/bin/bash'
 student_gid = 1002
 staff_gid = 1001
 faculty_gid = 1000
-sacctmgr_path = '/usr/local/bin/sacctmgr'
+# In development the access to slurm is remote via a docker container
+sacctmgr_path = 'sacctmgr'
 ldap_domain_components = 'dc=example,dc=org'
 ldap_org_unit = 'people'
 ldap_server = 'ldap://localhost:389'
