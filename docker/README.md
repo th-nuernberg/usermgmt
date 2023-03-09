@@ -6,12 +6,23 @@
 ```
 
 2. start docker container 
+```bash
 ./run_dev_docker.sh
+```
+
+3. post docker container start
+```bash
+./after_container_start.sh
 ```
 
 For stopping all containers 
 ```bash
 ./tear_dev_docker_down.sh
+```
+
+For removing all volumes to restart slurm db
+```bash
+./throw_away_volumes.sh
 ```
 
 ## Initial data and specs for slurmdb

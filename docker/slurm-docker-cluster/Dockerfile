@@ -92,10 +92,16 @@ RUN set -x \
     && chmod 600 /etc/slurm/slurmdbd.conf
 
 # Enable access via ssh from the app
-RUN dnf install openssh-server -y
+RUN dnf install openssh-server sudo quota -y
 RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 RUN echo "root:password" | chpasswd
 RUN ssh-keygen -A
+
+RUN adduser dev_user 
+RUN echo "dev_user:password" | chpasswd
+RUN echo "dev_user ALL = (root) NOPASSWD: ALL" >> /etc/sudoers
+# Needed to allow to log in as dev_user as unprivileged user 
+RUN rm -rf /run/nologin
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # Copied for providing script which is executed to provide intial specs and data. 
