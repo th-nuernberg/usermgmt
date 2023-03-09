@@ -15,6 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
+      - name: "Checkout repository content"
+        uses: actions/checkout@v3
+        
+      - name: "Install needed rust toolchain stable"
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+            
+      - name: "Building project to see if it compiles" 
+        run: cargo build --verbose
+        
+      - name: "Checking if all unit tests pass" 
+        run: cargo test --verbose
