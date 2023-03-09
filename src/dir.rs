@@ -4,38 +4,21 @@ pub mod dir {
     use ssh2::Session;
     use std::io::prelude::*;
     use std::net::TcpStream;
-    use util::io_util::user_input;
 
     use crate::config::config::MgmtConfig;
-    use crate::{util, Entity, Group};
+    use crate::ssh::SshCredential;
+    use crate::{Entity, Group};
 
-    pub fn add_user_directories(entity: &Entity, config: &MgmtConfig) {
-        let (username, password) = ask_credentials(&config.default_ssh_user);
+    pub fn add_user_directories(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
+        handle_compute_nodes(entity, config, credentials);
 
-        handle_compute_nodes(entity, config, &username, &password);
+        handle_nfs(entity, config, credentials);
 
-        handle_nfs(entity, config, &username, &password);
-
-        handle_home(entity, config, &username, &password);
-    }
-
-    fn ask_credentials(default_user: &str) -> (String, String) {
-        println!("Enter your SSH username (defaults to {}):", default_user);
-        let mut username = user_input();
-        if username.is_empty() {
-            username = default_user.to_string();
-        }
-        let password = rpassword::prompt_password("Enter your SSH password: ").unwrap();
-        (username, password)
+        handle_home(entity, config, credentials);
     }
 
     /// Establish SSH connection to each compute node, make user directory and set quota
-    fn handle_compute_nodes(
-        entity: &Entity,
-        config: &MgmtConfig,
-        ssh_username: &str,
-        ssh_password: &str,
-    ) {
+    fn handle_compute_nodes(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
         debug!("Start handling directories on compute nodes");
 
         if config.compute_nodes.is_empty() {
@@ -71,7 +54,8 @@ pub mod dir {
             let mut sess = Session::new().unwrap();
             sess.handshake(&tcp).unwrap();
 
-            sess.userauth_password(ssh_username, ssh_password).unwrap();
+            sess.userauth_password(credentials.username(), credentials.password())
+                .unwrap();
 
             // Create directory
             let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
@@ -119,7 +103,7 @@ pub mod dir {
     }
 
     /// Establish SSH connection to NFS host, make user directory and set quota
-    fn handle_nfs(entity: &Entity, config: &MgmtConfig, ssh_username: &str, ssh_password: &str) {
+    fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
         debug!("Start handling NFS user directory");
 
         if config.nfs_host.is_empty() {
@@ -146,7 +130,8 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(ssh_username, ssh_password).unwrap();
+        sess.userauth_password(credentials.username(), credentials.password())
+            .unwrap();
 
         // Create directory
         let mut group_dir = "staff";
@@ -189,7 +174,7 @@ pub mod dir {
     }
 
     /// Establish SSH connection to home host, make user directory and set quota
-    fn handle_home(entity: &Entity, config: &MgmtConfig, ssh_username: &str, ssh_password: &str) {
+    fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
         debug!("Start handling home directory");
 
         if config.home_host.is_empty() {
@@ -212,7 +197,8 @@ pub mod dir {
         let mut sess = Session::new().unwrap();
         sess.handshake(&tcp).unwrap();
 
-        sess.userauth_password(ssh_username, ssh_password).unwrap();
+        sess.userauth_password(credentials.username(), credentials.password())
+            .unwrap();
 
         // Create directory
         let directory = format!("/home/{}", entity.username);

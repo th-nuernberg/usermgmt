@@ -3,6 +3,7 @@ pub mod config;
 pub mod dir;
 mod ldap;
 mod slurm;
+mod ssh;
 pub mod util;
 use cli::cli::Commands;
 use config::config::MgmtConfig;
@@ -12,6 +13,7 @@ use std::{fmt, fs, str::FromStr};
 use crate::{
     dir::dir::add_user_directories,
     ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
+    ssh::SshCredential,
     // slurm::local::{add_slurm_user, delete_slurm_user, modify_slurm_user},
 };
 extern crate confy;
@@ -313,11 +315,12 @@ fn add_user(
         config,
     );
 
+    let ssh_credentials = SshCredential::new(config);
     let wants_slurm = !is_ldap_only && !directories_only;
     if wants_slurm {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::add_slurm_user(&entity, config);
+            slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::add_slurm_user(&entity, &sacctmgr_path);
@@ -332,7 +335,7 @@ fn add_user(
     if config.include_dir_mgmt {
         let wants_user_directories = !is_slurm_only && !is_ldap_only;
         if wants_user_directories {
-            add_user_directories(&entity, config);
+            add_user_directories(&entity, config, &ssh_credentials);
         }
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
@@ -350,10 +353,11 @@ fn delete_user(
 ) {
     debug!("Start delete_user");
 
+    let credentials = SshCredential::new(config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::delete_slurm_user(user, config);
+            slurm::remote::delete_slurm_user(user, config, &credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::delete_slurm_user(user, sacctmgr_path);
@@ -415,10 +419,11 @@ fn modify_user(
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
+    let credential = SshCredential::new(config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&modifiable, config);
+            slurm::remote::modify_slurm_user(&modifiable, config, &credential);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::modify_slurm_user(&modifiable, &sacctmgr_path);
@@ -432,9 +437,10 @@ fn modify_user(
 }
 
 fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
+    let credentials = SshCredential::new(config);
     if *slurm {
         if config.run_slurm_remote {
-            slurm::remote::list_users(config);
+            slurm::remote::list_users(config, &credentials);
         } else {
             slurm::local::list_users(&config.sacctmgr_path);
         }
