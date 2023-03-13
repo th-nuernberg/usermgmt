@@ -7,7 +7,7 @@ description = "Simultaneous Slurm and LDAP user management"
 readme = "README.md"
 
 [dependencies]
-clap = { version = "3.1.10", features = ["derive"] }
+clap = { version = "4.1.8", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 confy = "0.4.0"
 tempfile = "3.3.0"

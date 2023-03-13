@@ -46,7 +46,7 @@ pub mod cli {
             #[clap(short, long, default_value = "")]
             publickey: String,
             /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml).
-            #[clap(short, long, max_values(20))]
+            #[clap(short, long, num_args(0..=20))]
             qos: Vec<String>,
         },
         /// Modify a user in Slurm and/or LDAP
@@ -69,7 +69,7 @@ pub mod cli {
             #[clap(short, long)]
             publickey: Option<String>,
             /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed.
-            #[clap(short, long, max_values(20))]
+            #[clap(short, long, num_args(0..=20))]
             qos: Vec<String>,
         },
         /// Delete a user from Slurm and/or LDAP
