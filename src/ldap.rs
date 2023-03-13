@@ -21,6 +21,8 @@ pub mod ldap {
     }
 
     impl LDAPConfig {
+        /// TODO: this constructor is always called with config of type MgmtConfig.
+        /// Reduce argument count and complexity of this function.
         fn new(
             ldap_server: &String,
             dc: &Option<String>,
@@ -85,6 +87,7 @@ pub mod ldap {
         LdapConn::new(server)
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -167,6 +170,7 @@ pub mod ldap {
         debug!("add_ldap_user done");
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,

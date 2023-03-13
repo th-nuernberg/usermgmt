@@ -16,6 +16,9 @@ use crate::{
 };
 extern crate confy;
 
+// TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
+// A code block as example in the file slurm under function add_slurm_user is repeated quite often
+
 #[derive(Clone, PartialEq)]
 pub enum Group {
     Staff,
@@ -163,6 +166,7 @@ impl Default for Entity {
 }
 
 /// Defines options that can be modified
+/// TODO: consider encapsulation with getters and setters.
 pub struct Modifiable {
     pub username: String,
     pub firstname: Option<String>,
@@ -283,6 +287,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
     valid_groups.contains(group)
 }
 
+/// TODO: reduce argument count
 fn add_user(
     user: &String,
     group: &String,
@@ -366,6 +371,7 @@ fn delete_user(
     debug!("Finished delete_user");
 }
 
+/// TODO: reduce argument count
 fn modify_user(
     user: &String,
     firstname: &Option<String>,
