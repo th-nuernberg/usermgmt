@@ -47,6 +47,7 @@ impl FromStr for Group {
 
 /// Representation of a user entity.
 /// It contains all information necessary to add/modify/delete the user.
+/// TODO: Add proper encapsulation via getter and setters
 pub struct Entity {
     pub username: String,
     pub firstname: String,
@@ -55,6 +56,7 @@ pub struct Entity {
     pub gid: i32,
     pub group: Group,
     pub default_qos: String,
+    /// TODO: Add validation if a present publickey is in valid format, OpenSsh
     pub publickey: String,
     pub qos: Vec<String>,
 }
@@ -119,8 +121,6 @@ impl Entity {
                 Ok(result) => pubkey_from_file = result,
                 Err(e) => error!("Unable to read publickey from file! {}", e),
             }
-        } else {
-            warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
         }
 
         Entity {
