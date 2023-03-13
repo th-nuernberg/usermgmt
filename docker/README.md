@@ -20,19 +20,25 @@ In the docker container the PATH environment variable includes the sacctmgr exec
 
 ## How to use docker development set up
 
-1. build docker image from local files. Only needs to be done once.
+1. Go into docker folder relative to the project root
+
+```bash
+cd ./docker
+```
+
+2. build docker image from local files. Only needs to be done once.
 
 ```bash
 ./docker_build_set_up.sh
 ```
 
-2. start docker container 
+3. start docker container 
 
 ```bash
 ./run_dev_docker.sh
 ```
 
-3. post docker container start. Installs slurm specs
+4. post docker container start. Installs slurm specs
 
 ```bash
 ./after_container_start.sh
