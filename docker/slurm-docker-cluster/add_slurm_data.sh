@@ -4,6 +4,7 @@
 
 prefix='sacctmgr --immediate'
 
+$prefix add cluster thn-hpc
 
 $prefix add account thn Description="THN root account" Organization=thn 
 $prefix add account cs parent=thn Description="Computer Science faculty accounts" Organization=thn

@@ -92,9 +92,7 @@ RUN set -x \
     && chmod 600 /etc/slurm/slurmdbd.conf
 
 # Enable access via ssh from the app
-RUN dnf install openssh-server sudo quota -y
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN echo "root:password" | chpasswd
+RUN dnf install openssh-server -y
 RUN ssh-keygen -A
 
 RUN adduser dev_user 
