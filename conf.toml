@@ -36,7 +36,9 @@ compute_nodes = [
 ]
 # Static ip address of docker container as head node for development
 head_node = '172.25.0.13'
+# Name of user with slurm admin rights in the slurmdb of the development docker set up.
 default_ssh_user = 'dev_user'
+# Static ip address of docker container as head node for development
 home_host = '172.25.0.13'
 nfs_host = 'nfs.server.de'
 nfs_root_dir = '/mnt/md0/scratch'
@@ -61,6 +63,7 @@ ldap_org_unit = 'people'
 ldap_server = 'ldap://localhost:389'
 ldap_readonly_user = 'admin'
 ldap_readonly_pw = 'admin'
+# We do not support directory management in the docker development set up
 include_dir_mgmt = false
 use_homedir_helper = false 
 run_slurm_remote = true
