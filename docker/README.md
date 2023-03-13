@@ -1,8 +1,15 @@
 # Docker set up
 
-Do not use this in production ! It is meant to be used for local development.
+**Do not use this in production !**
+
+It is meant to be used for local development.
 While it response to the app as a ldap and slurm endpoint, the set up 
-is designed for production ready security !
+is not designed for production ready security !
+
+**Do not use this [ssh_host_rsa_key](./ssh_host_rsa_key) in any production environment or for your own private usage !**
+
+The private [ssh_host_rsa_key](./ssh_host_rsa_key) is located for convenience in this repository.
+It makes sure that the public key fingerprint is always the same for ssh client.
 
 ## Limitations
 
@@ -12,10 +19,9 @@ For example I could not make setting the quota of a created directory work prope
 
 ## Setting of conf.toml for docker
 
-By default the conf.toml has set up those keys for docker properly in the repository.
-In development you want to deactivate the directory management by setting the key "include_dir_mgmt" to false 
-in the conf.toml. 
-Set key "sacctmgr_path" to sacctmgr in the conf.toml file. 
+By default the conf.toml is set up for docker properly in the repository.
+In development the key "include_dir_mgmt" needs to false in the conf.toml. 
+The key must be "sacctmgr_path"  in the conf.toml file. 
 In the docker container the PATH environment variable includes the sacctmgr executable.
 
 ## How to use docker development set up
@@ -38,11 +44,13 @@ cd ./docker
 ./run_dev_docker.sh
 ```
 
-4. post docker container start. Installs slurm specs
+4. Wait a bit until slurmdb and slurmctl as services are ready. Then start this post script.
 
 ```bash
 ./after_container_start.sh
 ```
+
+---
 
 For stopping all containers 
 
@@ -50,26 +58,29 @@ For stopping all containers
 ./tear_dev_docker_down.sh
 ```
 
-For removing all volumes to restart slurm db
+For removing all volumes to clean slurm db and LDAP db
 
 ```bash
 ./throw_away_volumes.sh
 ```
 
-## User for ssh
+## dev_user as slurm admin during development
 
-In docker set up development there is a user called "dev_user". The password of the user is "password"
+In the docker set up there is a user called "dev_user". The password of the user is "password"
 for ssh login. 
-This user has admin rights in the slurmdb and can be used add/modify/delete users in the slurmdb of the docker set up
-Login in as this user in the ssh prompt of app.
+
+Use this username and password when the app prompts for ssh credentials during development.
+
+This user has admin rights in the slurmdb and can be used to add/modify/delete users in the slurmdb 
+of the docker set up. 
 
 ## Initial data and specs for slurmdb
 
 - This is accomplished via this [script](./slurm-docker-cluster/add_slurm_data.sh)
   If changes/addition of slurmdb data are required then make changes there.
-  You need to build the docker file again to provide the docker container with its new version.
 
 ## Git clone of slurm-docker-cluster folder
+
 The [folder for slurm cluster](./slurm-docker-cluster) came from git clone 
 from this remote Github [repository](https://github.com/giovtorres/slurm-docker-cluster). 
 

@@ -93,8 +93,13 @@ RUN set -x \
 
 # Enable access via ssh from the app
 RUN dnf install openssh-server -y
-RUN ssh-keygen -A
+# Copy already created ssh rsa host keys 
+# to ensure the known host key file alwasy get the same fingerprint
+COPY ssh_host_rsa_key /etc/ssh/ssh_host_rsa_key 
+COPY ssh_host_rsa_key.pub /etc/ssh/ssh_host_rsa_key.pub
+RUN chmod 600 /etc/ssh/ssh_host_rsa_key /etc/ssh/ssh_host_rsa_key.pub
 
+# This user is used for ssh connection and slurm operations.
 RUN adduser dev_user 
 RUN echo "dev_user:password" | chpasswd
 RUN echo "dev_user ALL = (root) NOPASSWD: ALL" >> /etc/sudoers
