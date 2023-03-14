@@ -22,6 +22,8 @@ pub mod cli {
     }
 
     #[derive(Subcommand, Debug)]
+    /// TODO: put fields into seperate struct with clap so user of a variant can pass the fields
+    /// easier around.
     pub enum Commands {
         /// Add a user to Slurm and/or LDAP
         Add {

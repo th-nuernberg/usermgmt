@@ -5,6 +5,7 @@ pub mod local {
 
     use crate::{Entity, Modifiable};
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
             .arg("add")
@@ -41,6 +42,7 @@ pub mod local {
         modify_qos(entity, sacctmgr_path, false);
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn delete_slurm_user(user: &str, sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
             .arg("delete")
@@ -72,6 +74,7 @@ pub mod local {
         }
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn modify_slurm_user(modifiable: &Modifiable, sacctmgr_path: &str) {
         debug!("Start modifying user qos");
         match &modifiable.default_qos {
@@ -108,6 +111,7 @@ pub mod local {
         }
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn list_users(sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
             .arg("list")
@@ -121,6 +125,7 @@ pub mod local {
         println!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
+    /// TODO: Bubble up error instead of just logging it
     fn modify_qos(entity: &Entity, sacctmgr_path: &str, default_qos: bool) {
         let mut qos_str: String = "defaultQos=".to_owned();
         if default_qos {
@@ -170,6 +175,7 @@ pub mod remote {
     use crate::config::config::MgmtConfig;
     use crate::{util::io_util::user_input, Entity, Modifiable};
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
 
@@ -186,7 +192,7 @@ pub mod remote {
             "{} add user {} Account={} --immediate",
             config.sacctmgr_path, entity.username, entity.group
         );
-        let exit_code = run_command(&sess, &cmd);
+        let exit_code = run_remote_command(&sess, &cmd);
 
         match exit_code {
             0 => info!(
@@ -200,6 +206,7 @@ pub mod remote {
         };
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn delete_slurm_user(user: &str, config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
 
@@ -213,7 +220,7 @@ pub mod remote {
             .unwrap();
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
-        let exit_code = run_command(&sess, &cmd);
+        let exit_code = run_remote_command(&sess, &cmd);
 
         match exit_code {
             0 => info!("Successfully deleted Slurm user {}.", user),
@@ -224,6 +231,7 @@ pub mod remote {
         };
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn modify_slurm_user(modifiable: &Modifiable, config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
 
@@ -268,6 +276,7 @@ pub mod remote {
         }
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn list_users(config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
         let cmd = "sacctmgr list users format=User%30,DefaultAccount,Admin%15";
@@ -299,6 +308,7 @@ pub mod remote {
         (username, password)
     }
 
+    /// TODO: Bubble up error instead of just logging it
     fn modify_qos(entity: &Entity, config: &MgmtConfig, sess: &Session, default_qos: bool) {
         let mut qos_str: String = "defaultQos=".to_owned();
         if default_qos {
@@ -312,7 +322,7 @@ pub mod remote {
             "{} modify user {} set {} --immediate",
             config.sacctmgr_path, entity.username, qos_str
         );
-        let exit_code = run_command(sess, &cmd);
+        let exit_code = run_remote_command(sess, &cmd);
 
         match exit_code {
             0 => info!(
@@ -326,7 +336,11 @@ pub mod remote {
         };
     }
 
-    fn run_command(sess: &Session, cmd: &str) -> i32 {
+    /// Executes given command `cmd` on remote machine over ssh
+    ///
+    /// TODO: move checking if for exit code inside here and return result instead of error code
+    /// directly
+    fn run_remote_command(sess: &Session, cmd: &str) -> i32 {
         debug!("Running command {}", cmd);
 
         let mut channel = sess.channel_session().unwrap();
