@@ -82,7 +82,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjust directory creation on NFS from `/nfs/scratch` to `/nfs/scratch/<students|staff>` 
 
 ## [0.4.6] - 2023-03-15
-
 ### Fixed
 - Fix for [#13](https://github.com/th-nuernberg/usermgmt/issues/13)
 
@@ -93,3 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved listing of Slurm users. It now executes `sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80`.  
 - Various improvements by @BoolPurist
+
+## [0.4.7] - 2023-03-15
+### Changed
+- Try M1 release build
