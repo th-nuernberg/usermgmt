@@ -5,6 +5,7 @@ edition = "2021"
 license-file = "LICENSE"
 description = "Simultaneous Slurm and LDAP user management"
 readme = "README.md"
+rust-version = "1.59.0"
 
 [dependencies]
 clap = { version = "3.1.10", features = ["derive"] }
