@@ -4,7 +4,7 @@ pub mod cli {
 
     /// Add, delete, or modify users in LDAP and Slurm simultaneously
     #[derive(Parser, Debug)]
-    #[clap(author = "Author: Dominik Wagner", version = "0.4.5", 
+    #[clap(author = "Author: Dominik Wagner", version = "0.4.6",
             about = "Simultaneous user management for Slurm and LDAP", long_about = None)]
     pub struct Args {
         /// Operation to conduct on the user. Either add, delete or modify.
@@ -22,7 +22,7 @@ pub mod cli {
     }
 
     #[derive(Subcommand, Debug)]
-    /// TODO: put fields into seperate struct with clap so user of a variant can pass the fields
+    /// TODO: put fields into separate struct with clap so user of a variant can pass the fields
     /// easier around.
     pub enum Commands {
         /// Add a user to Slurm and/or LDAP
@@ -47,7 +47,7 @@ pub mod cli {
             /// Path to SSH publickey.
             #[clap(short, long, default_value = "")]
             publickey: String,
-            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml).
+            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). QOS need to be provided as a whitespace separated list (e.g. interactive basic).
             #[clap(short, long, num_args(0..=20))]
             qos: Vec<String>,
         },

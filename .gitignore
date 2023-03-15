@@ -1,4 +1,5 @@
 /target
 .vscode/
+.idea/
 conf_thn.toml
 .DS_Store

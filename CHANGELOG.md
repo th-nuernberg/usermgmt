@@ -80,3 +80,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.5] - 2022-11-14
 ### Changed
 - Adjust directory creation on NFS from `/nfs/scratch` to `/nfs/scratch/<students|staff>` 
+
+## [0.4.6] - 2023-03-15
+
+### Fixed
+- Fix for [#13](https://github.com/th-nuernberg/usermgmt/issues/13)
+
+### Added
+-  New config parameters `ldap_bind_prefix` and `ldap_bind_org_unit` to allow more flexibility regarding user binding for establishing LDAP connections
+
+### Changed
+- Improved listing of Slurm users. It now executes `sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80`.  
+- Various improvements by @BoolPurist 

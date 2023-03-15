@@ -30,6 +30,8 @@ pub mod ldap {
             org_unit: &Option<String>,
             username: &Option<String>,
             password: &Option<String>,
+            bind_prefix: &Option<String>,
+            bind_org_unit: &Option<String>,
         ) -> Self {
             let (ldap_user, ldap_pass);
             match username {
@@ -47,18 +49,30 @@ pub mod ldap {
                 None => "people".to_string(),
             };
 
+            let bind_prefix_str = match bind_prefix {
+                Some(bp) => bp.to_owned(),
+                None => "cn".to_string(),
+            };
+
+            let bind_org_unit_str = match bind_org_unit {
+                Some(ou) => format!("ou={ou},"),
+                None => "".to_string(),
+            };
+
             let ldap_bind: String;
             let ldap_base: String;
             let ldap_dc: String;
             match dc {
                 Some(x) => {
-                    ldap_bind = format!("cn={ldap_user},{x}");
+
+                    ldap_bind = format!("{bind_prefix_str}={ldap_user},{bind_org_unit_str}{x}");
+                    // ldap_bind = format!("{bind_prefix_str}={ldap_user},{x}");
                     ldap_base = format!("ou={org_unit_str},{x}");
                     ldap_dc = x.to_string();
                 }
                 None => {
-                    ldap_dc = "dc=informatik,dc=fh-nuernberg,dc=de".to_string();
-                    ldap_bind = format!("cn={ldap_user},{ldap_dc}");
+                    ldap_dc = "".to_string();
+                    ldap_bind = format!("{bind_prefix_str}={ldap_user},{ldap_dc}");
                     ldap_base = format!("ou={org_unit_str},{ldap_dc}");
                 }
             }
@@ -100,6 +114,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
 
         if username_exists(
@@ -183,6 +199,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         // get dn for uid
         match find_dn_by_uid(
@@ -222,6 +240,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         // get dn for uid
         match find_dn_by_uid(
@@ -291,6 +311,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &ldap_user,
             &ldap_pass,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
 
         // Establish LDAP connection and bind
@@ -458,6 +480,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         let mut dn_result = None;
         match make_ldap_connection(&ldap_config.ldap_server) {
@@ -508,6 +532,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         let mut qos: Vec<String> = Vec::new();
 
@@ -559,6 +585,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         match make_ldap_connection(&ldap_config.ldap_server) {
             Ok(mut ldap) => {

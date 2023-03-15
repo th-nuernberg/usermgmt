@@ -114,14 +114,14 @@ pub mod local {
     /// TODO: Bubble up error instead of just logging it
     pub fn list_users(sacctmgr_path: &str) {
         let output = Command::new(sacctmgr_path)
-            .arg("list")
-            .arg("users")
-            .arg("format=User%30,DefaultAccount,Admin%15")
+            .arg("show")
+            .arg("assoc")
+            .arg("format=User%30,Account,DefaultQOS,QOS%80")
             .output()
             .expect(
                 "Unable to execute sacctmgr command. Is the path specified in your config correct?",
             );
-
+        // sacctmgr show assoc format=cluster,account,qos
         println!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
@@ -134,7 +134,7 @@ pub mod local {
             let qos_joined = entity.qos.join(",");
             qos_str = format!("qos={}", qos_joined);
         }
-
+        debug!("Attempting to modify user with QOS: {qos_str}");
         let output = Command::new(sacctmgr_path)
             .arg("modify")
             .arg("user")
@@ -204,6 +204,10 @@ pub mod remote {
                 cmd
             ),
         };
+
+        debug!("Modifying user qos");
+        modify_qos(&entity, config, &sess, true);
+        modify_qos(&entity, config, &sess, false);
     }
 
     /// TODO: Bubble up error instead of just logging it
@@ -252,6 +256,7 @@ pub mod remote {
                     default_qos: m.to_string(),
                     ..Default::default()
                 };
+                debug!("New defaultQOS will be {}", entity.default_qos);
                 modify_qos(&entity, config, &sess, true);
             }
             None => info!(
@@ -267,6 +272,7 @@ pub mod remote {
                 qos: modifiable.qos.clone(),
                 ..Default::default()
             };
+            debug!("New QOS will be {:?}", entity.qos);
             modify_qos(&entity, config, &sess, false);
         } else {
             info!(
@@ -279,7 +285,7 @@ pub mod remote {
     /// TODO: Bubble up error instead of just logging it
     pub fn list_users(config: &MgmtConfig) {
         let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-        let cmd = "sacctmgr list users format=User%30,DefaultAccount,Admin%15";
+        let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
@@ -317,6 +323,7 @@ pub mod remote {
             let qos_joined = entity.qos.join(",");
             qos_str = format!("qos={}", qos_joined);
         }
+        debug!("Attempting to modify user QOS with {qos_str}");
 
         let cmd = format!(
             "{} modify user {} set {} --immediate",
