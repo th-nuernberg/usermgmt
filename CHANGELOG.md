@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used LDAP.
 - Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
 - User is only asked once for ssh credentials and not several times for Slurm and directory management respectively
 
@@ -80,3 +81,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.5] - 2022-11-14
 ### Changed
 - Adjust directory creation on NFS from `/nfs/scratch` to `/nfs/scratch/<students|staff>` 
+
+## [0.4.6] - 2023-03-15
+### Fixed
+- Fix for [#13](https://github.com/th-nuernberg/usermgmt/issues/13)
+
+### Added
+- New config parameters `ldap_bind_prefix` and `ldap_bind_org_unit` to allow more flexibility regarding user binding for establishing LDAP connections
+- Unit tests by @BoolPurist
+
+### Changed
+- Improved listing of Slurm users. It now executes `sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80`.  
+- Various improvements by @BoolPurist
+
+## [0.4.7] - 2023-03-15
+### Changed
+- Try M1 release build

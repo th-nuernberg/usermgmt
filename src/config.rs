@@ -3,6 +3,7 @@ pub mod config {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
+    /// TODO: consider implementing encapsulation with getters and setters
     pub struct MgmtConfig {
         pub student_default_qos: String,
         pub staff_default_qos: String,
@@ -22,6 +23,8 @@ pub mod config {
         pub ldap_server: String,
         pub ldap_readonly_user: String,
         pub ldap_readonly_pw: String,
+        pub ldap_bind_prefix: String,
+        pub ldap_bind_org_unit: String,
         pub home_host: String,
         pub nfs_host: String,
         pub head_node: String,
@@ -73,6 +76,10 @@ pub mod config {
                 ldap_domain_components: "".to_string(),
                 ldap_org_unit: "people".to_string(),
                 ldap_server: "ldap://localhost:389".to_string(),
+                ldap_readonly_user: "".to_string(),
+                ldap_readonly_pw: "".to_string(),
+                ldap_bind_prefix: "cn".to_string(),
+                ldap_bind_org_unit: "people".to_string(),
                 home_host: "localhost".to_string(),
                 nfs_host: "localhost".to_string(),
                 quota_softlimit: "200G".to_string(),
@@ -92,8 +99,6 @@ pub mod config {
                 default_ssh_user: "root".to_string(),
                 head_node: "".to_string(),
                 run_slurm_remote: false,
-                ldap_readonly_user: "".to_string(),
-                ldap_readonly_pw: "".to_string(),
             }
         }
     }

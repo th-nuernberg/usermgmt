@@ -11,6 +11,7 @@ pub mod ldap {
     use crate::{util::io_util::user_input, Entity, MgmtConfig, Modifiable};
 
     #[derive(Debug, Default)]
+    /// TODO: consider implementing encapsulation with getters and setters
     pub struct LDAPConfig {
         pub ldap_server: String,
         pub ldap_bind: String,
@@ -21,12 +22,16 @@ pub mod ldap {
     }
 
     impl LDAPConfig {
+        /// TODO: this constructor is always called with config of type MgmtConfig.
+        /// Reduce argument count and complexity of this function.
         fn new(
             ldap_server: &String,
             dc: &Option<String>,
             org_unit: &Option<String>,
             username: &Option<String>,
             password: &Option<String>,
+            bind_prefix: &Option<String>,
+            bind_org_unit: &Option<String>,
         ) -> Self {
             let (ldap_user, ldap_pass);
             match username {
@@ -44,18 +49,30 @@ pub mod ldap {
                 None => "people".to_string(),
             };
 
+            let bind_prefix_str = match bind_prefix {
+                Some(bp) => bp.to_owned(),
+                None => "cn".to_string(),
+            };
+
+            let bind_org_unit_str = match bind_org_unit {
+                Some(ou) => format!("ou={ou},"),
+                None => "".to_string(),
+            };
+
             let ldap_bind: String;
             let ldap_base: String;
             let ldap_dc: String;
             match dc {
                 Some(x) => {
-                    ldap_bind = format!("cn={ldap_user},{x}");
+
+                    ldap_bind = format!("{bind_prefix_str}={ldap_user},{bind_org_unit_str}{x}");
+                    // ldap_bind = format!("{bind_prefix_str}={ldap_user},{x}");
                     ldap_base = format!("ou={org_unit_str},{x}");
                     ldap_dc = x.to_string();
                 }
                 None => {
-                    ldap_dc = "dc=informatik,dc=fh-nuernberg,dc=de".to_string();
-                    ldap_bind = format!("cn={ldap_user},{ldap_dc}");
+                    ldap_dc = "".to_string();
+                    ldap_bind = format!("{bind_prefix_str}={ldap_user},{ldap_dc}");
                     ldap_base = format!("ou={org_unit_str},{ldap_dc}");
                 }
             }
@@ -85,13 +102,20 @@ pub mod ldap {
         LdapConn::new(server)
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
+        if entity.publickey.is_empty() {
+            warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
+        }
+
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
             &Some(config.ldap_domain_components.clone()),
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
 
         if username_exists(
@@ -167,6 +191,7 @@ pub mod ldap {
         debug!("add_ldap_user done");
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -174,6 +199,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         // get dn for uid
         match find_dn_by_uid(
@@ -205,6 +232,7 @@ pub mod ldap {
         debug!("delete_ldap_user done");
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -212,6 +240,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &None,
             &None,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         // get dn for uid
         match find_dn_by_uid(
@@ -262,6 +292,10 @@ pub mod ldap {
     }
 
     /// List all LDAP users and some attributes
+    ///
+    /// TODO: improve output format in readability.
+    /// It currently outputs all values in line separated by commas.
+    /// TODO: Bubble up error instead of just logging it
     pub fn list_ldap_users(config: &MgmtConfig) {
         let mut ldap_user = Some(config.ldap_readonly_user.clone());
         let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
@@ -277,6 +311,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &ldap_user,
             &ldap_pass,
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
 
         // Establish LDAP connection and bind
@@ -444,6 +480,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         let mut dn_result = None;
         match make_ldap_connection(&ldap_config.ldap_server) {
@@ -494,6 +532,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         let mut qos: Vec<String> = Vec::new();
 
@@ -531,6 +571,7 @@ pub mod ldap {
 
     /// Check if username already exists in ldap.
     /// Must be an exact match on the uid attribute.
+    /// TODO: Bubble up error instead of just logging it
     fn username_exists(
         username: &String,
         config: &MgmtConfig,
@@ -544,6 +585,8 @@ pub mod ldap {
             &Some(config.ldap_org_unit.clone()),
             &Some(ldap_user.clone()),
             &Some(ldap_pass.clone()),
+            &Some(config.ldap_bind_prefix.clone()),
+            &Some(config.ldap_bind_org_unit.clone()),
         );
         match make_ldap_connection(&ldap_config.ldap_server) {
             Ok(mut ldap) => {

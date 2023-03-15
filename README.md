@@ -32,6 +32,7 @@ The LDAP instance needs an [auxiliary ObjectClass](https://ldap.com/object-class
 See documentations like [this](https://www.gurkengewuerz.de/openldap-neue-schema-hinzufuegen/?cookie-state-change=1638436473037) for details about the creation of new schemas in LDAP. 
 
 ### Slurm
+
 The only dependency to Slurm is the `sacctmgr` ([Slurm Account Manager](https://slurm.schedmd.com/sacctmgr.html)), which interacts with the interface provided by `slurmdbd` (Slurm Database Daemon). 
 The `sacctmgr` tool should be available on the control host of your cluster. 
 
@@ -191,6 +192,11 @@ login_shell = '/bin/bash'
 # This value is combined with ldap_domain_components like
 # 'ou={ldap_org_unit},{ldap_domain_components}'
 ldap_org_unit = 'people'
+# User bind prefix to be used when establishing LDAP connections. 
+# Binding goes like: cn=admin... or uid=someuser...
+ldap_bind_prefix = 'cn'
+# Use a different OU for establishing connections to you LDAP server
+ldap_bind_org_unit = 'people'
 # Protocol, host and port of your LDAP server
 ldap_server = 'ldap://<hostname>:<port>'
 # Read only user for ldap search queries (e.g. usermgmt list ldap)
