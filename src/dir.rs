@@ -30,6 +30,7 @@ pub mod dir {
     }
 
     /// Establish SSH connection to each compute node, make user directory and set quota
+    /// TODO: Bubble up errors instead of just logging
     fn handle_compute_nodes(
         entity: &Entity,
         config: &MgmtConfig,
@@ -119,6 +120,7 @@ pub mod dir {
     }
 
     /// Establish SSH connection to NFS host, make user directory and set quota
+    /// TODO: Bubble up errors instead of just logging
     fn handle_nfs(entity: &Entity, config: &MgmtConfig, ssh_username: &str, ssh_password: &str) {
         debug!("Start handling NFS user directory");
 
@@ -189,6 +191,7 @@ pub mod dir {
     }
 
     /// Establish SSH connection to home host, make user directory and set quota
+    /// TODO: Bubble up errors instead of just logging
     fn handle_home(entity: &Entity, config: &MgmtConfig, ssh_username: &str, ssh_password: &str) {
         debug!("Start handling home directory");
 

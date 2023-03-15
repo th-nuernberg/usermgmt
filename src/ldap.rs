@@ -11,6 +11,7 @@ pub mod ldap {
     use crate::{util::io_util::user_input, Entity, MgmtConfig, Modifiable};
 
     #[derive(Debug, Default)]
+    /// TODO: consider implementing encapsulation with getters and setters
     pub struct LDAPConfig {
         pub ldap_server: String,
         pub ldap_bind: String,
@@ -21,6 +22,8 @@ pub mod ldap {
     }
 
     impl LDAPConfig {
+        /// TODO: this constructor is always called with config of type MgmtConfig.
+        /// Reduce argument count and complexity of this function.
         fn new(
             ldap_server: &String,
             dc: &Option<String>,
@@ -85,6 +88,7 @@ pub mod ldap {
         LdapConn::new(server)
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -167,6 +171,7 @@ pub mod ldap {
         debug!("add_ldap_user done");
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -205,6 +210,7 @@ pub mod ldap {
         debug!("delete_ldap_user done");
     }
 
+    /// TODO: Bubble up error instead of just logging it
     pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
@@ -262,6 +268,10 @@ pub mod ldap {
     }
 
     /// List all LDAP users and some attributes
+    ///
+    /// TODO: improve output format in readability.
+    /// It currently outputs all values in line separated by commas.
+    /// TODO: Bubble up error instead of just logging it
     pub fn list_ldap_users(config: &MgmtConfig) {
         let mut ldap_user = Some(config.ldap_readonly_user.clone());
         let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
@@ -531,6 +541,7 @@ pub mod ldap {
 
     /// Check if username already exists in ldap.
     /// Must be an exact match on the uid attribute.
+    /// TODO: Bubble up error instead of just logging it
     fn username_exists(
         username: &String,
         config: &MgmtConfig,

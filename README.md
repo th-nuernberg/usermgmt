@@ -32,6 +32,7 @@ The LDAP instance needs an [auxiliary ObjectClass](https://ldap.com/object-class
 See documentations like [this](https://www.gurkengewuerz.de/openldap-neue-schema-hinzufuegen/?cookie-state-change=1638436473037) for details about the creation of new schemas in LDAP. 
 
 ### Slurm
+
 The only dependency to Slurm is the `sacctmgr` ([Slurm Account Manager](https://slurm.schedmd.com/sacctmgr.html)), which interacts with the interface provided by `slurmdbd` (Slurm Database Daemon). 
 The `sacctmgr` tool should be available on the control host of your cluster. 
 
