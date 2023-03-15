@@ -87,8 +87,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix for [#13](https://github.com/th-nuernberg/usermgmt/issues/13)
 
 ### Added
--  New config parameters `ldap_bind_prefix` and `ldap_bind_org_unit` to allow more flexibility regarding user binding for establishing LDAP connections
+- New config parameters `ldap_bind_prefix` and `ldap_bind_org_unit` to allow more flexibility regarding user binding for establishing LDAP connections
+- Unit tests by @BoolPurist
 
 ### Changed
 - Improved listing of Slurm users. It now executes `sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80`.  
-- Various improvements by @BoolPurist 
+- Various improvements by @BoolPurist
