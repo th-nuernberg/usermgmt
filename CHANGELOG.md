@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used LDAP.
 - Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
 
 ## [0.1.0] - 2022-06-20

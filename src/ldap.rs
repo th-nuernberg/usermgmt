@@ -90,6 +90,10 @@ pub mod ldap {
 
     /// TODO: Bubble up error instead of just logging it
     pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
+        if entity.publickey.is_empty() {
+            warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
+        }
+
         let ldap_config = LDAPConfig::new(
             &config.ldap_server,
             &Some(config.ldap_domain_components.clone()),
