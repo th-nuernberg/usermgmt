@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used LDAP.
+- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used in LDAP.
 - Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
 - User is only asked once for ssh credentials and not several times for Slurm and directory management respectively
 
@@ -97,3 +97,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.7] - 2023-03-15
 ### Changed
 - Try M1 release build
+
+## [0.4.8] - 2023-03-16
+### Added
+- Fix for SSH credential reuse by @BoolPurist ([#8](https://github.com/th-nuernberg/usermgmt/issues/8))
+
+### Changed
+- Order of Slurm QOS modification during user creation
+- Pick default QOS from `conf.toml` when no value is provided and remove default value from CLI

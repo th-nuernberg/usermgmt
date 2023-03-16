@@ -4,7 +4,7 @@ pub mod cli {
 
     /// Add, delete, or modify users in LDAP and Slurm simultaneously
     #[derive(Parser, Debug)]
-    #[clap(author = "Author: Dominik Wagner", version = "0.4.7",
+    #[clap(author = "Author: Dominik Wagner", version = "0.4.8",
             about = "Simultaneous user management for Slurm and LDAP", long_about = None)]
     pub struct Args {
         /// Operation to conduct on the user. Either add, delete or modify.
@@ -42,7 +42,7 @@ pub mod cli {
             #[clap(short, long, default_value = "")]
             mail: String,
             /// Slurm default QOS for the user e.g. basic.
-            #[clap(short, long, default_value = "basic")]
+            #[clap(short, long, default_value = "")]
             default_qos: String,
             /// Path to SSH publickey.
             #[clap(short, long, default_value = "")]

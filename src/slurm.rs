@@ -38,8 +38,10 @@ pub mod local {
         }
 
         debug!("Modifying user qos");
-        modify_qos(entity, sacctmgr_path, true);
+        // Note: The order of execution is important here!
+        // Slurm expects the user to have QOS, before it can set the default QOS
         modify_qos(entity, sacctmgr_path, false);
+        modify_qos(entity, sacctmgr_path, true);
     }
 
     /// TODO: Bubble up error instead of just logging it
@@ -205,8 +207,11 @@ pub mod remote {
         };
 
         debug!("Modifying user qos");
-        modify_qos(&entity, config, &sess, true);
+        // Note: The order of execution is important here!
+        // Slurm expects the user to have QOS, before it can set the default QOS
         modify_qos(&entity, config, &sess, false);
+        modify_qos(&entity, config, &sess, true);
+
     }
 
     /// TODO: Bubble up error instead of just logging it

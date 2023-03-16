@@ -110,8 +110,8 @@ impl Entity {
             }
         }
 
-        if !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
-            warn!("Specified default QOS is invalid. Using the value specified in config.");
+        if default_qos.is_empty() || !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
+            warn!("Specified default QOS is invalid or empty. Using the value specified in config.");
             match group {
                 Group::Staff => default_qos = staff_default_qos,
                 Group::Student => default_qos = student_default_qos,
@@ -121,11 +121,11 @@ impl Entity {
 
         let mut pubkey_from_file = "".to_string();
         if !publickey.is_empty() {
-            debug!("Received publickey file path {}", publickey);
+            debug!("Received PublicKey file path {}", publickey);
             let pubkey_result = fs::read_to_string(publickey);
             match pubkey_result {
                 Ok(result) => pubkey_from_file = result,
-                Err(e) => error!("Unable to read publickey from file! {}", e),
+                Err(e) => error!("Unable to read PublicKey from file! {}", e),
             }
         }
 
