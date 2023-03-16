@@ -330,7 +330,9 @@ git tag <version> main
 git push origin <version>
 ```
 
-`<version>` is the version of your release (e.g. `v0.3.0`).  
+`<version>` is the version of your release (e.g. `v0.3.0`). 
+
+**Note:** Don't forget to push your commits to main as well (`git push`). 
 
 ### Build for Mac M1
 
