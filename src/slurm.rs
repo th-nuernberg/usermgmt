@@ -173,19 +173,18 @@ pub mod remote {
     use ssh2::Session;
 
     use crate::config::config::MgmtConfig;
-    use crate::{util::io_util::user_input, Entity, Modifiable};
+    use crate::ssh::SshCredential;
+    use crate::{Entity, Modifiable};
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig) {
-        let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-
+    pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(credentials.username(), credentials.password())
             .unwrap();
 
         let cmd = format!(
@@ -211,16 +210,14 @@ pub mod remote {
     }
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn delete_slurm_user(user: &str, config: &MgmtConfig) {
-        let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-
+    pub fn delete_slurm_user(user: &str, config: &MgmtConfig, credentials: &SshCredential) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(credentials.username(), credentials.password())
             .unwrap();
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
@@ -236,16 +233,18 @@ pub mod remote {
     }
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn modify_slurm_user(modifiable: &Modifiable, config: &MgmtConfig) {
-        let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
-
+    pub fn modify_slurm_user(
+        modifiable: &Modifiable,
+        config: &MgmtConfig,
+        credentials: &SshCredential,
+    ) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(credentials.username(), credentials.password())
             .unwrap();
 
         debug!("Start modifying user default qos");
@@ -283,8 +282,7 @@ pub mod remote {
     }
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn list_users(config: &MgmtConfig) {
-        let (ssh_username, ssh_password) = ask_credentials(&config.default_ssh_user);
+    pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) {
         let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
         // Connect to the SSH server and authenticate
@@ -293,7 +291,7 @@ pub mod remote {
         let mut sess = Session::new().unwrap();
 
         sess.handshake(&tcp).unwrap();
-        sess.userauth_password(&ssh_username, &ssh_password)
+        sess.userauth_password(credentials.username(), credentials.password())
             .unwrap();
 
         let mut channel = sess.channel_session().unwrap();
@@ -302,16 +300,6 @@ pub mod remote {
         let mut s = String::new();
         channel.read_to_string(&mut s).unwrap();
         println!("{}", s);
-    }
-
-    fn ask_credentials(default_user: &str) -> (String, String) {
-        println!("Enter your SSH username (defaults to {}):", default_user);
-        let mut username = user_input();
-        if username.is_empty() {
-            username = default_user.to_string();
-        }
-        let password = rpassword::prompt_password("Enter your SSH password: ").unwrap();
-        (username, password)
     }
 
     /// TODO: Bubble up error instead of just logging it
