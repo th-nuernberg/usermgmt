@@ -1,11 +1,11 @@
 #!/bin/bash
 # This is script shows how you can install the usermgmt
-# tool on a Mac with M1 chip using a prebuilt release
+# tool on a Mac with M1 using a prebuilt release
 # from GitHub. 
 #
 # Author: Dominik Wagner, 2022
 
-version=v0.4.1
+version=v0.4.8
 arch=aarch64
 target_dir=/Users/$USER/usermgmt
 
