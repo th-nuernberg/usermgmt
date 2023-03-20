@@ -3,7 +3,7 @@ use env_logger::Env;
 use log::error;
 use std::fs;
 use std::path::Path;
-use usermgmt::cli::cli::Args;
+use usermgmt::cli::GeneralArgs;
 use usermgmt::config::config::MgmtConfig;
 use usermgmt::run_mgmt;
 
@@ -26,7 +26,7 @@ fn main() {
     let cfg: Result<MgmtConfig, confy::ConfyError> = confy::load_path(path);
     match cfg {
         Ok(config) => {
-            let args = Args::parse();
+            let args = GeneralArgs::parse();
             run_mgmt(args, config);
         }
         Err(e) => error!("Configuration error: {:?}", e),

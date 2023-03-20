@@ -5,7 +5,7 @@ mod ldap;
 mod slurm;
 mod ssh;
 pub mod util;
-use cli::{cli::Commands, Modifiable};
+use cli::{Commands, Modifiable, UserToAdd};
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
 use std::{fmt, fs, str::FromStr};
@@ -70,17 +70,7 @@ pub struct Entity {
 pub struct User {}
 
 impl Entity {
-    fn new(
-        user: &String,
-        group: &String,
-        firstname: &String,
-        lastname: &String,
-        mail: &String,
-        default_qos: &String,
-        publickey: &String,
-        qos: &Vec<String>,
-        config: &MgmtConfig,
-    ) -> Self {
+    fn new(to_add: &UserToAdd, config: &MgmtConfig) -> Self {
         let staff_qos = &config.staff_qos;
         let student_qos = &config.student_qos;
         let valid_qos = &config.valid_qos;
@@ -88,9 +78,9 @@ impl Entity {
         let staff_default_qos = &config.staff_default_qos;
         let student_default_qos = &config.student_default_qos;
 
-        let mut default_qos = default_qos;
-        let mut group_str = group.to_lowercase();
-        let mut qos: &Vec<String> = qos;
+        let mut default_qos = &to_add.default_qos;
+        let mut group_str = to_add.group.to_lowercase();
+        let mut qos: &Vec<String> = &to_add.qos;
 
         if !is_valid_group(&group_str, &config.valid_slurm_groups) {
             warn!(
@@ -124,9 +114,9 @@ impl Entity {
         }
 
         let mut pubkey_from_file = "".to_string();
-        if !publickey.is_empty() {
-            debug!("Received PublicKey file path {}", publickey);
-            let pubkey_result = fs::read_to_string(publickey);
+        if !to_add.publickey.is_empty() {
+            debug!("Received PublicKey file path {}", to_add.publickey);
+            let pubkey_result = fs::read_to_string(&to_add.publickey);
             match pubkey_result {
                 Ok(result) => pubkey_from_file = result,
                 Err(e) => error!("Unable to read PublicKey from file! {}", e),
@@ -134,15 +124,15 @@ impl Entity {
         }
 
         Entity {
-            username: user.to_lowercase(),
-            firstname: firstname.to_string(),
-            lastname: lastname.to_string(),
+            username: to_add.user.to_lowercase(),
+            firstname: to_add.firstname.to_string(),
+            lastname: to_add.lastname.to_string(),
             group,
             default_qos: default_qos.to_string(),
             publickey: pubkey_from_file.trim().to_string(),
             qos: qos.to_vec(),
             gid,
-            mail: mail.to_string(),
+            mail: to_add.mail.to_string(),
         }
     }
 
@@ -173,44 +163,32 @@ impl Default for Entity {
 }
 
 /// Main function that handles user management
-pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
+pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
     let is_slurm_only = args.slurm_only;
     let is_ldap_only = args.ldap_only;
     let directories_only = args.dirs_only;
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
-        Commands::Add {
-            user,
-            group,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
-        } => add_user(
-            user,
-            group,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
+        Commands::Add { to_add } => add_user(
+            &to_add,
             &is_slurm_only,
             &is_ldap_only,
             &directories_only,
             &config,
         ),
         Commands::Modify { data } => modify_user(data.clone(), config, is_slurm_only, is_ldap_only),
-        Commands::Delete { user } => {
-            delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config)
-        }
+        Commands::Delete { user } => delete_user(
+            &user,
+            &is_slurm_only,
+            &is_ldap_only,
+            &sacctmgr_path,
+            &config,
+        ),
         Commands::List {
             slurm_users,
             ldap_users,
-        } => list_users(&config, slurm_users, ldap_users),
+        } => list_users(&config, &slurm_users, &ldap_users),
     }
 }
 
@@ -243,14 +221,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
 
 /// TODO: reduce argument count
 fn add_user(
-    user: &String,
-    group: &String,
-    firstname: &String,
-    lastname: &String,
-    mail: &String,
-    default_qos: &String,
-    publickey: &String,
-    qos: &Vec<String>,
+    to_add: &UserToAdd,
     is_slurm_only: &bool,
     is_ldap_only: &bool,
     directories_only: &bool,
@@ -260,17 +231,7 @@ fn add_user(
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let entity = Entity::new(
-        user,
-        group,
-        firstname,
-        lastname,
-        mail,
-        default_qos,
-        publickey,
-        qos,
-        config,
-    );
+    let entity = Entity::new(to_add, config);
 
     let ssh_credentials = SshCredential::new(config);
     let wants_slurm = !is_ldap_only && !directories_only;
