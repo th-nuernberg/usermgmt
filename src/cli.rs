@@ -20,8 +20,6 @@ pub struct GeneralArgs {
 }
 
 #[derive(Subcommand, Debug)]
-/// TODO: put fields into separate struct with clap so user of a variant can pass the fields
-/// easier around.
 pub enum Commands {
     /// Add a user to Slurm and/or LDAP
     Add {
@@ -75,6 +73,7 @@ pub struct Modifiable {
     pub qos: Vec<String>,
 }
 
+/// TODO: consider encapsulation with getters and setters.
 #[derive(Args, Debug, Clone)]
 pub struct UserToAdd {
     /// Username e.g. wagnerdo.
