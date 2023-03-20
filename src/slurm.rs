@@ -3,10 +3,10 @@ pub mod local {
 
     use log::{debug, error, info, warn};
 
+    use crate::prelude::*;
     use crate::{Entity, Modifiable};
 
-    /// TODO: Bubble up error instead of just logging it
-    pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) {
+    pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) -> AppResult {
         let output = Command::new(sacctmgr_path)
             .arg("add")
             .arg("user")
@@ -14,9 +14,9 @@ pub mod local {
             .arg(format!("Account={}", entity.group))
             .arg("--immediate")
             .output()
-            .expect(
-                "Unable to execute sacctmgr command. Is the path specified in your config correct?",
-            );
+            .map_err(|error| {
+                AnyError::new(error).context("could not execute sacctmgr on local machine")
+            })?;
 
         debug!(
             "add_slurm_user: {}",
@@ -27,14 +27,7 @@ pub mod local {
             info!("Added user {} to Slurm", entity.username);
         } else {
             warn!("Slurm user creation did not return with success.");
-            let out = String::from_utf8_lossy(&output.stdout);
-            if out.len() > 0 {
-                warn!("sacctmgr stdout: {}", out);
-            }
-            let err = String::from_utf8_lossy(&output.stderr);
-            if err.len() > 0 {
-                error!("sacctmgr stderr: {}", err);
-            }
+            return Err(output.into());
         }
 
         debug!("Modifying user qos");
@@ -42,6 +35,8 @@ pub mod local {
         // Slurm expects the user to have QOS, before it can set the default QOS
         modify_qos(entity, sacctmgr_path, false);
         modify_qos(entity, sacctmgr_path, true);
+
+        Ok(())
     }
 
     /// TODO: Bubble up error instead of just logging it
@@ -211,7 +206,6 @@ pub mod remote {
         // Slurm expects the user to have QOS, before it can set the default QOS
         modify_qos(&entity, config, &sess, false);
         modify_qos(&entity, config, &sess, true);
-
     }
 
     /// TODO: Bubble up error instead of just logging it
