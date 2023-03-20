@@ -5,7 +5,7 @@ mod ldap;
 mod slurm;
 mod ssh;
 pub mod util;
-use cli::cli::Commands;
+use cli::{cli::Commands, Modifiable};
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
 use std::{fmt, fs, str::FromStr};
@@ -67,6 +67,8 @@ pub struct Entity {
     pub qos: Vec<String>,
 }
 
+pub struct User {}
+
 impl Entity {
     fn new(
         user: &String,
@@ -111,7 +113,9 @@ impl Entity {
         }
 
         if default_qos.is_empty() || !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
-            warn!("Specified default QOS is invalid or empty. Using the value specified in config.");
+            warn!(
+                "Specified default QOS is invalid or empty. Using the value specified in config."
+            );
             match group {
                 Group::Staff => default_qos = staff_default_qos,
                 Group::Student => default_qos = student_default_qos,
@@ -168,40 +172,6 @@ impl Default for Entity {
     }
 }
 
-/// Defines options that can be modified
-/// TODO: consider encapsulation with getters and setters.
-pub struct Modifiable {
-    pub username: String,
-    pub firstname: Option<String>,
-    pub lastname: Option<String>,
-    pub mail: Option<String>,
-    pub default_qos: Option<String>,
-    pub publickey: Option<String>,
-    pub qos: Vec<String>,
-}
-
-impl Modifiable {
-    fn new(
-        username: &String,
-        firstname: &Option<String>,
-        lastname: &Option<String>,
-        mail: &Option<String>,
-        default_qos: &Option<String>,
-        publickey: &Option<String>,
-        qos: &[String],
-    ) -> Self {
-        Modifiable {
-            username: username.clone(),
-            firstname: firstname.clone(),
-            lastname: lastname.clone(),
-            mail: mail.clone(),
-            default_qos: default_qos.clone(),
-            publickey: publickey.clone(),
-            qos: qos.to_vec(),
-        }
-    }
-}
-
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
     let is_slurm_only = args.slurm_only;
@@ -233,26 +203,7 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
             &directories_only,
             &config,
         ),
-        Commands::Modify {
-            user,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
-        } => modify_user(
-            user,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
-            &is_slurm_only,
-            &is_ldap_only,
-            &config,
-        ),
+        Commands::Modify { data } => modify_user(data.clone(), config, is_slurm_only, is_ldap_only),
         Commands::Delete { user } => {
             delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config)
         }
@@ -377,30 +328,19 @@ fn delete_user(
 }
 
 /// TODO: reduce argument count
-fn modify_user(
-    user: &String,
-    firstname: &Option<String>,
-    lastname: &Option<String>,
-    mail: &Option<String>,
-    mut default_qos: &Option<String>,
-    publickey: &Option<String>,
-    qos: &Vec<String>,
-    is_slurm_only: &bool,
-    is_ldap_only: &bool,
-    config: &MgmtConfig,
-) {
-    debug!("Start modify_user for {}", user);
+fn modify_user(mut data: Modifiable, config: MgmtConfig, is_ldap_only: bool, is_slurm_only: bool) {
+    debug!("Start modify_user for {}", data.username);
 
-    if let Some(s) = default_qos {
+    if let Some(ref s) = data.default_qos {
         if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
             warn!("Specified default QOS {s} is invalid and will be removed!");
-            default_qos = &None;
+            data.default_qos = None;
         }
     }
 
     let mut pubkey_from_file = None;
 
-    if let Some(pubk) = publickey {
+    if let Some(ref pubk) = data.publickey {
         debug!("Matched pubkey file {}", pubk);
         if !pubk.is_empty() {
             debug!("Reading publickey from {}", pubk);
@@ -412,33 +352,29 @@ fn modify_user(
         }
     }
 
-    let filtered_qos = filter_invalid_qos(qos, &config.valid_qos);
-    debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
-    let modifiable = Modifiable::new(
-        user,
-        firstname,
-        lastname,
-        mail,
-        default_qos,
-        &pubkey_from_file,
-        &filtered_qos,
-    );
+    {
+        let filtered_qos = filter_invalid_qos(&data.qos, &config.valid_qos);
+        data.qos = filtered_qos;
+
+        debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
+        data.publickey = pubkey_from_file;
+    }
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let credential = SshCredential::new(config);
+    let credential = SshCredential::new(&config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&modifiable, config, &credential);
+            slurm::remote::modify_slurm_user(&data, &config, &credential);
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::modify_slurm_user(&modifiable, &sacctmgr_path);
+            slurm::local::modify_slurm_user(&data, &sacctmgr_path);
         }
     }
 
     if !is_slurm_only {
-        modify_ldap_user(&modifiable, config);
+        modify_ldap_user(&data, &config);
     }
     debug!("Finished modify_user");
 }

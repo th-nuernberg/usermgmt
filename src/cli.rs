@@ -1,6 +1,10 @@
+use clap::Args;
+
 pub mod cli {
 
     use clap::{Parser, Subcommand};
+
+    use crate::Modifiable;
 
     /// Add, delete, or modify users in LDAP and Slurm simultaneously
     #[derive(Parser, Debug)]
@@ -53,26 +57,8 @@ pub mod cli {
         },
         /// Modify a user in Slurm and/or LDAP
         Modify {
-            /// A valid username e.g. wagnerdo.
-            user: String,
-            /// Firstname of the user.
-            #[clap(short, long)]
-            firstname: Option<String>,
-            /// Lastname of the user.
-            #[clap(short, long)]
-            lastname: Option<String>,
-            /// User's e-mail address.
-            #[clap(short, long)]
-            mail: Option<String>,
-            /// Slurm default QOS for the user e.g. basic.
-            #[clap(short, long)]
-            default_qos: Option<String>,
-            /// Path to SSH publickey.
-            #[clap(short, long)]
-            publickey: Option<String>,
-            /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed.
-            #[clap(short, long, num_args(0..=20))]
-            qos: Vec<String>,
+            #[command(flatten)]
+            data: Modifiable,
         },
         /// Delete a user from Slurm and/or LDAP
         Delete {
@@ -89,4 +75,30 @@ pub mod cli {
             ldap_users: bool,
         },
     }
+}
+
+/// Defines options that can be modified
+/// TODO: consider encapsulation with getters and setters.
+#[derive(Args, Debug, Clone)]
+pub struct Modifiable {
+    /// A valid username e.g. wagnerdo.
+    pub username: String,
+    /// Firstname of the user.
+    #[clap(short, long)]
+    pub firstname: Option<String>,
+    /// Lastname of the user.
+    #[clap(short, long)]
+    pub lastname: Option<String>,
+    /// User's e-mail address.
+    #[clap(short, long)]
+    pub mail: Option<String>,
+    /// Slurm default QOS for the user e.g. basic.
+    #[clap(short, long)]
+    pub default_qos: Option<String>,
+    /// Path to SSH publickey.
+    #[clap(short, long)]
+    pub publickey: Option<String>,
+    /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed.
+    #[clap(short, long, num_args(0..=20))]
+    pub qos: Vec<String>,
 }
