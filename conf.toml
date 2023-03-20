@@ -61,3 +61,4 @@ ldap_readonly_pw = 'secret'
 include_dir_mgmt = true
 use_homedir_helper = true
 run_slurm_remote = true
+ssh_port = 22
