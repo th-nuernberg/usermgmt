@@ -33,14 +33,16 @@ impl<'a, 'b> SshSession<'a, 'b> {
 
     pub fn exec(&self, cmd: &str) -> (String, i32) {
         let session = self.session.get_or_init(|| {
-            let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port)).unwrap();
-
             info!("Connecting to host {}", self.endpoint);
 
             let mut sess = Session::new().expect("Could not build up ssh session");
 
-            sess.handshake(&tcp)
-                .expect("Could not perform ssh handshake");
+            {
+                let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port)).unwrap();
+                sess.set_tcp_stream(tcp);
+            }
+
+            sess.handshake().expect("Could not perform ssh handshake");
 
             let (username, password) = (self.credentials.username(), self.credentials.password());
             sess.userauth_password(username, password)

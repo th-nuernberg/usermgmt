@@ -168,11 +168,8 @@ pub mod local {
 }
 
 pub mod remote {
-    use std::io::Read;
-    use std::net::TcpStream;
 
     use log::{debug, error, info};
-    use ssh2::Session;
 
     use crate::config::config::MgmtConfig;
     use crate::ssh::{self, SshCredential, SshSession};
