@@ -249,6 +249,8 @@ include_dir_mgmt = true
 use_homedir_helper = true
 # Execute Slurm commands from a remote client via SSH or directly on the server
 run_slurm_remote = true
+# Port to be used when connecting via ssh to any node
+ssh_port = 22
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
