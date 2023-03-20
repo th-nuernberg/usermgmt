@@ -12,7 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
 - User is only asked once for ssh credentials and not several times for Slurm and directory management respectively
 
+### Added
+
+- Port for ssh connection can now specified via configuration file
+
 ## [0.1.0] - 2022-06-20
+
 ### Added
 - Usermanagement via subprocess calls to [LDAPUtils](https://wiki.debian.org/LDAP/LDAPUtils) and `sacctmgr`
 
