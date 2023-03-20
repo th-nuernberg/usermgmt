@@ -3,6 +3,7 @@ pub mod config;
 pub mod dir;
 mod ldap;
 mod slurm;
+mod ssh;
 pub mod util;
 use cli::cli::Commands;
 use config::config::MgmtConfig;
@@ -12,9 +13,14 @@ use std::{fmt, fs, str::FromStr};
 use crate::{
     dir::dir::add_user_directories,
     ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
+    ssh::SshCredential,
     // slurm::local::{add_slurm_user, delete_slurm_user, modify_slurm_user},
 };
 extern crate confy;
+
+// TODO: git rif of unwraps. Replace them with expects or better with result if possible.
+// TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
+// A code block as example in the file slurm under function add_slurm_user is repeated quite often
 
 #[derive(Clone, PartialEq)]
 pub enum Group {
@@ -47,6 +53,7 @@ impl FromStr for Group {
 
 /// Representation of a user entity.
 /// It contains all information necessary to add/modify/delete the user.
+/// TODO: Add proper encapsulation via getter and setters
 pub struct Entity {
     pub username: String,
     pub firstname: String,
@@ -55,6 +62,7 @@ pub struct Entity {
     pub gid: i32,
     pub group: Group,
     pub default_qos: String,
+    /// TODO: Add validation if a present publickey is in valid format, OpenSsh
     pub publickey: String,
     pub qos: Vec<String>,
 }
@@ -102,8 +110,8 @@ impl Entity {
             }
         }
 
-        if !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
-            warn!("Specified default QOS is invalid. Using the value specified in config.");
+        if default_qos.is_empty() || !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
+            warn!("Specified default QOS is invalid or empty. Using the value specified in config.");
             match group {
                 Group::Staff => default_qos = staff_default_qos,
                 Group::Student => default_qos = student_default_qos,
@@ -113,14 +121,12 @@ impl Entity {
 
         let mut pubkey_from_file = "".to_string();
         if !publickey.is_empty() {
-            debug!("Received publickey file path {}", publickey);
+            debug!("Received PublicKey file path {}", publickey);
             let pubkey_result = fs::read_to_string(publickey);
             match pubkey_result {
                 Ok(result) => pubkey_from_file = result,
-                Err(e) => error!("Unable to read publickey from file! {}", e),
+                Err(e) => error!("Unable to read PublicKey from file! {}", e),
             }
-        } else {
-            warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
         }
 
         Entity {
@@ -163,6 +169,7 @@ impl Default for Entity {
 }
 
 /// Defines options that can be modified
+/// TODO: consider encapsulation with getters and setters.
 pub struct Modifiable {
     pub username: String,
     pub firstname: Option<String>,
@@ -283,6 +290,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
     valid_groups.contains(group)
 }
 
+/// TODO: reduce argument count
 fn add_user(
     user: &String,
     group: &String,
@@ -313,11 +321,12 @@ fn add_user(
         config,
     );
 
+    let ssh_credentials = SshCredential::new(config);
     let wants_slurm = !is_ldap_only && !directories_only;
     if wants_slurm {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::add_slurm_user(&entity, config);
+            slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::add_slurm_user(&entity, &sacctmgr_path);
@@ -332,7 +341,7 @@ fn add_user(
     if config.include_dir_mgmt {
         let wants_user_directories = !is_slurm_only && !is_ldap_only;
         if wants_user_directories {
-            add_user_directories(&entity, config);
+            add_user_directories(&entity, config, &ssh_credentials);
         }
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
@@ -350,10 +359,11 @@ fn delete_user(
 ) {
     debug!("Start delete_user");
 
+    let credentials = SshCredential::new(config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::delete_slurm_user(user, config);
+            slurm::remote::delete_slurm_user(user, config, &credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::delete_slurm_user(user, sacctmgr_path);
@@ -366,6 +376,7 @@ fn delete_user(
     debug!("Finished delete_user");
 }
 
+/// TODO: reduce argument count
 fn modify_user(
     user: &String,
     firstname: &Option<String>,
@@ -415,10 +426,11 @@ fn modify_user(
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
+    let credential = SshCredential::new(config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&modifiable, config);
+            slurm::remote::modify_slurm_user(&modifiable, config, &credential);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::modify_slurm_user(&modifiable, &sacctmgr_path);
@@ -432,9 +444,10 @@ fn modify_user(
 }
 
 fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
+    let credentials = SshCredential::new(config);
     if *slurm {
         if config.run_slurm_remote {
-            slurm::remote::list_users(config);
+            slurm::remote::list_users(config, &credentials);
         } else {
             slurm::local::list_users(&config.sacctmgr_path);
         }

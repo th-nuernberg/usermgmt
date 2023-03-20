@@ -18,8 +18,11 @@ pub mod io_util {
         input
     }
 
-    pub fn hashset_from_vec_str(data: &[String]) -> HashSet<&str> {
-        data.iter().map(|s| s.as_str()).collect::<HashSet<&str>>()
+    pub fn hashset_from_vec_str<R>(data: &'_ [R]) -> HashSet<&'_ str>
+    where
+        R: AsRef<str>,
+    {
+        data.iter().map(|s| s.as_ref()).collect::<HashSet<&str>>()
     }
 
     /// Returns uid which can be used for a new user.
@@ -72,6 +75,8 @@ pub mod io_util {
 
     #[cfg(test)]
     mod testing {
+        use maplit::hashset;
+
         use super::*;
         #[test]
         fn should_return_next_uid() {
@@ -96,6 +101,14 @@ pub mod io_util {
         fn should_return_error_for_staff_into_student() {
             let actual = get_new_uid(&vec![STUDENT_UID - 1], Group::Staff);
             assert!(actual.is_err());
+        }
+
+        #[test]
+        fn should_hashset_from_vec_str() {
+            let given = vec!["one", "one", "two", "three"];
+            let actual = hashset_from_vec_str(&given);
+            let expected = hashset! {"one", "two", "three"};
+            assert_eq!(expected, actual);
         }
 
         fn assert_return_next_uid(uids: &[i32], group: crate::Group, expected_uid: i32) {

@@ -192,6 +192,11 @@ login_shell = '/bin/bash'
 # This value is combined with ldap_domain_components like
 # 'ou={ldap_org_unit},{ldap_domain_components}'
 ldap_org_unit = 'people'
+# User bind prefix to be used when establishing LDAP connections. 
+# Binding goes like: cn=admin... or uid=someuser...
+ldap_bind_prefix = 'cn'
+# Use a different OU for establishing connections to you LDAP server
+ldap_bind_org_unit = 'people'
 # Protocol, host and port of your LDAP server
 ldap_server = 'ldap://<hostname>:<port>'
 # Read only user for ldap search queries (e.g. usermgmt list ldap)
@@ -325,7 +330,9 @@ git tag <version> main
 git push origin <version>
 ```
 
-`<version>` is the version of your release (e.g. `v0.3.0`).  
+`<version>` is the version of your release (e.g. `v0.3.0`). 
+
+**Note:** Don't forget to push your commits to main as well (`git push`). 
 
 ### Build for Mac M1
 
