@@ -274,21 +274,10 @@ pub mod remote {
     pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) {
         let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
-        // Connect to the SSH server and authenticate
-        info!("Connecting to {}", config.head_node);
-        let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
-        let mut sess = Session::new().unwrap();
+        let sess = SshSession::from_head_node(config, credentials);
 
-        sess.handshake(&tcp).unwrap();
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
-
-        let mut channel = sess.channel_session().unwrap();
-        channel.exec(cmd).unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        println!("{}", s);
+        let (output, _) = sess.exec(&cmd);
+        println!("{}", output);
     }
 
     /// TODO: Bubble up error instead of just logging it
