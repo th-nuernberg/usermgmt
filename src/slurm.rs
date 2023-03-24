@@ -168,32 +168,24 @@ pub mod local {
 }
 
 pub mod remote {
-    use std::io::Read;
-    use std::net::TcpStream;
 
     use log::{debug, error, info};
-    use ssh2::Session;
 
     use crate::config::config::MgmtConfig;
-    use crate::ssh::SshCredential;
+    use crate::ssh::{self, SshCredential, SshSession};
     use crate::{Entity, Modifiable};
 
     /// TODO: Bubble up error instead of just logging it
     pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
-        let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
-        let mut sess = Session::new().unwrap();
-
-        sess.handshake(&tcp).unwrap();
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
+        let session = SshSession::from_head_node(config, credentials);
 
         let cmd = format!(
             "{} add user {} Account={} --immediate",
             config.sacctmgr_path, entity.username, entity.group
         );
-        let exit_code = run_remote_command(&sess, &cmd);
+        let exit_code = ssh::run_remote_command(&session, &cmd);
 
         match exit_code {
             0 => info!(
@@ -209,23 +201,18 @@ pub mod remote {
         debug!("Modifying user qos");
         // Note: The order of execution is important here!
         // Slurm expects the user to have QOS, before it can set the default QOS
-        modify_qos(&entity, config, &sess, false);
-        modify_qos(&entity, config, &sess, true);
+        modify_qos(&entity, config, &session, false);
+        modify_qos(&entity, config, &session, true);
     }
 
     /// TODO: Bubble up error instead of just logging it
     pub fn delete_slurm_user(user: &str, config: &MgmtConfig, credentials: &SshCredential) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
-        let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
-        let mut sess = Session::new().unwrap();
-
-        sess.handshake(&tcp).unwrap();
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
+        let sess = SshSession::from_head_node(config, credentials);
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
-        let exit_code = run_remote_command(&sess, &cmd);
+        let exit_code = ssh::run_remote_command(&sess, &cmd);
 
         match exit_code {
             0 => info!("Successfully deleted Slurm user {}.", user),
@@ -244,12 +231,7 @@ pub mod remote {
     ) {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
-        let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
-        let mut sess = Session::new().unwrap();
-
-        sess.handshake(&tcp).unwrap();
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
+        let sess = SshSession::from_head_node(config, credentials);
 
         debug!("Start modifying user default qos");
         match &modifiable.default_qos {
@@ -289,25 +271,14 @@ pub mod remote {
     pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) {
         let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
-        // Connect to the SSH server and authenticate
-        info!("Connecting to {}", config.head_node);
-        let tcp = TcpStream::connect(format!("{}:22", config.head_node)).unwrap();
-        let mut sess = Session::new().unwrap();
+        let sess = SshSession::from_head_node(config, credentials);
 
-        sess.handshake(&tcp).unwrap();
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
-
-        let mut channel = sess.channel_session().unwrap();
-        channel.exec(cmd).unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        println!("{}", s);
+        let (output, _) = sess.exec(&cmd);
+        println!("{}", output);
     }
 
     /// TODO: Bubble up error instead of just logging it
-    fn modify_qos(entity: &Entity, config: &MgmtConfig, sess: &Session, default_qos: bool) {
+    fn modify_qos(entity: &Entity, config: &MgmtConfig, sess: &SshSession, default_qos: bool) {
         let mut qos_str: String = "defaultQos=".to_owned();
         if default_qos {
             qos_str += &entity.default_qos;
@@ -321,7 +292,7 @@ pub mod remote {
             "{} modify user {} set {} --immediate",
             config.sacctmgr_path, entity.username, qos_str
         );
-        let exit_code = run_remote_command(sess, &cmd);
+        let exit_code = ssh::run_remote_command(sess, &cmd);
 
         match exit_code {
             0 => info!(
@@ -333,24 +304,5 @@ pub mod remote {
                 cmd
             ),
         };
-    }
-
-    /// Executes given command `cmd` on remote machine over ssh
-    ///
-    /// TODO: move checking if for exit code inside here and return result instead of error code
-    /// directly
-    fn run_remote_command(sess: &Session, cmd: &str) -> i32 {
-        debug!("Running command {}", cmd);
-
-        let mut channel = sess.channel_session().unwrap();
-        channel.exec(cmd).unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        let exit_status = channel.exit_status().unwrap();
-
-        debug!("command output: {}", s);
-        debug!("command exit status: {}", exit_status);
-        exit_status
     }
 }

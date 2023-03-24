@@ -1,10 +1,12 @@
 pub mod cli;
 pub mod config;
 pub mod dir;
+pub mod util;
+
 mod ldap;
 mod slurm;
 mod ssh;
-pub mod util;
+
 use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
@@ -111,7 +113,9 @@ impl Entity {
         }
 
         if default_qos.is_empty() || !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
-            warn!("Specified default QOS is invalid or empty. Using the value specified in config.");
+            warn!(
+                "Specified default QOS is invalid or empty. Using the value specified in config."
+            );
             match group {
                 Group::Staff => default_qos = staff_default_qos,
                 Group::Student => default_qos = student_default_qos,

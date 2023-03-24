@@ -1,12 +1,9 @@
 /// Module for directory management
 pub mod dir {
     use log::{debug, error, info, warn};
-    use ssh2::Session;
-    use std::io::prelude::*;
-    use std::net::TcpStream;
 
     use crate::config::config::MgmtConfig;
-    use crate::ssh::SshCredential;
+    use crate::ssh::{self, SshCredential, SshSession};
     use crate::{Entity, Group};
 
     pub fn add_user_directories(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
@@ -49,15 +46,8 @@ pub mod dir {
         let mut owner_exit_codes = Vec::new();
         let mut quota_exit_codes = Vec::new();
         for server in config.compute_nodes.iter() {
-            // Connect to the SSH server
-            info!("Connecting to compute node {}", server);
-            let tcp = TcpStream::connect(format!("{server}:22")).unwrap();
-            let mut sess = Session::new().unwrap();
-            sess.handshake(&tcp).unwrap();
-
-            sess.userauth_password(credentials.username(), credentials.password())
-                .unwrap();
-
+            info!("Connecting to a compute node");
+            let sess = SshSession::new(server, config.ssh_port, credentials);
             // Create directory
             let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
             let dir_exit_code = make_directory(&sess, &directory);
@@ -126,14 +116,8 @@ pub mod dir {
             warn!("Hard-/softlimit and/or filesystem for quota isn't properly configured. Refusing to set user quota based on these values. Please check your conf.toml");
         }
 
-        // Connect to the SSH server
-        info!("Connecting to NFS host {}", config.nfs_host);
-        let tcp = TcpStream::connect(format!("{}:22", config.nfs_host)).unwrap();
-        let mut sess = Session::new().unwrap();
-        sess.handshake(&tcp).unwrap();
-
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
+        info!("Connecting to NFS host");
+        let sess = SshSession::new(&config.nfs_host, config.ssh_port, credentials);
 
         // Create directory
         let mut group_dir = "staff";
@@ -194,14 +178,8 @@ pub mod dir {
             warn!("Hard-/softlimit and/or filesystem for quota isn't properly configured. Refusing to set user quota based on these values. Please check your conf.toml");
         }
 
-        // Connect to the SSH server
-        info!("Connecting to home host {}", config.home_host);
-        let tcp = TcpStream::connect(format!("{}:22", config.home_host)).unwrap();
-        let mut sess = Session::new().unwrap();
-        sess.handshake(&tcp).unwrap();
-
-        sess.userauth_password(credentials.username(), credentials.password())
-            .unwrap();
+        info!("Connecting to home host");
+        let sess = SshSession::new(&config.home_host, config.ssh_port, credentials);
 
         // Create directory
         let directory = format!("/home/{}", entity.username);
@@ -244,56 +222,32 @@ pub mod dir {
         }
     }
 
-    fn make_directory(sess: &Session, directory: &str) -> i32 {
+    fn make_directory(sess: &SshSession, directory: &str) -> i32 {
         debug!("Making directory {}", directory);
 
-        let mut channel = sess.channel_session().unwrap();
-        channel.exec(&format!("sudo mkdir -p {directory}")).unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        let exit_status = channel.exit_status().unwrap();
-
-        debug!("make_directory - command output: {}", s);
-        debug!("make_directory - command exit status: {}", exit_status);
+        let cmd = format!("sudo mkdir -p {directory}");
+        let exit_status = ssh::run_remote_command(sess, &cmd);
         exit_status
     }
 
-    fn make_home_directory(sess: &Session, username: &str) -> i32 {
+    fn make_home_directory(sess: &SshSession, username: &str) -> i32 {
         debug!("Making home directory using the mkhomedir_helper");
 
-        let mut channel = sess.channel_session().unwrap();
-        channel
-            .exec(&format!("sudo mkhomedir_helper {username}"))
-            .unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        let exit_status = channel.exit_status().unwrap();
-
-        debug!("make_home_directory - command output: {}", s);
-        debug!("make_home_directory - command exit status: {}", exit_status);
+        let cmd = format!("sudo mkhomedir_helper {username}");
+        let exit_status = ssh::run_remote_command(sess, &cmd);
         exit_status
     }
 
-    fn change_ownership(sess: &Session, directory: &str, username: &str, group: &str) -> i32 {
+    fn change_ownership(sess: &SshSession, directory: &str, username: &str, group: &str) -> i32 {
         debug!("Changing ownership for directory {}", directory);
 
-        let mut channel = sess.channel_session().unwrap();
         let cmd = format!("sudo chown {username}:{group} {directory}");
-        channel.exec(&cmd).unwrap();
-
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        let exit_status = channel.exit_status().unwrap();
-
-        debug!("change_ownership - command output: {}", s);
-        debug!("change_ownership - command exit status: {}", exit_status);
+        let exit_status = ssh::run_remote_command(sess, &cmd);
         exit_status
     }
 
     fn set_quota(
-        sess: &Session,
+        sess: &SshSession,
         username: &str,
         softlimit: &str,
         hardlimit: &str,
@@ -304,16 +258,10 @@ pub mod dir {
             username, filesystem
         );
 
-        let mut channel = sess.channel_session().unwrap();
         let cmd = format!("sudo setquota -u {username} {softlimit} {hardlimit} 0 0 {filesystem}");
-        channel.exec(&cmd).unwrap();
 
-        let mut s = String::new();
-        channel.read_to_string(&mut s).unwrap();
-        let exit_status = channel.exit_status().unwrap();
+        let exit_status = ssh::run_remote_command(sess, &cmd);
 
-        debug!("change_ownership - command output: {}", s);
-        debug!("change_ownership - command exit status: {}", exit_status);
         exit_status
     }
 }

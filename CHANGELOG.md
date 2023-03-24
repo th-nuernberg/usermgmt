@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+### Added
+
+- Port for ssh connection can now specified via configuration file
+
 ## [0.1.0] - 2022-06-20
+
 ### Added
 - Usermanagement via subprocess calls to [LDAPUtils](https://wiki.debian.org/LDAP/LDAPUtils) and `sacctmgr`
 
