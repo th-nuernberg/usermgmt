@@ -1,0 +1,121 @@
+# The network settings are derived from this stack overflow post 
+# https://stackoverflow.com/questions/37242217/access-docker-container-from-host-using-containers-name
+
+# the setting of the networking is done to provided static ip addresses which the app needs in the 
+# conf.toml file at the project root
+
+# Static ip addresses are chosen over hostnames for the app. 
+# Addressing docker container via hostnames only works within docker containers and not from the host
+# machine by default. 
+# To make hostnames work from host, it would require either changing the host file on the host machine
+# or starting a seperate dns service 
+ 
+version: "2.2"
+
+services:
+  mysql:
+    image: mariadb:10.10
+    hostname: mysql
+    container_name: mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: slurm_acct_db
+      MYSQL_USER: slurm
+      MYSQL_PASSWORD: password
+    volumes:
+      - var_lib_mysql:/var/lib/mysql
+    networks:
+      slurm-cluster-network:
+        ipv4_address: 172.25.0.11
+
+  slurmdbd:
+    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    build:
+      context: .
+      args:
+        SLURM_TAG: ${SLURM_TAG:-slurm-21-08-6-1}
+    command: ["slurmdbd"]
+    container_name: slurmdbd
+    hostname: slurmdbd
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6819"
+    depends_on:
+      - mysql
+    networks:
+      slurm-cluster-network:
+        ipv4_address: 172.25.0.12
+
+
+  slurmctld:
+    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    command: ["slurmctld"]
+    container_name: slurmctld
+    hostname: slurmctld
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6817"
+    depends_on:
+      - "slurmdbd"
+    networks:
+      slurm-cluster-network:
+        ipv4_address: 172.25.0.13
+
+  c1:
+    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    command: ["slurmd"]
+    hostname: c1
+    container_name: c1
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6818"
+    depends_on:
+      - "slurmctld"
+    networks:
+      slurm-cluster-network:
+        ipv4_address: 172.25.0.14
+      
+  c2:
+    image: slurm-docker-cluster:${IMAGE_TAG:-21.08}
+    command: ["slurmd"]
+    hostname: c2
+    container_name: c2
+    volumes:
+      - etc_munge:/etc/munge
+      - etc_slurm:/etc/slurm
+      - slurm_jobdir:/data
+      - var_log_slurm:/var/log/slurm
+    expose:
+      - "6818"
+    depends_on:
+      - "slurmctld"
+    networks:
+      slurm-cluster-network:
+        ipv4_address: 172.25.0.15
+
+volumes:
+  etc_munge:
+  etc_slurm:
+  slurm_jobdir:
+  var_lib_mysql:
+  var_log_slurm:
+
+networks:
+  slurm-cluster-network:
+    driver: bridge
+    ipam: 
+      driver: default
+      config: 
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1
