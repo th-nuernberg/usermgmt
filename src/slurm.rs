@@ -189,7 +189,6 @@ pub mod remote {
         sess.userauth_password(credentials.username(), credentials.password())
             .unwrap();
 
-        dbg!();
         let cmd = format!(
             "{} add user {} Account={} --immediate",
             config.sacctmgr_path, entity.username, entity.group
