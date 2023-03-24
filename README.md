@@ -351,3 +351,10 @@ cp LICENSE target/aarch64-apple-darwin/release
 cd target/aarch64-apple-darwin/release
 tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ```
+
+## Local development with via docker
+
+Development of this app can be done locally via a docker container set up. As moment of writing 
+the functionallity for LDAP and Slurm can be used via docker. Directory management does not work in
+docker. Read this [Readme](./docker/README.md) for how to set up local development via docker.
+

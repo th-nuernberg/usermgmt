@@ -211,7 +211,6 @@ pub mod remote {
         // Slurm expects the user to have QOS, before it can set the default QOS
         modify_qos(&entity, config, &sess, false);
         modify_qos(&entity, config, &sess, true);
-
     }
 
     /// TODO: Bubble up error instead of just logging it
