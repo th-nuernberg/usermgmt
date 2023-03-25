@@ -10,7 +10,17 @@ use cli::{Commands, Modifiable, UserToAdd};
 
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
+use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
+
+mod app_error;
+
+mod prelude {
+    pub use anyhow::{anyhow, bail};
+    pub type AppError = crate::app_error::AppError;
+    pub type AppResult<T = ()> = Result<T, AppError>;
+    pub type AnyError = anyhow::Error;
+}
 
 use crate::{
     dir::dir::add_user_directories,
@@ -274,7 +284,9 @@ fn add_user(
             slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::add_slurm_user(&entity, &sacctmgr_path);
+
+            let after = slurm::local::add_slurm_user(&entity, &sacctmgr_path);
+            exit_if_app_error(&after);
         }
     }
 
@@ -385,6 +397,17 @@ fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
 
     if *ldap {
         ldap::ldap::list_ldap_users(config);
+    }
+}
+
+/// If given parmater `maybe_error` is an error
+/// then the application prints out error information to the user and
+/// exits with error code of provided error.
+fn exit_if_app_error<T>(maybe_error: &AppResult<T>) {
+    if let Err(error) = maybe_error {
+        error!("{:?}", error);
+
+        std::process::exit(error.exit_code());
     }
 }
 

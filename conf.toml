@@ -65,8 +65,8 @@ ldap_bind_prefix = 'uid'
 ldap_server = 'ldap://localhost:389'
 ldap_readonly_user = 'admin'
 ldap_readonly_pw = 'admin'
-# We do not support directory management in the docker development set up
 include_dir_mgmt = false
+# We do not support directory management in the docker development set up
 use_homedir_helper = false 
 run_slurm_remote = true
 ssh_port = 22
