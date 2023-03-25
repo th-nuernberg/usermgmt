@@ -1,3 +1,6 @@
+# this configuration is set up for development 
+# via docker container serving as end points for ldap and slurm nodes
+
 student_default_qos = 'basic'
 staff_default_qos = 'advanced'
 student_qos = [
@@ -31,9 +34,12 @@ compute_nodes = [
     'm0.host.de',
     'ml1.host.de',
 ]
-head_node = 'head.node.de'
-default_ssh_user = 'serveradmin'
-home_host = 'home.server.de'
+# Static ip address of docker container as head node for development
+head_node = '172.25.0.13'
+# Name of user with slurm admin rights in the slurmdb of the development docker set up.
+default_ssh_user = 'dev_user'
+# Static ip address of docker container as head node for development
+home_host = '172.25.0.13'
 nfs_host = 'nfs.server.de'
 nfs_root_dir = '/mnt/md0/scratch'
 compute_node_root_dir = '/mnt/md0/user'
@@ -50,14 +56,17 @@ login_shell = '/bin/bash'
 student_gid = 1002
 staff_gid = 1001
 faculty_gid = 1000
-sacctmgr_path = '/usr/local/bin/sacctmgr'
-ldap_domain_components = 'cn=department,dc=company,dc=com'
+# In development the access to slurm is remote via a docker container
+sacctmgr_path = 'sacctmgr'
+ldap_domain_components = 'dc=example,dc=org'
 ldap_org_unit = 'people'
 ldap_bind_org_unit = 'people'
 ldap_bind_prefix = 'uid'
 ldap_server = 'ldap://localhost:389'
-ldap_readonly_user = 'readonlyuser'
-ldap_readonly_pw = 'secret'
-include_dir_mgmt = true
-use_homedir_helper = true
+ldap_readonly_user = 'admin'
+ldap_readonly_pw = 'admin'
+# We do not support directory management in the docker development set up
+include_dir_mgmt = false
+use_homedir_helper = false 
 run_slurm_remote = true
+ssh_port = 22
