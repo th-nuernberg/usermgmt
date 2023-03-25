@@ -6,8 +6,8 @@ pub mod util;
 mod ldap;
 mod slurm;
 mod ssh;
+use cli::{Commands, Modifiable, UserToAdd};
 
-use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
 use std::{collections::HashSet, fmt, fs, str::FromStr};
@@ -69,18 +69,10 @@ pub struct Entity {
     pub qos: Vec<String>,
 }
 
+pub struct User {}
+
 impl Entity {
-    fn new(
-        user: &String,
-        group: &String,
-        firstname: &String,
-        lastname: &String,
-        mail: &String,
-        default_qos: &String,
-        publickey: &String,
-        qos: &Vec<String>,
-        config: &MgmtConfig,
-    ) -> Self {
+    fn new(to_add: &UserToAdd, config: &MgmtConfig) -> Self {
         let staff_qos = &config.staff_qos;
         let student_qos = &config.student_qos;
         let valid_qos = &config.valid_qos;
@@ -88,9 +80,9 @@ impl Entity {
         let staff_default_qos = &config.staff_default_qos;
         let student_default_qos = &config.student_default_qos;
 
-        let mut default_qos = default_qos;
-        let mut group_str = group.to_lowercase();
-        let mut qos: &Vec<String> = qos;
+        let mut default_qos = &to_add.default_qos;
+        let mut group_str = to_add.group.to_lowercase();
+        let mut qos: &Vec<String> = &to_add.qos;
 
         if !is_valid_group(&group_str, &config.valid_slurm_groups) {
             warn!(
@@ -124,9 +116,9 @@ impl Entity {
         }
 
         let mut pubkey_from_file = "".to_string();
-        if !publickey.is_empty() {
-            debug!("Received PublicKey file path {}", publickey);
-            let pubkey_result = fs::read_to_string(publickey);
+        if !to_add.publickey.is_empty() {
+            debug!("Received PublicKey file path {}", to_add.publickey);
+            let pubkey_result = fs::read_to_string(&to_add.publickey);
             match pubkey_result {
                 Ok(result) => pubkey_from_file = result,
                 Err(e) => error!("Unable to read PublicKey from file! {}", e),
@@ -134,15 +126,15 @@ impl Entity {
         }
 
         Entity {
-            username: user.to_lowercase(),
-            firstname: firstname.to_string(),
-            lastname: lastname.to_string(),
+            username: to_add.user.to_lowercase(),
+            firstname: to_add.firstname.to_string(),
+            lastname: to_add.lastname.to_string(),
             group,
             default_qos: default_qos.to_string(),
             publickey: pubkey_from_file.trim().to_string(),
             qos: qos.to_vec(),
             gid,
-            mail: mail.to_string(),
+            mail: to_add.mail.to_string(),
         }
     }
 
@@ -172,98 +164,33 @@ impl Default for Entity {
     }
 }
 
-/// Defines options that can be modified
-/// TODO: consider encapsulation with getters and setters.
-pub struct Modifiable {
-    pub username: String,
-    pub firstname: Option<String>,
-    pub lastname: Option<String>,
-    pub mail: Option<String>,
-    pub default_qos: Option<String>,
-    pub publickey: Option<String>,
-    pub qos: Vec<String>,
-}
-
-impl Modifiable {
-    fn new(
-        username: &String,
-        firstname: &Option<String>,
-        lastname: &Option<String>,
-        mail: &Option<String>,
-        default_qos: &Option<String>,
-        publickey: &Option<String>,
-        qos: &[String],
-    ) -> Self {
-        Modifiable {
-            username: username.clone(),
-            firstname: firstname.clone(),
-            lastname: lastname.clone(),
-            mail: mail.clone(),
-            default_qos: default_qos.clone(),
-            publickey: publickey.clone(),
-            qos: qos.to_vec(),
-        }
-    }
-}
-
 /// Main function that handles user management
-pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
+pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
     let is_slurm_only = args.slurm_only;
     let is_ldap_only = args.ldap_only;
     let directories_only = args.dirs_only;
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
-        Commands::Add {
-            user,
-            group,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
-        } => add_user(
-            user,
-            group,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
+        Commands::Add { to_add } => add_user(
+            &to_add,
             &is_slurm_only,
             &is_ldap_only,
             &directories_only,
             &config,
         ),
-        Commands::Modify {
-            user,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
-        } => modify_user(
-            user,
-            firstname,
-            lastname,
-            mail,
-            default_qos,
-            publickey,
-            qos,
+        Commands::Modify { data } => modify_user(data.clone(), config, is_slurm_only, is_ldap_only),
+        Commands::Delete { user } => delete_user(
+            &user,
             &is_slurm_only,
             &is_ldap_only,
+            &sacctmgr_path,
             &config,
         ),
-        Commands::Delete { user } => {
-            delete_user(user, &is_slurm_only, &is_ldap_only, &sacctmgr_path, &config)
-        }
         Commands::List {
             slurm_users,
             ldap_users,
-        } => list_users(&config, slurm_users, ldap_users),
+        } => list_users(&config, &slurm_users, &ldap_users),
     }
 }
 
@@ -327,14 +254,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
 
 /// TODO: reduce argument count
 fn add_user(
-    user: &String,
-    group: &String,
-    firstname: &String,
-    lastname: &String,
-    mail: &String,
-    default_qos: &String,
-    publickey: &String,
-    qos: &Vec<String>,
+    to_add: &UserToAdd,
     is_slurm_only: &bool,
     is_ldap_only: &bool,
     directories_only: &bool,
@@ -344,17 +264,7 @@ fn add_user(
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let entity = Entity::new(
-        user,
-        group,
-        firstname,
-        lastname,
-        mail,
-        default_qos,
-        publickey,
-        qos,
-        config,
-    );
+    let entity = Entity::new(to_add, config);
 
     let ssh_credentials = SshCredential::new(config);
     let wants_slurm = !is_ldap_only && !directories_only;
@@ -412,30 +322,19 @@ fn delete_user(
 }
 
 /// TODO: reduce argument count
-fn modify_user(
-    user: &String,
-    firstname: &Option<String>,
-    lastname: &Option<String>,
-    mail: &Option<String>,
-    mut default_qos: &Option<String>,
-    publickey: &Option<String>,
-    qos: &Vec<String>,
-    is_slurm_only: &bool,
-    is_ldap_only: &bool,
-    config: &MgmtConfig,
-) {
-    debug!("Start modify_user for {}", user);
+fn modify_user(mut data: Modifiable, config: MgmtConfig, is_ldap_only: bool, is_slurm_only: bool) {
+    debug!("Start modify_user for {}", data.username);
 
-    if let Some(s) = default_qos {
+    if let Some(ref s) = data.default_qos {
         if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
             warn!("Specified default QOS {s} is invalid and will be removed!");
-            default_qos = &None;
+            data.default_qos = None;
         }
     }
 
     let mut pubkey_from_file = None;
 
-    if let Some(pubk) = publickey {
+    if let Some(ref pubk) = data.publickey {
         debug!("Matched pubkey file {}", pubk);
         if !pubk.is_empty() {
             debug!("Reading publickey from {}", pubk);
@@ -447,33 +346,29 @@ fn modify_user(
         }
     }
 
-    let filtered_qos = filter_invalid_qos(qos, &config.valid_qos);
-    debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
-    let modifiable = Modifiable::new(
-        user,
-        firstname,
-        lastname,
-        mail,
-        default_qos,
-        &pubkey_from_file,
-        &filtered_qos,
-    );
+    {
+        let filtered_qos = filter_invalid_qos(&data.qos, &config.valid_qos);
+        data.qos = filtered_qos;
+
+        debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
+        data.publickey = pubkey_from_file;
+    }
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let credential = SshCredential::new(config);
+    let credential = SshCredential::new(&config);
     if !is_ldap_only {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&modifiable, config, &credential);
+            slurm::remote::modify_slurm_user(&data, &config, &credential);
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::modify_slurm_user(&modifiable, &sacctmgr_path);
+            slurm::local::modify_slurm_user(&data, &sacctmgr_path);
         }
     }
 
     if !is_slurm_only {
-        modify_ldap_user(&modifiable, config);
+        modify_ldap_user(&data, &config);
     }
     debug!("Finished modify_user");
 }
