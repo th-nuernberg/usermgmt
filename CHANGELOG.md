@@ -6,13 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
 
-- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used in LDAP.
-- Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
-- User is only asked once for ssh credentials and not several times for Slurm and directory management respectively
+### Added
+
+- Port for ssh connection can now specified via configuration file
 
 ## [0.1.0] - 2022-06-20
+
 ### Added
 - Usermanagement via subprocess calls to [LDAPUtils](https://wiki.debian.org/LDAP/LDAPUtils) and `sacctmgr`
 
@@ -99,8 +99,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Try M1 release build
 
 ## [0.4.8] - 2023-03-16
-### Added
+
+### Fixed
+
 - Fix for SSH credential reuse by @BoolPurist ([#8](https://github.com/th-nuernberg/usermgmt/issues/8))
+- Warning for missing ssh public key is only shown if LDAP is involved, since it is only used in LDAP.
+- Command "add" respects options "--ldap-only", "--slurm-only" and "--dirs-only" now.
 
 ### Changed
 - Order of Slurm QOS modification during user creation

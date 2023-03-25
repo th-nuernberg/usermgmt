@@ -249,6 +249,8 @@ include_dir_mgmt = true
 use_homedir_helper = true
 # Execute Slurm commands from a remote client via SSH or directly on the server
 run_slurm_remote = true
+# Port to be used when connecting via ssh to any node
+ssh_port = 22
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
@@ -351,3 +353,10 @@ cp LICENSE target/aarch64-apple-darwin/release
 cd target/aarch64-apple-darwin/release
 tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ```
+
+## Local development with via docker
+
+Development of this app can be done locally via a docker container set up. As moment of writing 
+the functionallity for LDAP and Slurm can be used via docker. Directory management does not work in
+docker. Read this [Readme](./docker/README.md) for how to set up local development via docker.
+

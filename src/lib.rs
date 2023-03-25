@@ -1,15 +1,17 @@
 pub mod cli;
 pub mod config;
 pub mod dir;
+pub mod util;
+
 mod ldap;
 mod slurm;
 mod ssh;
-pub mod util;
+
 use cli::cli::Commands;
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
 use prelude::*;
-use std::{fmt, fs, str::FromStr};
+use std::{collections::HashSet, fmt, fs, str::FromStr};
 
 mod app_error;
 
@@ -275,9 +277,22 @@ pub fn run_mgmt(args: cli::cli::Args, config: MgmtConfig) {
     }
 }
 
-/// Check if a Vector contains invalid QOS values
+/// Check if sequence `qos` contains only valid QOS values.
+/// A value in `qos` is valid if `valid_qos` contains it.
 /// Valid QOS are defined in conf.toml
-fn is_valid_qos(qos: &Vec<String>, valid_qos: &[String]) -> bool {
+///
+/// # Returns
+///
+/// - true if all values in `qos` are valid
+/// - false if at least one element in `qos` is invalid
+/// - true if `qos` and `valid_qos` are empty
+/// - true if `qos` is empty
+/// - false if `valid_qos` is empty
+///
+fn is_valid_qos<S>(qos: &[S], valid_qos: &[S]) -> bool
+where
+    S: AsRef<str> + PartialEq,
+{
     for q in qos {
         if !valid_qos.contains(q) {
             return false;
@@ -285,17 +300,35 @@ fn is_valid_qos(qos: &Vec<String>, valid_qos: &[String]) -> bool {
     }
     true
 }
+/// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
+/// Filters out duplicates too.
+/// Returns an empty vector if `qos` or `valid_qos` is empty.
+fn filter_invalid_qos<S>(qos: &[S], valid_qos: &[S]) -> Vec<S>
+where
+    S: AsRef<str> + PartialEq + Clone + std::fmt::Display,
+{
+    let mut filtered_qos: Vec<S> = Vec::with_capacity(qos.len());
+    // Just keep references to prevent another heap allocation.
+    let mut found: HashSet<&str> = HashSet::with_capacity(qos.len());
 
-fn filter_invalid_qos(qos: &Vec<String>, valid_qos: &[String]) -> Vec<String> {
-    let mut filtered_qos: Vec<String> = Vec::new();
-    for q in qos {
-        if is_valid_qos(&vec![q.clone()], valid_qos) {
-            filtered_qos.push(q.clone());
+    for to_inspect in qos {
+        let as_str: &str = to_inspect.as_ref();
+        if valid_qos.contains(to_inspect) {
+            if found.insert(as_str) {
+                filtered_qos.push(to_inspect.clone());
+            } else {
+                warn!(
+                    "QOS {} has a duplicate and will not be added another time !",
+                    to_inspect
+                )
+            }
         } else {
-            warn!("QOS {q} is invalid and will be removed!")
+            let s: &str = to_inspect.as_ref();
+            warn!("QOS {} is invalid and will be removed!", s)
         }
     }
-    filtered_qos
+
+    filtered_qos.into_iter().collect()
 }
 
 fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
@@ -480,5 +513,65 @@ fn exit_if_app_error<T>(maybe_error: &AppResult<T>) {
         error!("{:?}", error);
 
         std::process::exit(error.exit_code());
+    }
+}
+
+#[cfg(test)]
+mod testing {
+    use super::*;
+    #[test]
+    fn should_determine_if_valid_qos() {
+        asser_case(&["student"], &["student", "staff", "faculty"], true);
+        asser_case(&["worker"], &["student", "staff", "faculty"], false);
+        asser_case(
+            &["student", "worker"],
+            &["student", "staff", "faculty"],
+            false,
+        );
+        asser_case(&["student"], &[], false);
+        asser_case(&[], &["student"], true);
+        asser_case(&[], &[], true);
+
+        fn asser_case(qos: &[&str], valid_qos: &[&str], expected: bool) {
+            let actual = is_valid_qos(qos, valid_qos);
+            assert_eq!(
+                expected, actual,
+                "expected: {} with qos: {:?} and valid_qos: {:?}",
+                expected, qos, valid_qos
+            );
+        }
+    }
+
+    #[test]
+    fn should_filter_out_invalid_qos() {
+        assert_case(&["student", "worker"], &["student"], vec!["student"]);
+        // With duplicates
+        assert_case(
+            &["student", "student", "worker"],
+            &["student"],
+            vec!["student"],
+        );
+        // left == right
+        assert_case(
+            &["student", "worker"],
+            &["student", "worker"],
+            vec!["student", "worker"],
+        );
+        // contains only valid elements
+        assert_case(
+            &["student", "worker"],
+            &["student", "worker", "staff"],
+            vec!["student", "worker"],
+        );
+        // No valid element
+        assert_case(&["npc", "worker"], &["student"], vec![]);
+        // Edge cases for empty lists
+        assert_case(&["student"], &[], vec![]);
+        assert_case(&[], &["student"], vec![]);
+
+        fn assert_case(qos: &[&str], filter: &[&str], expected: Vec<&str>) {
+            let actual = filter_invalid_qos(qos, filter);
+            assert_eq!(expected, actual, "qos: {:?} and filter: {:?}", qos, filter);
+        }
     }
 }

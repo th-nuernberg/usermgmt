@@ -43,6 +43,7 @@ pub mod config {
         pub include_dir_mgmt: bool,
         pub use_homedir_helper: bool,
         pub run_slurm_remote: bool,
+        pub ssh_port: u32,
     }
 
     impl Default for MgmtConfig {
@@ -99,6 +100,7 @@ pub mod config {
                 default_ssh_user: "root".to_string(),
                 head_node: "".to_string(),
                 run_slurm_remote: false,
+                ssh_port: 22,
             }
         }
     }
