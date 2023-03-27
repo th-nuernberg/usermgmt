@@ -21,6 +21,7 @@ ssh2 = "0.9.4"
 once_cell = "1.17.1"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 thiserror = "1.0.40"
+getset = "0.1.2"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"

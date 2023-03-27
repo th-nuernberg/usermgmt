@@ -64,7 +64,6 @@ pub mod ldap {
             let ldap_dc: String;
             match dc {
                 Some(x) => {
-
                     ldap_bind = format!("{bind_prefix_str}={ldap_user},{bind_org_unit_str}{x}");
                     // ldap_bind = format!("{bind_prefix_str}={ldap_user},{x}");
                     ldap_base = format!("ou={org_unit_str},{x}");

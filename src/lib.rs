@@ -6,7 +6,7 @@ pub mod util;
 mod ldap;
 mod slurm;
 mod ssh;
-use cli::{Commands, Modifiable, UserToAdd};
+use cli::{Commands, Modifiable, OnWhichSystem, UserToAdd};
 
 use config::config::MgmtConfig;
 use log::{debug, error, info, warn};
@@ -176,31 +176,32 @@ impl Default for Entity {
 
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
-    let is_slurm_only = args.slurm_only;
-    let is_ldap_only = args.ldap_only;
-    let directories_only = args.dirs_only;
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
-        Commands::Add { to_add } => add_user(
+        Commands::Add {
+            to_add,
+            on_which_sys,
+        } => add_user(
             &to_add,
-            &is_slurm_only,
-            &is_ldap_only,
-            &directories_only,
+            &OnWhichSystem::from_config_for_all(&config, on_which_sys),
             &config,
         ),
-        Commands::Modify { data } => modify_user(data.clone(), config, is_slurm_only, is_ldap_only),
-        Commands::Delete { user } => delete_user(
+        Commands::Modify { data, on_which_sys } => modify_user(
+            data.clone(),
+            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+            &config,
+        ),
+        Commands::Delete { user, on_which_sys } => delete_user(
             &user,
-            &is_slurm_only,
-            &is_ldap_only,
+            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             &sacctmgr_path,
             &config,
         ),
-        Commands::List {
-            slurm_users,
-            ldap_users,
-        } => list_users(&config, &slurm_users, &ldap_users),
+        Commands::List { on_which_sys } => list_users(
+            &config,
+            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+        ),
     }
 }
 
@@ -263,13 +264,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
 }
 
 /// TODO: reduce argument count
-fn add_user(
-    to_add: &UserToAdd,
-    is_slurm_only: &bool,
-    is_ldap_only: &bool,
-    directories_only: &bool,
-    config: &MgmtConfig,
-) {
+fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
     debug!("Start add_user");
 
     let sacctmgr_path = config.sacctmgr_path.clone();
@@ -277,29 +272,24 @@ fn add_user(
     let entity = Entity::new(to_add, config);
 
     let ssh_credentials = SshCredential::new(config);
-    let wants_slurm = !is_ldap_only && !directories_only;
-    if wants_slurm {
+
+    if on_which_sys.ldap() {
+        add_ldap_user(&entity, config);
+    }
+
+    if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
-
             let after = slurm::local::add_slurm_user(&entity, &sacctmgr_path);
             exit_if_app_error(&after);
         }
     }
 
-    let wants_ldap = !is_slurm_only && !directories_only;
-    if wants_ldap {
-        add_ldap_user(&entity, config);
-    }
-
-    if config.include_dir_mgmt {
-        let wants_user_directories = !is_slurm_only && !is_ldap_only;
-        if wants_user_directories {
-            add_user_directories(&entity, config, &ssh_credentials);
-        }
+    if on_which_sys.dirs() {
+        add_user_directories(&entity, config, &ssh_credentials);
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
     }
@@ -309,15 +299,19 @@ fn add_user(
 
 fn delete_user(
     user: &String,
-    is_slurm_only: &bool,
-    is_ldap_only: &bool,
+    on_which_sys: &OnWhichSystem,
     sacctmgr_path: &String,
     config: &MgmtConfig,
 ) {
     debug!("Start delete_user");
 
     let credentials = SshCredential::new(config);
-    if !is_ldap_only {
+
+    if on_which_sys.ldap() {
+        delete_ldap_user(user, config);
+    }
+
+    if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::delete_slurm_user(user, config, &credentials);
@@ -327,14 +321,11 @@ fn delete_user(
         }
     }
 
-    if !is_slurm_only {
-        delete_ldap_user(user, config);
-    }
     debug!("Finished delete_user");
 }
 
 /// TODO: reduce argument count
-fn modify_user(mut data: Modifiable, config: MgmtConfig, is_ldap_only: bool, is_slurm_only: bool) {
+fn modify_user(mut data: Modifiable, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
@@ -369,7 +360,10 @@ fn modify_user(mut data: Modifiable, config: MgmtConfig, is_ldap_only: bool, is_
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     let credential = SshCredential::new(&config);
-    if !is_ldap_only {
+    if on_which_sys.ldap() {
+        modify_ldap_user(&data, &config);
+    }
+    if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
             slurm::remote::modify_slurm_user(&data, &config, &credential);
@@ -379,24 +373,22 @@ fn modify_user(mut data: Modifiable, config: MgmtConfig, is_ldap_only: bool, is_
         }
     }
 
-    if !is_slurm_only {
-        modify_ldap_user(&data, &config);
-    }
     debug!("Finished modify_user");
 }
 
-fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
+fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem) {
     let credentials = SshCredential::new(config);
-    if *slurm {
+
+    if on_which_sys.ldap() {
+        ldap::ldap::list_ldap_users(config);
+    }
+
+    if on_which_sys.slurm() {
         if config.run_slurm_remote {
             slurm::remote::list_users(config, &credentials);
         } else {
             slurm::local::list_users(&config.sacctmgr_path);
         }
-    }
-
-    if *ldap {
-        ldap::ldap::list_ldap_users(config);
     }
 }
 
@@ -416,18 +408,18 @@ mod testing {
     use super::*;
     #[test]
     fn should_determine_if_valid_qos() {
-        asser_case(&["student"], &["student", "staff", "faculty"], true);
-        asser_case(&["worker"], &["student", "staff", "faculty"], false);
-        asser_case(
+        assert_case(&["student"], &["student", "staff", "faculty"], true);
+        assert_case(&["worker"], &["student", "staff", "faculty"], false);
+        assert_case(
             &["student", "worker"],
             &["student", "staff", "faculty"],
             false,
         );
-        asser_case(&["student"], &[], false);
-        asser_case(&[], &["student"], true);
-        asser_case(&[], &[], true);
+        assert_case(&["student"], &[], false);
+        assert_case(&[], &["student"], true);
+        assert_case(&[], &[], true);
 
-        fn asser_case(qos: &[&str], valid_qos: &[&str], expected: bool) {
+        fn assert_case(qos: &[&str], valid_qos: &[&str], expected: bool) {
             let actual = is_valid_qos(qos, valid_qos);
             assert_eq!(
                 expected, actual,

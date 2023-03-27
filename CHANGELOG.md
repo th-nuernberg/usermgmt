@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CLI argument for slurm, ldap and directory management can be toggled via cli and conf.toml individually
+  CLI Option for a system is only available if a sub command supports it.
+  slurm-only, ldap-only and dirs-only were replaced by new options
 
 ### Added
 
