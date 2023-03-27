@@ -24,13 +24,12 @@ mod prelude {
 
 use crate::{
     dir::dir::add_user_directories,
-    ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
+    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
     ssh::SshCredential,
-    // slurm::local::{add_slurm_user, delete_slurm_user, modify_slurm_user},
 };
 extern crate confy;
 
-// TODO: git rif of unwraps. Replace them with expects or better with result if possible.
+// TODO: git rid of unwraps. Replace them with expects or better with result if possible.
 // TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
 // A code block as example in the file slurm under function add_slurm_user is repeated quite often
 
@@ -396,7 +395,7 @@ fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
     }
 
     if *ldap {
-        ldap::ldap::list_ldap_users(config);
+        ldap::list_ldap_users(config);
     }
 }
 
