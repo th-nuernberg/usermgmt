@@ -9,7 +9,8 @@ use ldap3::controls::{MakeCritical, RelaxRules};
 use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry, SearchResult};
 use log::{debug, error, info, warn};
 use maplit::hashset;
-use std::collections::HashSet;
+use std::borrow::Borrow;
+use std::collections::{HashMap, HashSet};
 
 use crate::util::io_util::{get_new_uid, hashset_from_vec_str};
 use crate::{Entity, MgmtConfig, Modifiable};
@@ -453,31 +454,82 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
     }
 }
 
-fn ldap_search_to_pretty_table(search_entries: &[&str], search_result: &SearchResult) -> String {
-    use prettytable::{Cell, Row, Table};
-
-    let mut table = Table::new();
-
-    let title_cells = search_entries
+/// Returns a pretty ASCII table from the result of an LDAP search query.
+/// First row is the title row which shows all used field name.
+/// Subsequent rows contain values to each field name for an LDAP entity.
+fn ldap_search_to_pretty_table(
+    search_by_in_title: &[&str],
+    search_result: &SearchResult,
+) -> String {
+    let to_table: Vec<HashMap<String, Vec<String>>> = search_result
+        .0
         .iter()
-        .map(|to_cell| Cell::new(to_cell))
+        .map(|row| {
+            let search_entry = SearchEntry::construct(row.to_owned());
+            search_entry.attrs
+        })
         .collect();
 
-    table.set_titles(Row::new(title_cells));
+    contruct_table_from_vec_hash_map(search_by_in_title, &to_table)
+}
 
-    for row_to_convert in search_result.0.iter() {
-        let search_entry = SearchEntry::construct(row_to_convert.to_owned());
-        let mut cells = Vec::with_capacity(search_entries.len());
-        cells.fill(Cell::new(""));
-        for (cell_name, cell_values) in search_entry.attrs {
-            if let Some(index) = search_entries.iter().position(|&value| value == &cell_name) {
+/// Returns a nice formatted table with title as 1. row form `search_by_in_title` and
+/// subsequent rows with the values of the vec to a key
+fn contruct_table_from_vec_hash_map<S>(
+    search_by_in_title: &[&str],
+    attrs: &[HashMap<S, Vec<S>>],
+) -> String
+where
+    S: Borrow<str> + std::fmt::Display,
+{
+    use prettytable::{Cell, Row, Table};
+
+    let mut table = table_with_title_bar(search_by_in_title);
+
+    // Performance: It will look up for every iteration below.
+    // For this reason a hash map is used to make the lookup fast.
+    let search_by_in_title: HashMap<&str, usize> = search_by_in_title
+        .iter()
+        .enumerate()
+        .map(|(index, &key)| (key, index))
+        .collect();
+
+    for row_to_convert in attrs.iter() {
+        // Construct with initial empty cells
+        let mut cells = vec![Cell::new(""); search_by_in_title.len()];
+
+        for (cell_name, cell_values) in row_to_convert.iter() {
+            // By coupling the field name to value as index for a row, the returned values
+            // do not get mixed up in the wrong field names
+            if let Some(&index) = search_by_in_title.get(cell_name.borrow()) {
                 let cell_v = cell_values.join(" | ");
+                cell_values.join(" | ");
                 *cells.get_mut(index).unwrap() = Cell::new(&cell_v);
+            } else {
+                warn!(
+                    "Ldap search returned values for the not specified name {}.
+                    These values are not included in the table.",
+                    cell_name
+                );
             }
         }
 
         table.add_row(Row::new(cells));
     }
 
-    table.to_string()
+    return table.to_string();
+
+    fn table_with_title_bar(fiedl_names: &[&str]) -> Table {
+        let mut table = Table::new();
+
+        // Title bar
+        let title_cells = fiedl_names
+            .iter()
+            .map(|to_cell| Cell::new(to_cell))
+            .collect();
+
+        table.set_titles(Row::new(title_cells));
+
+        table
+    }
 }

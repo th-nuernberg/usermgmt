@@ -1,5 +1,5 @@
-
 use super::*;
+use maplit::hashmap;
 
 struct ExpectedLdapPaths {
     pub ldap_dc: String,
@@ -90,4 +90,22 @@ fn should_give_correct_ldap_paths() {
             "Correct user binding, prefix_user + user + bind_org + dc"
         );
     }
+}
+
+#[test]
+fn should_produce_table_from_ldap_search() {
+    let given_entries = vec![
+        hashmap! {
+            "qos" => vec!["basic", "default"],
+            "name" => vec!["Mr. X"],
+            "age" => vec!["2"]
+        },
+        hashmap! {
+            "name" => vec!["example"]
+        },
+    ];
+
+    let given_search_entries = vec!["qos", "name"];
+    let actual = contruct_table_from_vec_hash_map(&given_search_entries, given_entries.as_slice());
+    insta::assert_display_snapshot!(actual);
 }
