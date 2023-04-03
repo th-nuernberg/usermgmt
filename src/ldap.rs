@@ -1,8 +1,10 @@
+use ldap3::{SearchEntry, SearchResult};
+
 /// LDAP operations using the ldap3 lib
 pub mod ldap {
 
     use ldap3::controls::{MakeCritical, RelaxRules};
-    use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
+    use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry, SearchResult};
     use log::{debug, error, info, warn};
     use maplit::hashset;
     use std::collections::HashSet;
@@ -64,7 +66,6 @@ pub mod ldap {
             let ldap_dc: String;
             match dc {
                 Some(x) => {
-
                     ldap_bind = format!("{bind_prefix_str}={ldap_user},{bind_org_unit_str}{x}");
                     // ldap_bind = format!("{bind_prefix_str}={ldap_user},{x}");
                     ldap_base = format!("ou={org_unit_str},{x}");
@@ -343,24 +344,8 @@ pub mod ldap {
                         match search_result {
                             // Parse search results and print
                             Ok(result) => {
-                                for elem in result.0.iter() {
-                                    let search_result = SearchEntry::construct(elem.to_owned());
-
-                                    let mut output_str = "".to_string();
-                                    for a in attrs.iter() {
-                                        if search_result.attrs.contains_key(*a) {
-                                            if *a == "slurmQos" {
-                                                let qos = &search_result.attrs["slurmQos"];
-                                                let elem = qos.join("|");
-                                                output_str += &format!("{}={},", a, elem);
-                                            } else {
-                                                let elem = search_result.attrs[*a][0].clone();
-                                                output_str += &format!("{}={},", a, elem);
-                                            }
-                                        }
-                                    }
-                                    println!("{}", output_str);
-                                }
+                                let table = ldap_search_to_pretty_table(&attrs, &result);
+                                println!("{}", table);
                             }
                             Err(e) => error!("Error during LDAP search! {}", e),
                         }
@@ -637,4 +622,42 @@ pub mod ldap {
             Err(error) => Err(error),
         }
     }
+
+    fn ldap_search_to_pretty_table(
+        search_entries: &[&str],
+        search_result: &SearchResult,
+    ) -> String {
+        use prettytable::{Cell, Row, Table};
+
+        let mut table = Table::new();
+
+        let title_cells = search_entries
+            .iter()
+            .map(|to_cell| Cell::new(to_cell))
+            .collect();
+
+        table.set_titles(Row::new(title_cells));
+
+        for row_to_convert in search_result.0.iter() {
+            let search_entry = SearchEntry::construct(row_to_convert.to_owned());
+            let mut cells = Vec::with_capacity(search_entries.len());
+            cells.fill(Cell::new(""));
+            for (cell_name, cell_values) in search_entry.attrs {
+                if let Some(index) = search_entries.iter().position(|&value| value == &cell_name) {
+                    let cell_v = cell_values.join(" | ");
+                    *cells.get_mut(index).unwrap() = Cell::new(&cell_v);
+                }
+            }
+
+            table.add_row(Row::new(cells));
+        }
+
+        table.to_string()
+    }
+}
+
+#[cfg(test)]
+mod testing {
+    #[test]
+    fn should_produce_table() {}
 }
