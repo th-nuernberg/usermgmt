@@ -48,8 +48,8 @@ impl<'a, 'b> SshSession<'a, 'b> {
             sess.userauth_password(username, password)
                 .unwrap_or_else(|error| {
                     panic!(
-                        "Authentication has failed with username: {} and password: {}\n Error: {}",
-                        username, password, error
+                        "Authentication has failed with provided username/password.\n Error: {}",
+                        error
                     )
                 });
 

@@ -1,6 +1,8 @@
 # this configuration is set up for development 
 # via docker container serving as end points for ldap and slurm nodes
 
+# ldap bind for user is cn=admin,dc=example,dc=org in docker set up
+
 student_default_qos = 'basic'
 staff_default_qos = 'advanced'
 student_qos = [
@@ -59,9 +61,9 @@ faculty_gid = 1000
 # In development the access to slurm is remote via a docker container
 sacctmgr_path = 'sacctmgr'
 ldap_domain_components = 'dc=example,dc=org'
-ldap_org_unit = 'people'
-ldap_bind_org_unit = 'people'
-ldap_bind_prefix = 'uid'
+ldap_org_unit = 'ou=people'
+# ldap_bind_org_unit = 'ou=people'
+# ldap_bind_prefix = ''
 ldap_server = 'ldap://localhost:389'
 ldap_readonly_user = 'admin'
 ldap_readonly_pw = 'admin'
