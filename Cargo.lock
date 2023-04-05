@@ -1167,7 +1167,6 @@ dependencies = [
  "serde",
  "ssh2",
  "tempfile",
- "thiserror",
 ]
 
 [[package]]
