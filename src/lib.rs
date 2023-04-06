@@ -13,13 +13,14 @@ use log::{debug, error, info, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
 
-mod app_error;
+pub mod app_error;
 
-mod prelude {
-    pub use anyhow::{anyhow, bail};
-    pub type AppError = crate::app_error::AppError;
-    pub type AppResult<T = ()> = Result<T, AppError>;
+pub mod prelude {
+    pub use crate::app_error;
+    pub use anyhow::{anyhow, bail, Context};
     pub type AnyError = anyhow::Error;
+    pub type AppError = AnyError;
+    pub type AppResult<T = ()> = Result<T, AnyError>;
 }
 
 use crate::{
@@ -174,7 +175,7 @@ impl Default for Entity {
 }
 
 /// Main function that handles user management
-pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
+pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
     let is_slurm_only = args.slurm_only;
     let is_ldap_only = args.ldap_only;
     let directories_only = args.dirs_only;
@@ -187,7 +188,7 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
             &is_ldap_only,
             &directories_only,
             &config,
-        ),
+        )?,
         Commands::Modify { data } => modify_user(data.clone(), config, is_slurm_only, is_ldap_only),
         Commands::Delete { user } => delete_user(
             &user,
@@ -201,6 +202,8 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
             ldap_users,
         } => list_users(&config, &slurm_users, &ldap_users),
     }
+
+    Ok(())
 }
 
 /// Check if sequence `qos` contains only valid QOS values.
@@ -268,7 +271,7 @@ fn add_user(
     is_ldap_only: &bool,
     directories_only: &bool,
     config: &MgmtConfig,
-) {
+) -> AppResult {
     debug!("Start add_user");
 
     let sacctmgr_path = config.sacctmgr_path.clone();
@@ -283,9 +286,7 @@ fn add_user(
             slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
-
-            let after = slurm::local::add_slurm_user(&entity, &sacctmgr_path);
-            exit_if_app_error(&after);
+            slurm::local::add_slurm_user(&entity, &sacctmgr_path)?;
         }
     }
 
@@ -304,6 +305,8 @@ fn add_user(
     }
 
     debug!("Finished add_user");
+
+    Ok(())
 }
 
 fn delete_user(
@@ -396,17 +399,6 @@ fn list_users(config: &MgmtConfig, slurm: &bool, ldap: &bool) {
 
     if *ldap {
         ldap::list_ldap_users(config);
-    }
-}
-
-/// If given parmater `maybe_error` is an error
-/// then the application prints out error information to the user and
-/// exits with error code of provided error.
-fn exit_if_app_error<T>(maybe_error: &AppResult<T>) {
-    if let Err(error) = maybe_error {
-        error!("{:?}", error);
-
-        std::process::exit(error.exit_code());
     }
 }
 
