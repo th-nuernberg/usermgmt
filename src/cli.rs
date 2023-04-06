@@ -1,5 +1,7 @@
 use clap::{Args, Parser, Subcommand};
+mod on_which_system;
 
+pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli};
 /// Add, delete, or modify users in LDAP and Slurm simultaneously
 #[derive(Parser, Debug)]
 #[clap(author = "Author: Dominik Wagner", version = env!("CARGO_PKG_VERSION"),
@@ -8,15 +10,6 @@ pub struct GeneralArgs {
     /// Operation to conduct on the user. Either add, delete or modify.
     #[clap(subcommand)]
     pub command: Commands,
-    /// Manage the user in Slurm only.
-    #[clap(long)]
-    pub slurm_only: bool,
-    /// Manage the user in LDAP only.
-    #[clap(long)]
-    pub ldap_only: bool,
-    /// Manage user directories only.
-    #[clap(long)]
-    pub dirs_only: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -25,25 +18,27 @@ pub enum Commands {
     Add {
         #[command(flatten)]
         to_add: UserToAdd,
+        #[command(flatten)]
+        on_which_sys: OnWhichSystemCli,
     },
     /// Modify a user in Slurm and/or LDAP
     Modify {
         #[command(flatten)]
         data: Modifiable,
+        #[command(flatten)]
+        on_which_sys: OnSlurmLdapOnlyCli,
     },
     /// Delete a user from Slurm and/or LDAP
     Delete {
         /// A valid username e.g. wagnerdo.
         user: String,
+        #[command(flatten)]
+        on_which_sys: OnSlurmLdapOnlyCli,
     },
     /// List users in Slurm and/or LDAP
     List {
-        /// List users available in Slurm.
-        #[clap(long)]
-        slurm_users: bool,
-        /// List users available in LDAP.
-        #[clap(long)]
-        ldap_users: bool,
+        #[command(flatten)]
+        on_which_sys: OnSlurmLdapOnlyCli,
     },
 }
 
