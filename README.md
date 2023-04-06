@@ -241,6 +241,12 @@ quota_nfs_hardlimit = '220G'
 quota_home_softlimit = '20G'
 # Quota hardlimit on user home
 quota_home_hardlimit = '22G'
+# Create/delete/modify user on the slurm data base by default
+# Can be overriden via CLI option for a command
+include_slurm = true
+# Create/delete/modify user on the ldap data base by default
+# Can be overriden via CLI option for a command
+include_ldap = true
 # Use the directory management module of the application 
 # Note that this is somewhat experimental and quite specific to 
 # the THN cluster and therefore might not be suitable for 
