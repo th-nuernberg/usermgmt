@@ -190,13 +190,16 @@ ldap_domain_components = 'cn=department,dc=company,dc=com'
 login_shell = '/bin/bash'
 # Organizational unit in LDAP used to apply operations under
 # This value is combined with ldap_domain_components like
-# 'ou={ldap_org_unit},{ldap_domain_components}'
+# Is optional and can be omited.
+# '[ldap_org_unit,]{ldap_domain_components}'
 ldap_org_unit = 'people'
 # User bind prefix to be used when establishing LDAP connections. 
 # Binding goes like: cn=admin... or uid=someuser...
 ldap_bind_prefix = 'cn'
 # Use a different OU for establishing connections to you LDAP server
-ldap_bind_org_unit = 'people'
+# Is optional and can be omited.
+# The resulting ldap path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] 
+ldap_bind_org_unit = 'ou=people'
 # Protocol, host and port of your LDAP server
 ldap_server = 'ldap://<hostname>:<port>'
 # Read only user for ldap search queries (e.g. usermgmt list ldap)

@@ -13,24 +13,24 @@ use log::{debug, error, info, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
 
-mod app_error;
+pub mod app_error;
 
-mod prelude {
-    pub use anyhow::{anyhow, bail};
-    pub type AppError = crate::app_error::AppError;
-    pub type AppResult<T = ()> = Result<T, AppError>;
+pub mod prelude {
+    pub use crate::app_error;
+    pub use anyhow::{anyhow, bail, Context};
     pub type AnyError = anyhow::Error;
+    pub type AppError = AnyError;
+    pub type AppResult<T = ()> = Result<T, AnyError>;
 }
 
 use crate::{
     dir::dir::add_user_directories,
-    ldap::ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
+    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
     ssh::SshCredential,
-    // slurm::local::{add_slurm_user, delete_slurm_user, modify_slurm_user},
 };
 extern crate confy;
 
-// TODO: git rif of unwraps. Replace them with expects or better with result if possible.
+// TODO: git rid of unwraps. Replace them with expects or better with result if possible.
 // TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
 // A code block as example in the file slurm under function add_slurm_user is repeated quite often
 
@@ -175,7 +175,7 @@ impl Default for Entity {
 }
 
 /// Main function that handles user management
-pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
+pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
     let sacctmgr_path = config.sacctmgr_path.clone();
 
     match &args.command {
@@ -186,7 +186,7 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
             &to_add,
             &OnWhichSystem::from_config_for_all(&config, on_which_sys),
             &config,
-        ),
+        )?,
         Commands::Modify { data, on_which_sys } => modify_user(
             data.clone(),
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
@@ -202,7 +202,9 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) {
             &config,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
         ),
-    }
+    };
+
+    Ok(())
 }
 
 /// Check if sequence `qos` contains only valid QOS values.
@@ -264,7 +266,7 @@ fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
 }
 
 /// TODO: reduce argument count
-fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
+fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start add_user");
 
     let sacctmgr_path = config.sacctmgr_path.clone();
@@ -283,8 +285,7 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
             slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
-            let after = slurm::local::add_slurm_user(&entity, &sacctmgr_path);
-            exit_if_app_error(&after);
+            slurm::local::add_slurm_user(&entity, &sacctmgr_path)?;
         }
     }
 
@@ -295,6 +296,8 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     }
 
     debug!("Finished add_user");
+
+    Ok(())
 }
 
 fn delete_user(
@@ -380,7 +383,7 @@ fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem) {
     let credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        ldap::ldap::list_ldap_users(config);
+        ldap::list_ldap_users(config);
     }
 
     if on_which_sys.slurm() {
@@ -389,17 +392,6 @@ fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem) {
         } else {
             slurm::local::list_users(&config.sacctmgr_path);
         }
-    }
-}
-
-/// If given parmater `maybe_error` is an error
-/// then the application prints out error information to the user and
-/// exits with error code of provided error.
-fn exit_if_app_error<T>(maybe_error: &AppResult<T>) {
-    if let Err(error) = maybe_error {
-        error!("{:?}", error);
-
-        std::process::exit(error.exit_code());
     }
 }
 

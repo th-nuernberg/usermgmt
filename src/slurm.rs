@@ -5,29 +5,44 @@ pub mod local {
 
     use crate::prelude::*;
     use crate::{Entity, Modifiable};
+    use anyhow::Context;
 
+    /// Uses local sacctmgr binary to add user on the slurm db of the local machine.
+    ///
+    /// # Errors
+    ///
+    /// - If no local sacctmgr binary can be found
+    /// - If the execution of the local sacctmgr binary returns with non zero error code.
     pub fn add_slurm_user(entity: &Entity, sacctmgr_path: &str) -> AppResult {
+        let account_spec = format!("Account={}", entity.group);
+        let cmd = &[
+            "add",
+            "user",
+            &entity.username,
+            &account_spec,
+            "--immediate",
+        ];
+
         let output = Command::new(sacctmgr_path)
-            .arg("add")
-            .arg("user")
-            .arg(entity.username.clone())
-            .arg(format!("Account={}", entity.group))
-            .arg("--immediate")
+            .args(cmd)
             .output()
-            .map_err(|error| {
-                AnyError::new(error).context("could not execute sacctmgr on local machine")
-            })?;
+            .context("could not execute sacctmgr on local machine. Is sacctmgr in $Path ?")?;
 
         debug!(
-            "add_slurm_user: {}",
+            "add_slurm_user: {}\n Executed",
             String::from_utf8_lossy(&output.stdout)
         );
 
         if output.status.success() {
             info!("Added user {} to Slurm", entity.username);
+            info!("Executed command for adding user: {}", cmd.join(" "))
         } else {
-            warn!("Slurm user creation did not return with success.");
-            return Err(output.into());
+            _ = app_error::output_to_result(output).with_context(|| {
+                format!(
+                    "Failed to create Slurm user. Command '{}' did not exit with 0.",
+                    cmd.join(" ")
+                )
+            })?;
         }
 
         debug!("Modifying user qos");
