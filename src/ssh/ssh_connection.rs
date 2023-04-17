@@ -6,7 +6,7 @@ use once_cell::unsync::OnceCell;
 use log::info;
 use ssh2::Session;
 
-use crate::config::config::MgmtConfig;
+use crate::config::MgmtConfig;
 
 use super::SshCredential;
 

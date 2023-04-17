@@ -1,7 +1,7 @@
 use clap::Args;
 use getset::CopyGetters;
 
-use crate::config::config::MgmtConfig;
+use crate::config::MgmtConfig;
 #[derive(Args, CopyGetters, Debug)]
 pub struct OnWhichSystemCli {
     #[command(flatten)]

@@ -40,7 +40,7 @@ pub mod io_util {
                 .collect::<Vec<_>>()
         } else {
             uids.iter()
-                .filter(|&i| (STAFF_UID..STUDENT_UID).contains(&i))
+                .filter(|i| (STAFF_UID..STUDENT_UID).contains(i))
                 .collect::<Vec<_>>()
         };
 

@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
 use usermgmt::cli::GeneralArgs;
-use usermgmt::config::config::MgmtConfig;
+use usermgmt::config::MgmtConfig;
 use usermgmt::prelude::*;
 use usermgmt::run_mgmt;
 
