@@ -47,7 +47,6 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
 
     match make_ldap_connection(&ldap_config.ldap_server) {
         Ok(mut ldap) => {
-            dbg!(&ldap_config.ldap_bind);
             match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
                 Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
                 Err(e) => error!("{}", e),
@@ -284,7 +283,6 @@ fn make_modification_vec<'a>(
     if !old_qos.is_empty() {
         // first we delete all old qos
         for q in old_qos {
-            dbg!(q);
             modifications.push(Mod::Delete("slurmQos", HashSet::from([&*q.as_str()])))
         }
         // then we add all new qos
