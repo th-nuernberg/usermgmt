@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added possibility to output listing of LDAP user via pretty table format 
+  and the old machine-readable format via CLI flag in subcommand list
+
 ### Changed
 
 - Output of for LDAP user via the sub command list is now presented in a nicer ASCII table format
