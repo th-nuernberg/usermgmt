@@ -11,6 +11,7 @@ use log::{debug, error, info, warn};
 use maplit::hashset;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 use crate::util::io_util::{get_new_uid, hashset_from_vec_str};
 use crate::{Entity, MgmtConfig, Modifiable};
@@ -175,7 +176,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
 /// TODO: improve output format in readability.
 /// It currently outputs all values in line separated by commas.
 /// TODO: Bubble up error instead of just logging it
-pub fn list_ldap_users(config: &MgmtConfig) {
+pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
     let mut ldap_user = Some(config.ldap_readonly_user.clone());
     let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
 
@@ -195,15 +196,21 @@ pub fn list_ldap_users(config: &MgmtConfig) {
                         "LDAP connection established to {}. Will search under {}",
                         ldap_config.ldap_bind, ldap_config.ldap_base
                     );
-                    let attrs = vec![
-                        "uid",
-                        "uidNumber",
-                        "givenName",
-                        "sn",
-                        "mail",
-                        "slurmDefaultQos",
-                        "slurmQos",
-                    ];
+                    let attrs = {
+                        // Make sure the keys are sorted alphabetic
+                        // This way the order fields in the final output deterministic
+                        let mut to_sort = vec![
+                            "uid",
+                            "uidNumber",
+                            "givenName",
+                            "sn",
+                            "mail",
+                            "slurmDefaultQos",
+                            "slurmQos",
+                        ];
+                        to_sort.sort();
+                        to_sort
+                    };
                     // Search for all entities under base dn
                     let search_result = ldap.search(
                         &ldap_config.ldap_base,
@@ -214,8 +221,12 @@ pub fn list_ldap_users(config: &MgmtConfig) {
                     match search_result {
                         // Parse search results and print
                         Ok(result) => {
-                            let pretty_table = ldap_search_to_pretty_table(&attrs, &result);
-                            println!("{}", pretty_table);
+                            let output = if simple_output_ldap {
+                                ldap_simple_output(&attrs, &result)
+                            } else {
+                                ldap_search_to_pretty_table(&attrs, &result)
+                            };
+                            println!("{}", output);
                         }
                         Err(e) => error!("Error during LDAP search! {}", e),
                     }
@@ -457,20 +468,67 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
 /// Returns a pretty ASCII table from the result of an LDAP search query.
 /// First row is the title row which shows all used field name.
 /// Subsequent rows contain values to each field name for an LDAP entity.
+///
+/// If there is no value for the field, then the cell of in the column is white space only
 fn ldap_search_to_pretty_table(
     search_by_in_title: &[&str],
     search_result: &SearchResult,
 ) -> String {
-    let to_table: Vec<HashMap<String, Vec<String>>> = search_result
+    let to_table = convert_ldap_listing_to_vec_hash_map(search_result);
+
+    contruct_table_from_vec_hash_map(search_by_in_title, &to_table)
+}
+
+/// Returns rows. Every row consists comma separated cells. Every cell is key value pair with "="
+/// sign in the middle.
+///
+/// Example for cell: name=example
+///
+/// If there is no value for the field, then there is nothing from right of the "=" sign
+pub fn ldap_simple_output(search_by_in_title: &[&str], search_result: &SearchResult) -> String {
+    let to_simple_output = convert_ldap_listing_to_vec_hash_map(search_result);
+
+    contruct_simple_output_from_vec_hash_map(search_by_in_title, &to_simple_output)
+}
+
+fn convert_ldap_listing_to_vec_hash_map(
+    search_result: &SearchResult,
+) -> Vec<HashMap<String, Vec<String>>> {
+    search_result
         .0
         .iter()
         .map(|row| {
             let search_entry = SearchEntry::construct(row.to_owned());
             search_entry.attrs
         })
-        .collect();
+        .collect()
+}
 
-    contruct_table_from_vec_hash_map(search_by_in_title, &to_table)
+fn contruct_simple_output_from_vec_hash_map<S>(
+    search_by_in_title: &[&str],
+    attrs: &[HashMap<S, Vec<S>>],
+) -> String
+where
+    S: Borrow<str> + std::fmt::Display + Eq + Hash,
+{
+    attrs
+        .into_iter()
+        .map(|next_row| {
+            search_by_in_title
+                .iter()
+                .map(|&next_field| {
+                    if let Some(values) = next_row.get(next_field) {
+                        let values = values.join("|");
+                        format!("{}={}", next_field, values)
+                    } else {
+                        format!("{}=", next_field)
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join(",")
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 /// Returns a nice formatted table with title as 1. row form `search_by_in_title` and
