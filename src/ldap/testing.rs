@@ -109,8 +109,10 @@ fn should_produce_simple_output() {
         },
     ];
     let given_search_entries = vec!["qos", "name"];
-    let actual =
-        contruct_simple_output_from_vec_hash_map(&given_search_entries, given_entries.as_slice());
+    let actual = text_list_output::contruct_simple_output_from_vec_hash_map(
+        &given_search_entries,
+        given_entries.as_slice(),
+    );
     insta::assert_display_snapshot!(actual);
 }
 
@@ -128,6 +130,9 @@ fn should_produce_table_from_ldap_search() {
     ];
 
     let given_search_entries = vec!["qos", "name"];
-    let actual = contruct_table_from_vec_hash_map(&given_search_entries, given_entries.as_slice());
+    let actual = text_list_output::contruct_table_from_vec_hash_map(
+        &given_search_entries,
+        given_entries.as_slice(),
+    );
     insta::assert_display_snapshot!(actual);
 }
