@@ -99,7 +99,6 @@ where
             // do not get mixed up in the wrong field names
             if let Some(&index) = search_by_in_title.get(cell_name.borrow()) {
                 let cell_v = cell_values.join(" | ");
-                cell_values.join(" | ");
                 *cells.get_mut(index).unwrap() = Cell::new(&cell_v);
             } else {
                 warn!(
