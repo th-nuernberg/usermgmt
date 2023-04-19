@@ -1,6 +1,6 @@
 [package]
 name = "usermgmt"
-version = "0.4.8"
+version = "0.5.0"
 edition = "2021"
 license-file = "LICENSE"
 description = "Simultaneous Slurm and LDAP user management"
@@ -20,11 +20,16 @@ maplit = "1.0.2"
 ssh2 = "0.9.4"
 once_cell = "1.17.1"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
+prettytable = "0.10.0"
 getset = "0.1.2"
+
+[dev-dependencies]
+insta = "1.29.0"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"
-copyright = "2023, Dominik Wagner <dominik.wagner@th-nuernberg.de>"
+authors = ["Dominik Wagner <dominik.wagner@th-nuernberg.de>", "BoolPurist <fnaumann@posteo.de>"]
+copyright = "2023, Technische Hochschule Nürnberg Georg Simon Ohm"
 license-file = ["LICENSE", "4"]
 extended-description = """\
 A simple commandline tool for \

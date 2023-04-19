@@ -6,8 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added possibility to output listing of LDAP user via pretty table format 
+  and the old machine-readable format via CLI flag in subcommand list
+
 ### Changed
 
+- Output of for LDAP user via the sub command list is now presented in a nicer ASCII table format
 - CLI argument for slurm, ldap and directory management can be toggled via cli and conf.toml individually
   CLI Option for a system is only available if a sub command supports it.
   slurm-only, ldap-only and dirs-only were replaced by new options
@@ -118,3 +122,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Order of Slurm QOS modification during user creation
 - Pick default QOS from `conf.toml` when no value is provided and remove default value from CLI
+
+
+## [0.5.0] - 2023-04-19
+
+### Changed
+
+- Output of for LDAP user via the sub command list is now presented in a nicer ASCII table format
+- CLI argument for slurm, ldap and directory management can be toggled via cli and conf.toml individually CLI Option for a system is only available if a sub command supports it. slurm-only, ldap-only and dirs-only were replaced by new options
+- LDAP bind OU and general LDAP OU are more configurable.
+  One can now specify several dn parts like ou=people,ou=department.
+  Before one could only specify a value for one fixed dn key part like people => ou=people.
+
+### Added
+
+- Added possibility to output listing of LDAP user via pretty table format and the old machine-readable format via CLI flag in subcommand list
+- Used base dc, dn for user manipulation and dn for user bind are now logged.
+- Port for ssh connection can now specified via configuration file
+

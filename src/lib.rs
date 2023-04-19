@@ -189,15 +189,19 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
             data.clone(),
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             &config,
-        ),
+        )?,
         Commands::Delete { user, on_which_sys } => delete_user(
             user,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             &config,
         ),
-        Commands::List { on_which_sys } => list_users(
+        Commands::List {
+            on_which_sys,
+            simple_output_for_ldap,
+        } => list_users(
             &config,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+            simple_output_for_ldap.unwrap_or(false),
         ),
     };
 
@@ -320,7 +324,11 @@ fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
 }
 
 /// TODO: reduce argument count
-fn modify_user(mut data: Modifiable, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
+fn modify_user(
+    mut data: Modifiable,
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+) -> AppResult {
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
@@ -356,7 +364,7 @@ fn modify_user(mut data: Modifiable, on_which_sys: &OnWhichSystem, config: &Mgmt
 
     let credential = SshCredential::new(config);
     if on_which_sys.ldap() {
-        modify_ldap_user(&data, config);
+        modify_ldap_user(&data, config)?;
     }
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
@@ -369,13 +377,14 @@ fn modify_user(mut data: Modifiable, on_which_sys: &OnWhichSystem, config: &Mgmt
     }
 
     debug!("Finished modify_user");
+    Ok(())
 }
 
-fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem) {
+fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem, simple_output_ldap: bool) {
     let credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        ldap::list_ldap_users(config);
+        ldap::list_ldap_users(config, simple_output_ldap);
     }
 
     if on_which_sys.slurm() {
