@@ -4,15 +4,16 @@ mod ldap_config;
 pub use ldap_config::LDAPConfig;
 #[cfg(test)]
 mod testing;
+use crate::prelude::AppResult;
+use crate::prelude::*;
+use crate::util::io_util::{get_new_uid, hashset_from_vec_str};
+use crate::{Entity, MgmtConfig, Modifiable};
 /// LDAP operations using the ldap3 lib
 use ldap3::controls::{MakeCritical, RelaxRules};
 use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
 use log::{debug, error, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
-
-use crate::util::io_util::{get_new_uid, hashset_from_vec_str};
-use crate::{Entity, MgmtConfig, Modifiable};
 
 fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
     LdapConn::new(server)
@@ -46,7 +47,6 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
 
     match make_ldap_connection(&ldap_config.ldap_server) {
         Ok(mut ldap) => {
-            dbg!(&ldap_config.ldap_bind);
             match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
                 Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
                 Err(e) => error!("{}", e),
@@ -124,7 +124,7 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
 }
 
 /// TODO: Bubble up error instead of just logging it
-pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
+pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResult {
     let ldap_config = LDAPConfig::new(config, &None, &None);
     // get dn for uid
     match find_dn_by_uid(&modifiable.username, &ldap_config) {
@@ -143,7 +143,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
                         config,
                         &ldap_config.ldap_user,
                         &ldap_config.ldap_pass,
-                    );
+                    )?;
                     let mod_vec = make_modification_vec(modifiable, &old_qos);
 
                     // Replace userPassword at given dn
@@ -166,7 +166,9 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) {
             modifiable.username
         ),
     }
+
     debug!("modify_ldap_user done");
+    Ok(())
 }
 
 /// List all LDAP users and some attributes
@@ -378,40 +380,44 @@ fn find_qos_by_uid(
     config: &MgmtConfig,
     ldap_user: &String,
     ldap_pass: &String,
-) -> Vec<String> {
+) -> AppResult<Vec<String>> {
     let ldap_config = LDAPConfig::new(&config, &Some(ldap_user.clone()), &Some(ldap_pass.clone()));
-    let mut qos: Vec<String> = Vec::new();
+    let mut fetched_all_qos: Vec<String> = Vec::new();
 
-    match make_ldap_connection(&ldap_config.ldap_server) {
-        Ok(mut ldap) => {
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
-                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
-                Err(e) => error!("{}", e),
-            }
+    let ldap_server = &ldap_config.ldap_server;
+    let mut ldap_connection = make_ldap_connection(ldap_server)
+        .with_context(|| format!("Connection to {} failed", ldap_server))?;
 
-            // Search for all uid under base dn and return dn of user
-            let search = ldap.search(
-                &*ldap_config.ldap_base,
-                Scope::OneLevel,
-                &format!("(uid={username})"),
-                vec!["slurmQos"],
-            );
-
-            match search {
-                Ok(result) => {
-                    for elem in result.0.iter() {
-                        let search_result = SearchEntry::construct(elem.to_owned());
-                        let q = &search_result.attrs["slurmQos"][0];
-                        debug!("QOS: {:?}", SearchEntry::construct(elem.to_owned()));
-                        qos.push(q.to_string().clone());
-                    }
-                }
-                Err(e) => error!("{}", e),
-            }
-        }
+    match ldap_connection.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+        Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
         Err(e) => error!("{}", e),
     }
-    qos
+
+    // Search for all uid under base dn and return dn of user
+    let search = ldap_connection
+        .search(
+            &*ldap_config.ldap_base,
+            Scope::OneLevel,
+            &format!("(uid={})", username),
+            vec!["slurmQos"],
+        )
+        .with_context(|| {
+            format!(
+                "search did not find any slurmQos for the user with uid {}",
+                username
+            )
+        })?;
+
+    for elem in search.0.iter() {
+        let search_result = SearchEntry::construct(elem.to_owned());
+        let q = &search_result.attrs["slurmQos"];
+        for one_qos in q {
+            debug!("Fetched QOS: {:?}", one_qos);
+            fetched_all_qos.push(one_qos.clone());
+        }
+    }
+
+    Ok(fetched_all_qos)
 }
 
 /// Check if username already exists in ldap.
