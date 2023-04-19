@@ -1,6 +1,7 @@
 //! TODO: Implement LDAP credential Struct for centralizing username and password acquisition.
 
 mod ldap_config;
+mod text_list_output;
 pub use ldap_config::LDAPConfig;
 #[cfg(test)]
 mod testing;
@@ -176,7 +177,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
 /// TODO: improve output format in readability.
 /// It currently outputs all values in line separated by commas.
 /// TODO: Bubble up error instead of just logging it
-pub fn list_ldap_users(config: &MgmtConfig) {
+pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
     let mut ldap_user = Some(config.ldap_readonly_user.clone());
     let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
 
@@ -196,15 +197,21 @@ pub fn list_ldap_users(config: &MgmtConfig) {
                         "LDAP connection established to {}. Will search under {}",
                         ldap_config.ldap_bind, ldap_config.ldap_base
                     );
-                    let attrs = vec![
-                        "uid",
-                        "uidNumber",
-                        "givenName",
-                        "sn",
-                        "mail",
-                        "slurmDefaultQos",
-                        "slurmQos",
-                    ];
+                    let attrs = {
+                        // Make sure the keys are sorted alphabetic
+                        // This way the order fields in the final output deterministic
+                        let mut to_sort = vec![
+                            "uid",
+                            "uidNumber",
+                            "givenName",
+                            "sn",
+                            "mail",
+                            "slurmDefaultQos",
+                            "slurmQos",
+                        ];
+                        to_sort.sort();
+                        to_sort
+                    };
                     // Search for all entities under base dn
                     let search_result = ldap.search(
                         &ldap_config.ldap_base,
@@ -215,24 +222,12 @@ pub fn list_ldap_users(config: &MgmtConfig) {
                     match search_result {
                         // Parse search results and print
                         Ok(result) => {
-                            for elem in result.0.iter() {
-                                let search_result = SearchEntry::construct(elem.to_owned());
-
-                                let mut output_str = "".to_string();
-                                for a in attrs.iter() {
-                                    if search_result.attrs.contains_key(*a) {
-                                        if *a == "slurmQos" {
-                                            let qos = &search_result.attrs["slurmQos"];
-                                            let elem = qos.join("|");
-                                            output_str += &format!("{}={},", a, elem);
-                                        } else {
-                                            let elem = search_result.attrs[*a][0].clone();
-                                            output_str += &format!("{}={},", a, elem);
-                                        }
-                                    }
-                                }
-                                println!("{}", output_str);
-                            }
+                            let output = if simple_output_ldap {
+                                text_list_output::ldap_simple_output(&attrs, &result)
+                            } else {
+                                text_list_output::ldap_search_to_pretty_table(&attrs, &result)
+                            };
+                            println!("{}", output);
                         }
                         Err(e) => error!("Error during LDAP search! {}", e),
                     }

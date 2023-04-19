@@ -39,6 +39,10 @@ pub enum Commands {
     List {
         #[command(flatten)]
         on_which_sys: OnSlurmLdapOnlyCli,
+        /// Prints out comma separated list instead of table
+        /// Is meant to be used for automation
+        #[clap(long, verbatim_doc_comment)]
+        simple_output_for_ldap: Option<bool>,
     },
 }
 
