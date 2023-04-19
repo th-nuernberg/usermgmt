@@ -4,7 +4,7 @@ mod on_which_system;
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli};
 /// Add, delete, or modify users in LDAP and Slurm simultaneously
 #[derive(Parser, Debug)]
-#[clap(author = "Author: Dominik Wagner", version = env!("CARGO_PKG_VERSION"),
+#[clap(author = "Authors: dwgnr and BoolPurist", version = env!("CARGO_PKG_VERSION"),
             about = "Simultaneous user management for Slurm and LDAP", long_about = None)]
 pub struct GeneralArgs {
     /// Operation to conduct on the user. Either add, delete or modify.
