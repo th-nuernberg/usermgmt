@@ -197,15 +197,26 @@ ldap_org_unit = 'people'
 # Binding goes like: cn=admin... or uid=someuser...
 ldap_bind_prefix = 'cn'
 # Use a different OU for establishing connections to you LDAP server
-# Is optional and can be omited.
+# Is optional and can be omitted.
 # The resulting ldap path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] 
 ldap_bind_org_unit = 'ou=people'
 # Protocol, host and port of your LDAP server
 ldap_server = 'ldap://<hostname>:<port>'
 # Read only user for ldap search queries (e.g. usermgmt list ldap)
+# Is optional and can be omitted.
 ldap_readonly_user = 'readonlyuser'
 # Read only user password
+# Is optional and can be omitted.
 ldap_readonly_pw = 'secret'
+# Can be used for connection with read access only
+# Is optional and can be omitted.
+# User bind prefix to be used when establishing LDAP connections. 
+# Binding goes like: cn=admin... or uid=someuser...
+ldap_readonly_user_prefix = "read_only_uid"
+# Can be used for connection with read access only
+# Is optional and can be omitted.
+# The resulting ldap path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] 
+ldap_readonly_bind = "ou=readonly,ou=realm"
 # Default user for SSH login during directory management. 
 # You can always enter a different username during application runtime
 default_ssh_user = 'serveradmin'
