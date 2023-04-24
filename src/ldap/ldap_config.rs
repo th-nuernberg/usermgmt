@@ -54,10 +54,10 @@ impl LDAPConfig {
         // create ldap paths by concat ldap components by comma
         let ldap_user_end_point = format!("{bind_prefix_str}={ldap_user}");
         let ldap_dc = dc.clone().unwrap_or(String::new());
-        let ldap_base = concat_by_comma_if_both_not_empty(org_unit_str.clone(), ldap_dc.clone());
+        let ldap_base = concat_by_comma_if_both_not_empty(org_unit_str, ldap_dc.clone());
         let ldap_bind = {
             let dc_and_bind_org =
-                concat_by_comma_if_both_not_empty(bind_org_unit_str.clone(), ldap_dc.clone());
+                concat_by_comma_if_both_not_empty(bind_org_unit_str, ldap_dc.clone());
             concat_by_comma_if_both_not_empty(ldap_user_end_point, dc_and_bind_org)
         };
 

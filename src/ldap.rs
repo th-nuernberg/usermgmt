@@ -26,7 +26,7 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
         warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
     }
 
-    let ldap_config = LDAPConfig::new(&config, &None, &None);
+    let ldap_config = LDAPConfig::new(config, &None, &None);
 
     if username_exists(&entity.username, &ldap_config) {
         warn!(
@@ -150,7 +150,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
                     // Replace userPassword at given dn
                     let res = ldap
                         .with_controls(RelaxRules.critical())
-                        .modify(&*dn, mod_vec);
+                        .modify(&dn, mod_vec);
 
                     match ldap_is_success(res) {
                         Ok(_) => {
@@ -186,7 +186,7 @@ pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
         ldap_pass = None;
     }
 
-    let ldap_config = LDAPConfig::new(&config, &ldap_user, &ldap_pass);
+    let ldap_config = LDAPConfig::new(config, &ldap_user, &ldap_pass);
 
     // Establish LDAP connection and bind
     match make_ldap_connection(&ldap_config.ldap_server) {
@@ -248,22 +248,22 @@ fn make_modification_vec<'a>(
     if let Some(firstname) = &modifiable.firstname {
         modifications.push(Mod::Replace(
             "givenName",
-            HashSet::from([&*firstname.as_str()]),
+            HashSet::from([firstname.as_str()]),
         ))
     }
 
     if let Some(lastname) = &modifiable.lastname {
-        modifications.push(Mod::Replace("sn", HashSet::from([&*lastname.as_str()])))
+        modifications.push(Mod::Replace("sn", HashSet::from([lastname.as_str()])))
     }
 
     if let Some(mail) = &modifiable.mail {
-        modifications.push(Mod::Replace("mail", HashSet::from([&*mail.as_str()])))
+        modifications.push(Mod::Replace("mail", HashSet::from([mail.as_str()])))
     }
 
     if let Some(default_qos) = &modifiable.default_qos {
         modifications.push(Mod::Replace(
             "slurmDefaultQos",
-            HashSet::from([&*default_qos.as_str()]),
+            HashSet::from([default_qos.as_str()]),
         ))
     }
 
@@ -271,18 +271,18 @@ fn make_modification_vec<'a>(
         debug!("Pushing modifiable publickey {}", publickey);
         modifications.push(Mod::Replace(
             "sshPublicKey",
-            HashSet::from([&*publickey.as_str()]),
+            HashSet::from([publickey.as_str()]),
         ))
     }
 
     if !old_qos.is_empty() {
         // first we delete all old qos
         for q in old_qos {
-            modifications.push(Mod::Delete("slurmQos", HashSet::from([&*q.as_str()])))
+            modifications.push(Mod::Delete("slurmQos", HashSet::from([q.as_str()])))
         }
         // then we add all new qos
         for q in &modifiable.qos {
-            modifications.push(Mod::Add("slurmQos", HashSet::from([&*q.as_str()])))
+            modifications.push(Mod::Add("slurmQos", HashSet::from([q.as_str()])))
         }
     }
     modifications
@@ -322,7 +322,7 @@ fn find_next_available_uid(ldap_config: &LDAPConfig, group: crate::Group) -> Res
                         uids.push(*uid);
                     }
                     // Find max uid and add 1
-                    return get_new_uid(&uids, group);
+                    get_new_uid(&uids, group)
                 }
                 Err(e) => Err(format!("Error during uid search! {}", e)),
             }
@@ -343,7 +343,7 @@ fn find_dn_by_uid(username: &str, ldap_config: &LDAPConfig) -> Option<String> {
 
             // Search for all uids under base dn and return dn of user
             let search = ldap.search(
-                &*ldap_config.ldap_base,
+                &ldap_config.ldap_base,
                 Scope::OneLevel,
                 &format!("(uid={username})"),
                 vec!["dn"],
@@ -373,10 +373,14 @@ fn find_dn_by_uid(username: &str, ldap_config: &LDAPConfig) -> Option<String> {
 fn find_qos_by_uid(
     username: &str,
     config: &MgmtConfig,
-    ldap_user: &String,
-    ldap_pass: &String,
+    ldap_user: &str,
+    ldap_pass: &str,
 ) -> AppResult<Vec<String>> {
-    let ldap_config = LDAPConfig::new(&config, &Some(ldap_user.clone()), &Some(ldap_pass.clone()));
+    let ldap_config = LDAPConfig::new(
+        config,
+        &Some(ldap_user.to_string()),
+        &Some(ldap_pass.to_string()),
+    );
     let mut fetched_all_qos: Vec<String> = Vec::new();
 
     let ldap_server = &ldap_config.ldap_server;
@@ -391,7 +395,7 @@ fn find_qos_by_uid(
     // Search for all uid under base dn and return dn of user
     let search = ldap_connection
         .search(
-            &*ldap_config.ldap_base,
+            &ldap_config.ldap_base,
             Scope::OneLevel,
             &format!("(uid={})", username),
             vec!["slurmQos"],
@@ -429,7 +433,7 @@ fn username_exists(username: &String, ldap_config: &LDAPConfig) -> bool {
 
             // Search for all uid under base dn and return dn of user
             let search = ldap.search(
-                &*ldap_config.ldap_base,
+                &ldap_config.ldap_base,
                 Scope::OneLevel,
                 &format!("(uid={username})"),
                 vec!["dn"],

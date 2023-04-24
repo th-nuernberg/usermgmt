@@ -50,7 +50,7 @@ where
     S: Borrow<str> + std::fmt::Display + Eq + Hash,
 {
     attrs
-        .into_iter()
+        .iter()
         .map(|next_row| {
             search_by_in_title
                 .iter()

@@ -23,9 +23,10 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          components: clippy
             
-      - name: "Building project to see if it compiles" 
-        run: cargo build --verbose
+      - name: "Building project to see if it compiles and does not produce any warnings" 
+        run: cargo clippy -- -Dwarnings
         
       - name: "Checking if all unit tests pass" 
         run: cargo test --verbose

@@ -181,7 +181,7 @@ pub mod remote {
 
     use log::{debug, error, info};
 
-    use crate::config::config::MgmtConfig;
+    use crate::config::MgmtConfig;
     use crate::ssh::{self, SshCredential, SshSession};
     use crate::{Entity, Modifiable};
 
@@ -211,8 +211,8 @@ pub mod remote {
         debug!("Modifying user qos");
         // Note: The order of execution is important here!
         // Slurm expects the user to have QOS, before it can set the default QOS
-        modify_qos(&entity, config, &session, false);
-        modify_qos(&entity, config, &session, true);
+        modify_qos(entity, config, &session, false);
+        modify_qos(entity, config, &session, true);
     }
 
     /// TODO: Bubble up error instead of just logging it
@@ -283,7 +283,7 @@ pub mod remote {
 
         let sess = SshSession::from_head_node(config, credentials);
 
-        let (output, _) = sess.exec(&cmd);
+        let (output, _) = sess.exec(cmd);
         println!("{}", output);
     }
 

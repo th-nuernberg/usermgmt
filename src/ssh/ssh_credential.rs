@@ -1,6 +1,6 @@
 use once_cell::unsync::OnceCell;
 
-use crate::config::config::MgmtConfig;
+use crate::config::MgmtConfig;
 
 /// Fetches username and password lazy at the first time.
 /// The fetching of username and password happens only once !

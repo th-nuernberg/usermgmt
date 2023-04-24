@@ -8,7 +8,7 @@ mod slurm;
 mod ssh;
 use cli::{Commands, Modifiable, OnWhichSystem, UserToAdd};
 
-use config::config::MgmtConfig;
+use config::MgmtConfig;
 use log::{debug, error, info, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
@@ -24,7 +24,7 @@ pub mod prelude {
 }
 
 use crate::{
-    dir::dir::add_user_directories,
+    dir::add_user_directories,
     ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
     ssh::SshCredential,
 };
@@ -114,7 +114,7 @@ impl Entity {
             }
         }
 
-        if default_qos.is_empty() || !is_valid_qos(&vec![default_qos.clone()], valid_qos) {
+        if default_qos.is_empty() || !is_valid_qos(&[default_qos.clone()], valid_qos) {
             warn!(
                 "Specified default QOS is invalid or empty. Using the value specified in config."
             );
@@ -176,14 +176,12 @@ impl Default for Entity {
 
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
-    let sacctmgr_path = config.sacctmgr_path.clone();
-
     match &args.command {
         Commands::Add {
             to_add,
             on_which_sys,
         } => add_user(
-            &to_add,
+            to_add,
             &OnWhichSystem::from_config_for_all(&config, on_which_sys),
             &config,
         )?,
@@ -193,9 +191,8 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
             &config,
         )?,
         Commands::Delete { user, on_which_sys } => delete_user(
-            &user,
+            user,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
-            &sacctmgr_path,
             &config,
         ),
         Commands::List {
@@ -304,12 +301,7 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     Ok(())
 }
 
-fn delete_user(
-    user: &String,
-    on_which_sys: &OnWhichSystem,
-    sacctmgr_path: &String,
-    config: &MgmtConfig,
-) {
+fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
     debug!("Start delete_user");
 
     let credentials = SshCredential::new(config);
@@ -324,7 +316,7 @@ fn delete_user(
             slurm::remote::delete_slurm_user(user, config, &credentials);
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::delete_slurm_user(user, sacctmgr_path);
+            slurm::local::delete_slurm_user(user, &config.sacctmgr_path);
         }
     }
 
@@ -340,7 +332,7 @@ fn modify_user(
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
-        if !is_valid_qos(&vec![s.clone()], &config.valid_qos) {
+        if !is_valid_qos(&[s.clone()], &config.valid_qos) {
             warn!("Specified default QOS {s} is invalid and will be removed!");
             data.default_qos = None;
         }
@@ -370,14 +362,14 @@ fn modify_user(
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let credential = SshCredential::new(&config);
+    let credential = SshCredential::new(config);
     if on_which_sys.ldap() {
-        modify_ldap_user(&data, &config)?;
+        modify_ldap_user(&data, config)?;
     }
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&data, &config, &credential);
+            slurm::remote::modify_slurm_user(&data, config, &credential);
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::modify_slurm_user(&data, &sacctmgr_path);
