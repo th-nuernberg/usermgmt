@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Added possibility to output listing of LDAP user via pretty table format 
-  and the old machine-readable format via CLI flag in subcommand list
+### Changed
+
+- Added option to use different user prefix and org unit binding for readonly LDAP user.
+- Made username and password optional for readonly user to allow for prompting these credentials.
 
 ### Changed
 

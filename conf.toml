@@ -5,23 +5,10 @@
 
 student_default_qos = 'basic'
 staff_default_qos = 'advanced'
-student_qos = [
-    'interactive',
-    'basic',
-]
-staff_qos = [
-    'interactive',
-    'advanced',
-]
-valid_qos = [
-    'interactive',
-    'basic',
-    'advanced',
-]
-valid_slurm_groups = [
-    'staff',
-    'student',
-]
+student_qos = ['interactive', 'basic']
+staff_qos = ['interactive', 'advanced']
+valid_qos = ['interactive', 'basic', 'advanced']
+valid_slurm_groups = ['staff', 'student']
 objectclass_common = [
     'inetOrgPerson',
     'ldapPublicKey',
@@ -30,12 +17,9 @@ objectclass_common = [
     'posixAccount',
     'shadowAccount',
     'slurmRole',
-    'top',       
+    'top',
 ]
-compute_nodes = [
-    'm0.host.de',
-    'ml1.host.de',
-]
+compute_nodes = ['m0.host.de', 'ml1.host.de']
 # Static ip address of docker container as head node for development
 head_node = '172.25.0.13'
 # Name of user with slurm admin rights in the slurmdb of the development docker set up.
@@ -64,13 +48,15 @@ ldap_domain_components = 'dc=example,dc=org'
 ldap_org_unit = 'ou=people'
 # ldap_bind_org_unit = 'ou=people'
 # ldap_bind_prefix = ''
+# ldap_readonly_user_prefix = "read_only_uid"
+# ldap_readonly_bind = "ou=readonly,ou=realm"
 ldap_server = 'ldap://localhost:389'
-ldap_readonly_user = 'admin'
-ldap_readonly_pw = 'admin'
+# ldap_readonly_user = 'admin'
+# ldap_readonly_pw = 'admin'
 include_slurm = true
 include_ldap = true
 include_dir_mgmt = false
 # We do not support directory management in the docker development set up
-use_homedir_helper = false 
+use_homedir_helper = false
 run_slurm_remote = true
 ssh_port = 22

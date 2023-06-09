@@ -1,13 +1,15 @@
 //! TODO: Implement LDAP credential Struct for centralizing username and password acquisition.
 
 mod ldap_config;
+mod ldap_paths;
+mod ldap_readonly_config;
 mod text_list_output;
 pub use ldap_config::LDAPConfig;
 #[cfg(test)]
-mod testing;
+pub mod testing;
 use crate::prelude::AppResult;
 use crate::prelude::*;
-use crate::util::io_util::{get_new_uid, hashset_from_vec_str};
+use crate::util::io_util::{self, get_new_uid, hashset_from_vec_str};
 use crate::{Entity, MgmtConfig, Modifiable};
 /// LDAP operations using the ldap3 lib
 use ldap3::controls::{MakeCritical, RelaxRules};
@@ -15,6 +17,8 @@ use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
 use log::{debug, error, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
+
+use self::ldap_readonly_config::LdapReadonlyConfig;
 
 fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
     LdapConn::new(server)
@@ -48,8 +52,8 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
 
     match make_ldap_connection(&ldap_config.ldap_server) {
         Ok(mut ldap) => {
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
-                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
+            match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
+                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.bind()),
                 Err(e) => error!("{}", e),
             }
             let un = &*entity.username.to_owned();
@@ -64,7 +68,7 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) {
             let pubkey = &*entity.publickey.to_owned();
 
             let ldap_result = ldap.add(
-                &format!("uid={},{}", entity.username, ldap_config.ldap_base),
+                &format!("uid={},{}", entity.username, ldap_config.base()),
                 vec![
                     ("cn", hashset! {un}),
                     (
@@ -104,9 +108,9 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) {
         Some(dn) => {
             match make_ldap_connection(&ldap_config.ldap_server) {
                 Ok(mut ldap) => {
-                    match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+                    match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
                         Ok(_bind) => {
-                            debug!("LDAP connection established to {}", ldap_config.ldap_bind)
+                            debug!("LDAP connection established to {}", ldap_config.bind())
                         }
                         Err(e) => error!("{}", e),
                     }
@@ -132,9 +136,9 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
         Some(dn) => {
             match make_ldap_connection(&ldap_config.ldap_server) {
                 Ok(mut ldap) => {
-                    match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+                    match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
                         Ok(_bind) => {
-                            debug!("LDAP connection established to {}", ldap_config.ldap_bind)
+                            debug!("LDAP connection established to {}", ldap_config.bind())
                         }
                         Err(e) => error!("{}", e),
                     }
@@ -142,7 +146,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
                     let old_qos = find_qos_by_uid(
                         &modifiable.username,
                         config,
-                        &ldap_config.ldap_user,
+                        ldap_config.username(),
                         &ldap_config.ldap_pass,
                     )?;
                     let mod_vec = make_modification_vec(modifiable, &old_qos);
@@ -178,24 +182,17 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
 /// It currently outputs all values in line separated by commas.
 /// TODO: Bubble up error instead of just logging it
 pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
-    let mut ldap_user = Some(config.ldap_readonly_user.clone());
-    let mut ldap_pass = Some(config.ldap_readonly_pw.clone());
-
-    if config.ldap_readonly_user.is_empty() || config.ldap_readonly_pw.is_empty() {
-        ldap_user = None;
-        ldap_pass = None;
-    }
-
-    let ldap_config = LDAPConfig::new(config, &ldap_user, &ldap_pass);
+    let ldap_config = LdapReadonlyConfig::new(config);
 
     // Establish LDAP connection and bind
-    match make_ldap_connection(&ldap_config.ldap_server) {
+    match make_ldap_connection(ldap_config.ldap_server()) {
         Ok(mut ldap) => {
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+            match ldap.simple_bind(ldap_config.bind(), ldap_config.ldap_pass()) {
                 Ok(_bind) => {
                     debug!(
                         "LDAP connection established to {}. Will search under {}",
-                        ldap_config.ldap_bind, ldap_config.ldap_base
+                        ldap_config.bind(),
+                        ldap_config.base()
                     );
                     let attrs = {
                         // Make sure the keys are sorted alphabetic
@@ -214,7 +211,7 @@ pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
                     };
                     // Search for all entities under base dn
                     let search_result = ldap.search(
-                        &ldap_config.ldap_base,
+                        ldap_config.base(),
                         Scope::OneLevel,
                         "(objectclass=*)",
                         attrs.clone(),
@@ -294,19 +291,21 @@ fn find_next_available_uid(ldap_config: &LDAPConfig, group: crate::Group) -> Res
         Ok(mut ldap) => {
             debug!(
                 "Binding with dn: {}, pw: {}",
-                ldap_config.ldap_bind, ldap_config.ldap_pass
+                ldap_config.bind(),
+                ldap_config.ldap_pass
             );
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
+            match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
                 Ok(r) => debug!(
                     "find_next_available_uid: LDAP connection established to {}, {}",
-                    ldap_config.ldap_bind, r
+                    ldap_config.bind(),
+                    r
                 ),
                 Err(e) => error!("{}", e),
             }
-            debug!("Search under {}", ldap_config.ldap_base);
+            debug!("Search under {}", ldap_config.base());
             // Search for all uidNumbers under base dn
             let search_result = ldap.search(
-                &ldap_config.ldap_base,
+                ldap_config.base(),
                 Scope::OneLevel,
                 "(objectclass=*)",
                 vec!["uidNumber"],
@@ -336,14 +335,14 @@ fn find_dn_by_uid(username: &str, ldap_config: &LDAPConfig) -> Option<String> {
     let mut dn_result = None;
     match make_ldap_connection(&ldap_config.ldap_server) {
         Ok(mut ldap) => {
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
-                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
+            match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
+                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.bind()),
                 Err(e) => error!("{}", e),
             }
 
             // Search for all uids under base dn and return dn of user
             let search = ldap.search(
-                &ldap_config.ldap_base,
+                ldap_config.base(),
                 Scope::OneLevel,
                 &format!("(uid={username})"),
                 vec!["dn"],
@@ -387,15 +386,15 @@ fn find_qos_by_uid(
     let mut ldap_connection = make_ldap_connection(ldap_server)
         .with_context(|| format!("Connection to {} failed", ldap_server))?;
 
-    match ldap_connection.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
-        Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
+    match ldap_connection.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
+        Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.bind()),
         Err(e) => error!("{}", e),
     }
 
     // Search for all uid under base dn and return dn of user
     let search = ldap_connection
         .search(
-            &ldap_config.ldap_base,
+            ldap_config.base(),
             Scope::OneLevel,
             &format!("(uid={})", username),
             vec!["slurmQos"],
@@ -426,14 +425,14 @@ fn username_exists(username: &String, ldap_config: &LDAPConfig) -> bool {
     let mut username_exists = false;
     match make_ldap_connection(&ldap_config.ldap_server) {
         Ok(mut ldap) => {
-            match ldap.simple_bind(&ldap_config.ldap_bind, &ldap_config.ldap_pass) {
-                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.ldap_bind),
+            match ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass) {
+                Ok(_bind) => debug!("LDAP connection established to {}", ldap_config.bind()),
                 Err(e) => error!("{}", e),
             }
 
             // Search for all uid under base dn and return dn of user
             let search = ldap.search(
-                &ldap_config.ldap_base,
+                ldap_config.base(),
                 Scope::OneLevel,
                 &format!("(uid={username})"),
                 vec!["dn"],
@@ -472,4 +471,31 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
         },
         Err(error) => Err(error),
     }
+}
+
+fn ask_credentials_if_not_provided(
+    username: Option<&str>,
+    password: Option<&str>,
+    on_credentials: impl FnOnce() -> (String, String),
+) -> (String, String) {
+    let (ldap_user, ldap_pass) = match username {
+        Some(u) => match password {
+            Some(p) => (u.to_owned(), p.to_owned()),
+            None => on_credentials(),
+        },
+        None => on_credentials(),
+    };
+
+    return (ldap_user.trim().to_owned(), ldap_pass.trim().to_owned());
+}
+
+fn ask_credentials_in_tty() -> (String, String) {
+    println!("Enter your LDAP username (defaults to admin):");
+    let mut username = io_util::user_input();
+    if username.is_empty() {
+        username = "admin".to_string();
+    }
+    let password = rpassword::prompt_password("Enter your LDAP password: ")
+        .expect("Failed to retrieve password from user in a terminal");
+    (username, password)
 }
