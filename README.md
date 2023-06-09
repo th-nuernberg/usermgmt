@@ -303,7 +303,7 @@ You'll receive the most verbose output when you set it to *debug*.
 RUST_LOG=debug usermgmt delete teststaff123
 ```
 
-### Backtraces
+### Stack trace 
 
 Many of the errors, reported by the application, can also shown with their stack trace.
 The stack trace is quite useful for locating the place in the code where the error was started.
