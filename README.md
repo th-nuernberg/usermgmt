@@ -303,11 +303,11 @@ You'll receive the most verbose output when you set it to *debug*.
 RUST_LOG=debug usermgmt delete teststaff123
 ```
 
-### Stack trace
+### Backtraces
 
 Many of the errors, reported by the application, can also shown with their stack trace.
 The stack trace is quite useful for locating the place in the code where the error was started.
-Especially handy for debugging.
+Espeacially handy for debugging.
 By default the stack trace in Rust is disabled though.
 You need to set the environmental variable named "RUST_BACKTRACE" to 1.
 This can be accomplished via this command
