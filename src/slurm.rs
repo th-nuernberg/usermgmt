@@ -182,11 +182,16 @@ pub mod remote {
     use log::{debug, error, info};
 
     use crate::config::MgmtConfig;
+    use crate::prelude::AppResult;
     use crate::ssh::{self, SshCredential, SshSession};
     use crate::{Entity, Modifiable};
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn add_slurm_user(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
+    pub fn add_slurm_user(
+        entity: &Entity,
+        config: &MgmtConfig,
+        credentials: &SshCredential,
+    ) -> AppResult {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let session = SshSession::from_head_node(config, credentials);
@@ -195,7 +200,7 @@ pub mod remote {
             "{} add user {} Account={} --immediate",
             config.sacctmgr_path, entity.username, entity.group
         );
-        let exit_code = ssh::run_remote_command(&session, &cmd);
+        let exit_code = ssh::run_remote_command(&session, &cmd)?;
 
         match exit_code {
             0 => info!(
@@ -211,18 +216,24 @@ pub mod remote {
         debug!("Modifying user qos");
         // Note: The order of execution is important here!
         // Slurm expects the user to have QOS, before it can set the default QOS
-        modify_qos(entity, config, &session, false);
-        modify_qos(entity, config, &session, true);
+        modify_qos(entity, config, &session, false)?;
+        modify_qos(entity, config, &session, true)?;
+
+        Ok(())
     }
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn delete_slurm_user(user: &str, config: &MgmtConfig, credentials: &SshCredential) {
+    pub fn delete_slurm_user(
+        user: &str,
+        config: &MgmtConfig,
+        credentials: &SshCredential,
+    ) -> AppResult {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let sess = SshSession::from_head_node(config, credentials);
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
-        let exit_code = ssh::run_remote_command(&sess, &cmd);
+        let exit_code = ssh::run_remote_command(&sess, &cmd)?;
 
         match exit_code {
             0 => info!("Successfully deleted Slurm user {}.", user),
@@ -231,6 +242,8 @@ pub mod remote {
                 cmd
             ),
         };
+
+        Ok(())
     }
 
     /// TODO: Bubble up error instead of just logging it
@@ -238,7 +251,7 @@ pub mod remote {
         modifiable: &Modifiable,
         config: &MgmtConfig,
         credentials: &SshCredential,
-    ) {
+    ) -> AppResult {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
         let sess = SshSession::from_head_node(config, credentials);
@@ -252,7 +265,7 @@ pub mod remote {
                     ..Default::default()
                 };
                 debug!("New defaultQOS will be {}", entity.default_qos);
-                modify_qos(&entity, config, &sess, true);
+                modify_qos(&entity, config, &sess, true)?;
             }
             None => info!(
                 "Did not modify default QOS for user {} in Slurm, since nothing was specified to modify.",
@@ -268,27 +281,36 @@ pub mod remote {
                 ..Default::default()
             };
             debug!("New QOS will be {:?}", entity.qos);
-            modify_qos(&entity, config, &sess, false);
+            modify_qos(&entity, config, &sess, false)?;
         } else {
             info!(
                 "Did not modify QOS for user {} in Slurm, since nothing was specified to modify.",
                 modifiable.username
             );
         }
+
+        Ok(())
     }
 
     /// TODO: Bubble up error instead of just logging it
-    pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) {
+    pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
         let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
         let sess = SshSession::from_head_node(config, credentials);
 
-        let (output, _) = sess.exec(cmd);
+        let (output, _) = sess.exec(cmd)?;
         println!("{}", output);
+
+        Ok(())
     }
 
     /// TODO: Bubble up error instead of just logging it
-    fn modify_qos(entity: &Entity, config: &MgmtConfig, sess: &SshSession, default_qos: bool) {
+    fn modify_qos(
+        entity: &Entity,
+        config: &MgmtConfig,
+        sess: &SshSession,
+        default_qos: bool,
+    ) -> AppResult {
         let mut qos_str: String = "defaultQos=".to_owned();
         if default_qos {
             qos_str += &entity.default_qos;
@@ -302,7 +324,7 @@ pub mod remote {
             "{} modify user {} set {} --immediate",
             config.sacctmgr_path, entity.username, qos_str
         );
-        let exit_code = ssh::run_remote_command(sess, &cmd);
+        let exit_code = ssh::run_remote_command(sess, &cmd)?;
 
         match exit_code {
             0 => info!(
@@ -314,5 +336,7 @@ pub mod remote {
                 cmd
             ),
         };
+
+        Ok(())
     }
 }

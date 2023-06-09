@@ -181,7 +181,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
 /// TODO: improve output format in readability.
 /// It currently outputs all values in line separated by commas.
 /// TODO: Bubble up error instead of just logging it
-pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
+pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) -> AppResult {
     let ldap_config = LdapReadonlyConfig::new(config);
 
     // Establish LDAP connection and bind
@@ -225,14 +225,15 @@ pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) {
                                 text_list_output::ldap_search_to_pretty_table(&attrs, &result)
                             };
                             println!("{}", output);
+                            Ok(())
                         }
-                        Err(e) => error!("Error during LDAP search! {}", e),
+                        Err(e) => Err(anyhow::Error::new(e).context("Error during LDAP search!")),
                     }
                 }
-                Err(e) => error!("{}", e),
+                Err(e) => Err(anyhow::Error::new(e).context("Error during LDAP binding!")),
             }
         }
-        Err(e) => error!("{}", e),
+        Err(e) => Err(anyhow::Error::new(e).context("Error while connecting via LDAP !")),
     }
 }
 

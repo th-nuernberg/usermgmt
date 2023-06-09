@@ -1,3 +1,4 @@
+use anyhow::Context;
 use std::io::Read;
 use std::net::TcpStream;
 
@@ -7,6 +8,7 @@ use log::info;
 use ssh2::Session;
 
 use crate::config::MgmtConfig;
+use crate::prelude::AppResult;
 
 use super::SshCredential;
 
@@ -31,47 +33,58 @@ impl<'a, 'b> SshSession<'a, 'b> {
         Self::new(&config.head_node, config.ssh_port, credentials)
     }
 
-    pub fn exec(&self, cmd: &str) -> (String, i32) {
-        let session = self.session.get_or_init(|| {
+    /// Tries to execute a given command on a remote machine over ssh
+    ///
+    /// # Error
+    ///
+    /// - If connection over tcp to endpoint failed.
+    /// - If Authentication failed.
+    /// - If remote command could not be executed.
+    /// - If output or exit code of executed remote command could not be retrieved.
+    ///
+    pub fn exec(&self, cmd: &str) -> AppResult<(String, i32)> {
+        let session = self.session.get_or_try_init(|| -> AppResult<Session> {
             info!("Connecting to host {}", self.endpoint);
 
-            let mut sess = Session::new().expect("Could not build up ssh session");
+            let mut sess = Session::new().context("Could not build up ssh session")?;
 
             {
-                let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port)).unwrap();
+                let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port))
+                    .with_context(|| {
+                        format!(
+                            "Could not connect over tcp to endpoint: {} over port: {}",
+                            self.endpoint, self.endpoint
+                        )
+                    })?;
                 sess.set_tcp_stream(tcp);
             }
 
-            sess.handshake().expect("Could not perform ssh handshake");
+            sess.handshake()
+                .context("Could not perform ssh handshake")?;
 
             let (username, password) = (self.credentials.username(), self.credentials.password());
             sess.userauth_password(username, password)
-                .unwrap_or_else(|error| {
-                    panic!(
-                        "Authentication has failed with provided username/password.\n Error: {}",
-                        error
-                    )
-                });
+                .context("Authentication has failed with provided username/password.")?;
 
-            sess
-        });
+            Ok(sess)
+        })?;
 
         let mut channel = session
             .channel_session()
-            .expect("Could not create channel for ssh session");
+            .context("Could not create channel for ssh session")?;
 
         channel
             .exec(cmd)
-            .expect("Execution of command on remote machine over ssh has failed.");
+            .context("Execution of command on remote machine over ssh has failed.")?;
 
         let mut output = String::new();
         channel
             .read_to_string(&mut output)
-            .expect("Could read output of executed commmand over ssh channel");
+            .context("Could not read output of executed commmand over ssh channel")?;
         let exit_status = channel
             .exit_status()
-            .expect("Could retrieve exit code of executed command over ssh");
+            .context("Could not retrieve exit code of executed command over ssh")?;
 
-        (output, exit_status)
+        Ok((output, exit_status))
     }
 }
