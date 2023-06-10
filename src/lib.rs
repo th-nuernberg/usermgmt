@@ -277,7 +277,7 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     let ssh_credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        add_ldap_user(&entity, config);
+        add_ldap_user(&entity, config)?;
     }
 
     if on_which_sys.slurm() {
@@ -307,16 +307,14 @@ fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) ->
     let credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        delete_ldap_user(user, config);
+        delete_ldap_user(user, config)?;
     }
 
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
-            // Execute sacctmgr commands via SSH session
             slurm::remote::delete_slurm_user(user, config, &credentials)?;
         } else {
-            // Call sacctmgr binary directly via subprocess
-            slurm::local::delete_slurm_user(user, &config.sacctmgr_path);
+            slurm::local::delete_slurm_user(user, &config.sacctmgr_path)?;
         }
     }
 
@@ -373,7 +371,7 @@ fn modify_user(
             slurm::remote::modify_slurm_user(&data, config, &credential)?;
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::modify_slurm_user(&data, &sacctmgr_path);
+            slurm::local::modify_slurm_user(&data, &sacctmgr_path)?;
         }
     }
 
@@ -396,7 +394,7 @@ fn list_users(
         if config.run_slurm_remote {
             slurm::remote::list_users(config, &credentials)?;
         } else {
-            slurm::local::list_users(&config.sacctmgr_path);
+            slurm::local::list_users(&config.sacctmgr_path)?;
         }
     }
 

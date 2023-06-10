@@ -1,5 +1,6 @@
+use crate::util::ResultAccumalator;
 /// Module for directory management
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
@@ -88,22 +89,35 @@ fn handle_compute_nodes(
         }
     }
 
-    if mkdir_exit_codes.iter().all(|&x| x == 0) {
-        if owner_exit_codes
-            .iter()
-            .all(|x| x.as_ref().is_ok_and(|code| *code == 0))
-        {
-            if quota_exit_codes.iter().all(|&x| x == 0) {
-                info!("Successfully created directories on compute nodes.");
-            } else if can_set_quota {
-                error!("Not all compute nodes returned exit code 0 during quota setup!");
-            }
-        } else {
-            error!("Not all compute nodes returned exit code 0 during ownership change!");
-        }
-    } else {
-        error!("Not all compute nodes returned exit code 0 during directory creation!");
-    }
+    let mut errors_from_codes =
+        ResultAccumalator::new("Failed at creating directories on compute nodes.".to_owned());
+
+    let all_exit_codes_are_zero = mkdir_exit_codes.iter().all(|&x| x == 0);
+
+    errors_from_codes.add_err_if_false(
+        all_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during directory creation!".to_owned(),
+    );
+
+    let all_owner_exit_codes_are_zero = owner_exit_codes
+        .iter()
+        .all(|x| x.as_ref().is_ok_and(|code| *code == 0));
+
+    errors_from_codes.add_err_if_false(
+        all_owner_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during ownership change!".to_owned(),
+    );
+
+    let all_quota_exit_codes_are_zero = quota_exit_codes.iter().all(|&x| x == 0);
+
+    errors_from_codes.add_err_if_false(
+        all_quota_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during quota setup!".to_owned(),
+    );
+
+    AppResult::from(errors_from_codes)?;
+
+    info!("Successfully created directories on compute nodes.");
 
     Ok(())
 }
@@ -142,7 +156,10 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
     let directory = format!("{}/{}/{}", config.nfs_root_dir, group_dir, entity.username);
     let dir_exit_code = make_directory(&sess, &directory)?;
 
-    if dir_exit_code == 0 {
+    let mut detected_errors =
+        ResultAccumalator::new("Errors in creating directories for NFS occured".to_owned());
+    let no_error_make_dir = dir_exit_code == 0;
+    if no_error_make_dir {
         // Give ownership to user
         let owner_exit_code = change_ownership(
             &sess,
@@ -151,12 +168,16 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
             &entity.group.to_string(),
         )?;
         if owner_exit_code != 0 {
-            error!("NFS host did not return with exit code 0 during ownership change!");
+            detected_errors.add_err(
+                "NFS host did not return with exit code 0 during ownership change!".to_owned(),
+            );
         } else {
             info!("Successfully created user directory on NFS host.");
         }
     } else {
-        error!("NFS host did not return with exit code 0 during directory creation!");
+        detected_errors.add_err(
+            "NFS host did not return with exit code 0 during directory creation!".to_owned(),
+        );
     }
 
     // Set user quota
@@ -168,10 +189,14 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
             &config.quota_nfs_hardlimit,
             &config.nfs_filesystem,
         )?;
-        if quota_exit_code != 0 {
-            error!("NFS host did not return with exit code 0 during quota setup!")
-        }
+
+        detected_errors.add_err_if_false(
+            quota_exit_code == 0,
+            "NFS host did not return with exit code 0 during quota setup!".to_owned(),
+        )
     }
+
+    AppResult::from(detected_errors)?;
 
     Ok(())
 }
@@ -207,6 +232,9 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
         make_directory(&sess, &directory)
     }?;
 
+    let mut detected_errors =
+        ResultAccumalator::new("Errors in creating the home folder of user occured".to_owned());
+
     if dir_exit_code == 0 {
         // Give ownership to user
         let owner_exit_code = change_ownership(
@@ -216,12 +244,16 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
             &entity.group.to_string(),
         )?;
         if owner_exit_code != 0 {
-            error!("Home host did not return with exit code 0 during ownership change!");
+            detected_errors.add_err(
+                "Home host did not return with exit code 0 during ownership change!".to_owned(),
+            );
         } else {
             info!("Successfully created user home directory.");
         }
     } else {
-        error!("Home host did not return with exit code 0 during directory creation!");
+        detected_errors.add_err(
+            "Home host did not return with exit code 0 during directory creation!".to_owned(),
+        );
     }
 
     // Set user quota
@@ -233,10 +265,13 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
             &config.quota_home_hardlimit,
             &config.home_filesystem,
         )?;
-        if quota_exit_code != 0 {
-            error!("Home host did not return with exit code 0 during quota setup!")
-        }
+        detected_errors.add_err_if_false(
+            quota_exit_code != 0,
+            "Home host did not return with exit code 0 during quota setup!".to_owned(),
+        );
     }
+
+    AppResult::from(detected_errors)?;
 
     Ok(())
 }
