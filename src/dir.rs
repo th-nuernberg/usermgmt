@@ -1,35 +1,47 @@
+use crate::util::ResultAccumalator;
 /// Module for directory management
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
 use crate::config::MgmtConfig;
+use crate::prelude::AppResult;
 use crate::ssh::{self, SshCredential, SshSession};
 use crate::{Entity, Group};
 
-pub fn add_user_directories(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
-    handle_compute_nodes(entity, config, credentials);
+pub fn add_user_directories(
+    entity: &Entity,
+    config: &MgmtConfig,
+    credentials: &SshCredential,
+) -> AppResult {
+    handle_compute_nodes(entity, config, credentials)?;
 
-    handle_nfs(entity, config, credentials);
+    handle_nfs(entity, config, credentials)?;
 
-    handle_home(entity, config, credentials);
+    handle_home(entity, config, credentials)?;
+
+    Ok(())
 }
 
 /// TODO: Bubble up errors instead of just logging
 /// Establish SSH connection to each compute node, make user directory and set quota
-fn handle_compute_nodes(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
+fn handle_compute_nodes(
+    entity: &Entity,
+    config: &MgmtConfig,
+    credentials: &SshCredential,
+) -> AppResult {
     debug!("Start handling directories on compute nodes");
 
     if config.compute_nodes.is_empty() {
         warn!("No compute nodes provided in config. Unable to create user directories.");
-        return;
+        return Ok(());
     }
     if config.compute_node_root_dir.is_empty() {
         warn!("No root directory on compute nodes provided in config. Unable to create user directories.");
-        return;
+        return Ok(());
     }
 
     if config.filesystem.is_empty() {
         warn!("No root directory on compute nodes provided in config. Unable to create user directories.");
-        return;
+        return Ok(());
     }
 
     let mut can_set_quota = true;
@@ -49,7 +61,7 @@ fn handle_compute_nodes(entity: &Entity, config: &MgmtConfig, credentials: &SshC
         let sess = SshSession::new(server, config.ssh_port, credentials);
         // Create directory
         let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
-        let dir_exit_code = make_directory(&sess, &directory);
+        let dir_exit_code = make_directory(&sess, &directory)?;
         mkdir_exit_codes.push(dir_exit_code);
 
         if dir_exit_code == 0 {
@@ -71,39 +83,57 @@ fn handle_compute_nodes(entity: &Entity, config: &MgmtConfig, credentials: &SshC
                     &config.quota_softlimit,
                     &config.quota_hardlimit,
                     &config.filesystem,
-                );
+                )?;
             }
             quota_exit_codes.push(quota_exit_code);
         }
     }
 
-    if mkdir_exit_codes.iter().all(|&x| x == 0) {
-        if owner_exit_codes.iter().all(|&x| x == 0) {
-            if quota_exit_codes.iter().all(|&x| x == 0) {
-                info!("Successfully created directories on compute nodes.");
-            } else if can_set_quota {
-                error!("Not all compute nodes returned exit code 0 during quota setup!");
-            }
-        } else {
-            error!("Not all compute nodes returned exit code 0 during ownership change!");
-        }
-    } else {
-        error!("Not all compute nodes returned exit code 0 during directory creation!");
-    }
+    let mut errors_from_codes =
+        ResultAccumalator::new("Failed at creating directories on compute nodes.".to_owned());
+
+    let all_exit_codes_are_zero = mkdir_exit_codes.iter().all(|&x| x == 0);
+
+    errors_from_codes.add_err_if_false(
+        all_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during directory creation!".to_owned(),
+    );
+
+    let all_owner_exit_codes_are_zero = owner_exit_codes
+        .iter()
+        .all(|x| x.as_ref().is_ok_and(|code| *code == 0));
+
+    errors_from_codes.add_err_if_false(
+        all_owner_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during ownership change!".to_owned(),
+    );
+
+    let all_quota_exit_codes_are_zero = quota_exit_codes.iter().all(|&x| x == 0);
+
+    errors_from_codes.add_err_if_false(
+        all_quota_exit_codes_are_zero,
+        "Not all compute nodes returned exit code 0 during quota setup!".to_owned(),
+    );
+
+    AppResult::from(errors_from_codes)?;
+
+    info!("Successfully created directories on compute nodes.");
+
+    Ok(())
 }
 
 /// Establish SSH connection to NFS host, make user directory and set quota
 /// TODO: Bubble up errors instead of just logging
-fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
+fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
     debug!("Start handling NFS user directory");
 
     if config.nfs_host.is_empty() {
         warn!("No NFS host provided in config. Unable to create directory.");
-        return;
+        return Ok(());
     }
     if config.nfs_root_dir.is_empty() {
         warn!("No root directory provided in config. Unable to create directory.");
-        return;
+        return Ok(());
     }
 
     let mut can_set_quota = true;
@@ -124,23 +154,30 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
         group_dir = "students"
     }
     let directory = format!("{}/{}/{}", config.nfs_root_dir, group_dir, entity.username);
-    let dir_exit_code = make_directory(&sess, &directory);
+    let dir_exit_code = make_directory(&sess, &directory)?;
 
-    if dir_exit_code == 0 {
+    let mut detected_errors =
+        ResultAccumalator::new("Errors in creating directories for NFS occured".to_owned());
+    let no_error_make_dir = dir_exit_code == 0;
+    if no_error_make_dir {
         // Give ownership to user
         let owner_exit_code = change_ownership(
             &sess,
             &directory,
             &entity.username,
             &entity.group.to_string(),
-        );
+        )?;
         if owner_exit_code != 0 {
-            error!("NFS host did not return with exit code 0 during ownership change!");
+            detected_errors.add_err(
+                "NFS host did not return with exit code 0 during ownership change!".to_owned(),
+            );
         } else {
             info!("Successfully created user directory on NFS host.");
         }
     } else {
-        error!("NFS host did not return with exit code 0 during directory creation!");
+        detected_errors.add_err(
+            "NFS host did not return with exit code 0 during directory creation!".to_owned(),
+        );
     }
 
     // Set user quota
@@ -151,21 +188,27 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
             &config.quota_nfs_softlimit,
             &config.quota_nfs_hardlimit,
             &config.nfs_filesystem,
-        );
-        if quota_exit_code != 0 {
-            error!("NFS host did not return with exit code 0 during quota setup!")
-        }
+        )?;
+
+        detected_errors.add_err_if_false(
+            quota_exit_code == 0,
+            "NFS host did not return with exit code 0 during quota setup!".to_owned(),
+        )
     }
+
+    AppResult::from(detected_errors)?;
+
+    Ok(())
 }
 
 /// Establish SSH connection to home host, make user directory and set quota
 /// TODO: Bubble up errors instead of just logging
-fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) {
+fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
     debug!("Start handling home directory");
 
     if config.home_host.is_empty() {
         warn!("No home host provided in config. Unable to create home directory for user.");
-        return;
+        return Ok(());
     }
 
     let mut can_set_quota = true;
@@ -187,7 +230,10 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
         make_home_directory(&sess, &entity.username)
     } else {
         make_directory(&sess, &directory)
-    };
+    }?;
+
+    let mut detected_errors =
+        ResultAccumalator::new("Errors in creating the home folder of user occured".to_owned());
 
     if dir_exit_code == 0 {
         // Give ownership to user
@@ -196,14 +242,18 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
             &directory,
             &entity.username,
             &entity.group.to_string(),
-        );
+        )?;
         if owner_exit_code != 0 {
-            error!("Home host did not return with exit code 0 during ownership change!");
+            detected_errors.add_err(
+                "Home host did not return with exit code 0 during ownership change!".to_owned(),
+            );
         } else {
             info!("Successfully created user home directory.");
         }
     } else {
-        error!("Home host did not return with exit code 0 during directory creation!");
+        detected_errors.add_err(
+            "Home host did not return with exit code 0 during directory creation!".to_owned(),
+        );
     }
 
     // Set user quota
@@ -214,28 +264,38 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
             &config.quota_home_softlimit,
             &config.quota_home_hardlimit,
             &config.home_filesystem,
+        )?;
+        detected_errors.add_err_if_false(
+            quota_exit_code != 0,
+            "Home host did not return with exit code 0 during quota setup!".to_owned(),
         );
-        if quota_exit_code != 0 {
-            error!("Home host did not return with exit code 0 during quota setup!")
-        }
     }
+
+    AppResult::from(detected_errors)?;
+
+    Ok(())
 }
 
-fn make_directory(sess: &SshSession, directory: &str) -> i32 {
+fn make_directory(sess: &SshSession, directory: &str) -> AppResult<i32> {
     debug!("Making directory {}", directory);
 
     let cmd = format!("sudo mkdir -p {directory}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn make_home_directory(sess: &SshSession, username: &str) -> i32 {
+fn make_home_directory(sess: &SshSession, username: &str) -> AppResult<i32> {
     debug!("Making home directory using the mkhomedir_helper");
 
     let cmd = format!("sudo mkhomedir_helper {username}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn change_ownership(sess: &SshSession, directory: &str, username: &str, group: &str) -> i32 {
+fn change_ownership(
+    sess: &SshSession,
+    directory: &str,
+    username: &str,
+    group: &str,
+) -> AppResult<i32> {
     debug!("Changing ownership for directory {}", directory);
 
     let cmd = format!("sudo chown {username}:{group} {directory}");
@@ -248,7 +308,7 @@ fn set_quota(
     softlimit: &str,
     hardlimit: &str,
     filesystem: &str,
-) -> i32 {
+) -> AppResult<i32> {
     debug!(
         "Setting quota for user {} on filesystem {}",
         username, filesystem

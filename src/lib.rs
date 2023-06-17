@@ -194,7 +194,7 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
             user,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             &config,
-        ),
+        )?,
         Commands::List {
             on_which_sys,
             simple_output_for_ldap,
@@ -202,7 +202,7 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
             &config,
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             simple_output_for_ldap.unwrap_or(false),
-        ),
+        )?,
     };
 
     Ok(())
@@ -277,13 +277,13 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     let ssh_credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        add_ldap_user(&entity, config);
+        add_ldap_user(&entity, config)?;
     }
 
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::add_slurm_user(&entity, config, &ssh_credentials);
+            slurm::remote::add_slurm_user(&entity, config, &ssh_credentials)?;
         } else {
             // Call sacctmgr binary directly via subprocess
             slurm::local::add_slurm_user(&entity, &sacctmgr_path)?;
@@ -291,7 +291,7 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     }
 
     if on_which_sys.dirs() {
-        add_user_directories(&entity, config, &ssh_credentials);
+        add_user_directories(&entity, config, &ssh_credentials)?;
     } else {
         debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
     }
@@ -301,26 +301,25 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
     Ok(())
 }
 
-fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) {
+fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start delete_user");
 
     let credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        delete_ldap_user(user, config);
+        delete_ldap_user(user, config)?;
     }
 
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
-            // Execute sacctmgr commands via SSH session
-            slurm::remote::delete_slurm_user(user, config, &credentials);
+            slurm::remote::delete_slurm_user(user, config, &credentials)?;
         } else {
-            // Call sacctmgr binary directly via subprocess
-            slurm::local::delete_slurm_user(user, &config.sacctmgr_path);
+            slurm::local::delete_slurm_user(user, &config.sacctmgr_path)?;
         }
     }
 
     debug!("Finished delete_user");
+    Ok(())
 }
 
 /// TODO: reduce argument count
@@ -369,10 +368,10 @@ fn modify_user(
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
             // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&data, config, &credential);
+            slurm::remote::modify_slurm_user(&data, config, &credential)?;
         } else {
             // Call sacctmgr binary directly via subprocess
-            slurm::local::modify_slurm_user(&data, &sacctmgr_path);
+            slurm::local::modify_slurm_user(&data, &sacctmgr_path)?;
         }
     }
 
@@ -380,20 +379,26 @@ fn modify_user(
     Ok(())
 }
 
-fn list_users(config: &MgmtConfig, on_which_sys: &OnWhichSystem, simple_output_ldap: bool) {
+fn list_users(
+    config: &MgmtConfig,
+    on_which_sys: &OnWhichSystem,
+    simple_output_ldap: bool,
+) -> AppResult {
     let credentials = SshCredential::new(config);
 
     if on_which_sys.ldap() {
-        ldap::list_ldap_users(config, simple_output_ldap);
+        ldap::list_ldap_users(config, simple_output_ldap)?;
     }
 
     if on_which_sys.slurm() {
         if config.run_slurm_remote {
-            slurm::remote::list_users(config, &credentials);
+            slurm::remote::list_users(config, &credentials)?;
         } else {
-            slurm::local::list_users(&config.sacctmgr_path);
+            slurm::local::list_users(&config.sacctmgr_path)?;
         }
     }
+
+    Ok(())
 }
 
 #[cfg(test)]

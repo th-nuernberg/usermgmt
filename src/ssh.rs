@@ -1,4 +1,4 @@
-use crate::util::io_util;
+use crate::{prelude::AppResult, util::io_util};
 use log::debug;
 mod ssh_connection;
 mod ssh_credential;
@@ -23,12 +23,12 @@ fn ask_credentials_for_ssh(default_user: &str) -> (String, String) {
 ///
 /// TODO: move checking if for exit code inside here and return result instead of error code
 /// directly
-pub fn run_remote_command(sess: &SshSession, cmd: &str) -> i32 {
+pub fn run_remote_command(sess: &SshSession, cmd: &str) -> AppResult<i32> {
     debug!("Running command {}", cmd);
 
-    let (s, exit_status) = sess.exec(cmd);
+    let (s, exit_status) = sess.exec(cmd)?;
 
     debug!("command output: {}", s);
     debug!("command exit status: {}", exit_status);
-    exit_status
+    Ok(exit_status)
 }

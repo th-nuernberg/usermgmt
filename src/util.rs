@@ -1,11 +1,16 @@
+mod result_accumalator;
+pub use result_accumalator::ResultAccumalator;
+
 pub mod io_util {
+    use crate::prelude::AppResult;
     use crate::Group;
+    use anyhow::bail;
     use log::debug;
     use std::collections::HashSet;
     use std::io;
 
-    const STUDENT_UID: i32 = 10_000;
-    const STAFF_UID: i32 = 1_000;
+    const STUDENT_UID: u32 = 10_000;
+    const STAFF_UID: u32 = 1_000;
 
     pub fn user_input() -> String {
         let mut input = String::new();
@@ -26,13 +31,12 @@ pub mod io_util {
     }
 
     /// Returns uid which can be used for a new user.
+    ///
     /// # Errors
     /// - if next uid would cause overflow because of its size
     /// - if next staff uid would be so big that it becomes a student id
     ///  
-    /// TODO: replace String as error with type implementing error trait.
-    /// TODO: could u32 be better than i32 ?  is there a need for a negative uid.
-    pub fn get_new_uid(uids: &[i32], group: crate::Group) -> Result<i32, String> {
+    pub fn get_new_uid(uids: &[u32], group: crate::Group) -> AppResult<u32> {
         // students start at 10000, staff at 1000
         let result = if group == Group::Student {
             uids.iter()
@@ -52,13 +56,11 @@ pub mod io_util {
                 let (next_uid, has_overflow) = max.overflowing_add(1);
 
                 if has_overflow {
-                    return Err(
-                        "Next uid would cause an overflow for an unsigned integer 32".to_string(),
-                    );
+                    bail!("Next uid would cause an overflow for an unsigned integer 32".to_string(),)
                 }
 
                 if group == Group::Staff && next_uid >= STUDENT_UID {
-                    return Err(format!("Next uid for staff goes into uid range of students !. Students range starts at {}", STUDENT_UID));
+                    bail!("Next uid for staff goes into uid range of students !. Students range starts at {}", STUDENT_UID);
                 }
 
                 Ok(next_uid)
@@ -94,7 +96,7 @@ pub mod io_util {
 
         #[test]
         fn should_return_error_for_overflow() {
-            let actual = get_new_uid(&vec![i32::MAX], Group::Student);
+            let actual = get_new_uid(&vec![u32::MAX], Group::Student);
             assert!(actual.is_err());
         }
         #[test]
@@ -111,7 +113,7 @@ pub mod io_util {
             assert_eq!(expected, actual);
         }
 
-        fn assert_return_next_uid(uids: &[i32], group: crate::Group, expected_uid: i32) {
+        fn assert_return_next_uid(uids: &[u32], group: crate::Group, expected_uid: u32) {
             let actual = get_new_uid(uids, group);
             let actual_value = actual.expect("Should not be an error for valid input");
             assert_eq!(actual_value, expected_uid);
