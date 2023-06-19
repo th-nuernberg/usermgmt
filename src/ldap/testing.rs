@@ -12,7 +12,8 @@ fn should_give_correct_ldap_paths() {
         let given = MgmtConfig {
             ..MgmtConfig::default()
         };
-        let actual = LDAPConfig::new(&given, &Some("xxx".to_owned()), &Some("xxxx".to_owned()));
+        let actual =
+            LDAPConfig::new(&given, &Some("xxx".to_owned()), &Some("xxxx".to_owned())).unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "".to_owned(),
@@ -31,7 +32,8 @@ fn should_give_correct_ldap_paths() {
             ..MgmtConfig::default()
         };
 
-        let actual = LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned()));
+        let actual =
+            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
 
         assert_case(
             ExpectedLdapPaths {
@@ -46,7 +48,8 @@ fn should_give_correct_ldap_paths() {
             ldap_domain_components: Some("dc=example,dc=com".to_owned()),
             ..MgmtConfig::default()
         };
-        let actual = LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned()));
+        let actual =
+            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "dc=example,dc=com".to_owned(),
@@ -61,7 +64,8 @@ fn should_give_correct_ldap_paths() {
             ldap_org_unit: Some("aaa=department,bbb=level".to_owned()),
             ..MgmtConfig::default()
         };
-        let actual = LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned()));
+        let actual =
+            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "aaa=department,bbb=level,dc=example,dc=com".to_owned(),

@@ -62,7 +62,7 @@ impl<'a, 'b> SshSession<'a, 'b> {
             sess.handshake()
                 .context("Could not perform ssh handshake")?;
 
-            let (username, password) = (self.credentials.username(), self.credentials.password());
+            let (username, password) = (self.credentials.username()?, self.credentials.password()?);
             sess.userauth_password(username, password)
                 .context("Authentication has failed with provided username/password.")?;
 

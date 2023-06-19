@@ -1,4 +1,4 @@
-use crate::config::MgmtConfig;
+use crate::{config::MgmtConfig, prelude::AppResult};
 
 use super::ldap_paths::LdapPaths;
 use getset::Getters;
@@ -14,17 +14,20 @@ pub struct LdapReadonlyConfig {
 }
 
 impl LdapReadonlyConfig {
-    pub fn new(config: &MgmtConfig) -> Self {
+    pub fn new(config: &MgmtConfig) -> AppResult<Self> {
         Self::create(config, super::ask_credentials_in_tty)
     }
 
-    fn create(config: &MgmtConfig, on_credentials: impl FnOnce() -> (String, String)) -> Self {
+    fn create(
+        config: &MgmtConfig,
+        on_credentials: impl FnOnce() -> AppResult<(String, String)>,
+    ) -> AppResult<Self> {
         let ldap_server = config.ldap_server.clone();
         let (ldap_user, ldap_pass) = super::ask_credentials_if_not_provided(
             config.ldap_readonly_user.as_deref(),
             config.ldap_readonly_pw.as_deref(),
             on_credentials,
-        );
+        )?;
 
         let (bind, prefix) = (
             config.ldap_readonly_bind.clone().or_else(|| {
@@ -46,11 +49,11 @@ impl LdapReadonlyConfig {
             ldap_user,
         );
 
-        Self {
+        Ok(Self {
             ldap_paths,
             ldap_pass,
             ldap_server,
-        }
+        })
     }
 
     pub fn bind(&self) -> &str {
@@ -66,8 +69,9 @@ mod testing {
     #[test]
     fn fall_back_for_default() {
         let given = LdapReadonlyConfig::create(&MgmtConfig::default(), || {
-            ("user".to_owned(), "password".to_owned())
-        });
+            Ok(("user".to_owned(), "password".to_owned()))
+        })
+        .unwrap();
         assert_eq!("password", given.ldap_pass);
         assert_eq!("user", given.ldap_paths.username());
     }
@@ -87,7 +91,8 @@ mod testing {
         };
         let given = LdapReadonlyConfig::create(&config, || {
             panic!("Should fall back for asking credentials")
-        });
+        })
+        .unwrap();
         assert_eq!(PASSWORD, given.ldap_pass);
         assert_eq!(USER, given.ldap_paths.username());
         let expected_bind = format!(

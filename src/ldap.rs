@@ -9,7 +9,8 @@ pub use ldap_config::LDAPConfig;
 pub mod testing;
 use crate::prelude::AppResult;
 use crate::prelude::*;
-use crate::util::io_util::{self, get_new_uid, hashset_from_vec_str};
+use crate::util::user_input;
+use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::{Entity, MgmtConfig, Modifiable};
 /// LDAP operations using the ldap3 lib
 use ldap3::controls::{MakeCritical, RelaxRules};
@@ -29,7 +30,7 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
         warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
     }
 
-    let ldap_config = LDAPConfig::new(config, &None, &None);
+    let ldap_config = LDAPConfig::new(config, &None, &None)?;
 
     let exitence_of_username = username_exists(&entity.username, &ldap_config)?;
     if exitence_of_username {
@@ -99,7 +100,7 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
 }
 
 pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
-    let ldap_config = LDAPConfig::new(config, &None, &None);
+    let ldap_config = LDAPConfig::new(config, &None, &None)?;
     // get dn for uid
     let dn = find_dn_by_uid(username, &ldap_config)
         .with_context(|| format!("No DN found for username {}!", username))?;
@@ -129,7 +130,7 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
 }
 
 pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResult {
-    let ldap_config = LDAPConfig::new(config, &None, &None);
+    let ldap_config = LDAPConfig::new(config, &None, &None)?;
 
     let dn = find_dn_by_uid(&modifiable.username, &ldap_config)
         .with_context(|| {
@@ -167,7 +168,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
 ///
 /// It currently outputs all values in line separated by commas.
 pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) -> AppResult {
-    let ldap_config = LdapReadonlyConfig::new(config);
+    let ldap_config = LdapReadonlyConfig::new(config)?;
 
     // Establish LDAP connection and bind
     let mut ldap = make_ldap_connection(ldap_config.ldap_server())
@@ -344,7 +345,7 @@ fn find_qos_by_uid(
         config,
         &Some(ldap_user.to_string()),
         &Some(ldap_pass.to_string()),
-    );
+    )?;
     let mut fetched_all_qos: Vec<String> = Vec::new();
 
     let ldap_server = &ldap_config.ldap_server;
@@ -427,26 +428,24 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
 fn ask_credentials_if_not_provided(
     username: Option<&str>,
     password: Option<&str>,
-    on_credentials: impl FnOnce() -> (String, String),
-) -> (String, String) {
+    on_credentials: impl FnOnce() -> AppResult<(String, String)>,
+) -> AppResult<(String, String)> {
     let (ldap_user, ldap_pass) = match username {
         Some(u) => match password {
-            Some(p) => (u.to_owned(), p.to_owned()),
+            Some(p) => Ok((u.to_owned(), p.to_owned())),
             None => on_credentials(),
         },
         None => on_credentials(),
-    };
+    }?;
 
-    return (ldap_user.trim().to_owned(), ldap_pass.trim().to_owned());
+    return Ok((ldap_user.trim().to_owned(), ldap_pass.trim().to_owned()));
 }
 
-fn ask_credentials_in_tty() -> (String, String) {
+fn ask_credentials_in_tty() -> AppResult<(String, String)> {
     println!("Enter your LDAP username (defaults to admin):");
-    let mut username = io_util::user_input();
-    if username.is_empty() {
-        username = "admin".to_string();
-    }
-    let password = rpassword::prompt_password("Enter your LDAP password: ")
-        .expect("Failed to retrieve password from user in a terminal");
-    (username, password)
+    let username = user_input::line_input_from_user()?.unwrap_or_else(|| "admin".to_string());
+    let password = user_input::ask_for_password("Enter your LDAP password: ")
+        .context("Failed to retrieve password from user in a terminal")?
+        .ok_or_else(|| anyhow!("No password provided"))?;
+    Ok((username, password))
 }
