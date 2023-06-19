@@ -1,34 +1,41 @@
+use anyhow::anyhow;
 use once_cell::unsync::OnceCell;
 
-use crate::config::MgmtConfig;
+use crate::{config::MgmtConfig, prelude::AppResult, util::user_input};
 
 /// Fetches username and password lazy at the first time.
 /// The fetching of username and password happens only once !
 pub struct SshCredential<'a> {
     default_ssh_user: &'a str,
-    username_password: OnceCell<(String, String)>,
+    username: OnceCell<String>,
+    password: OnceCell<String>,
 }
 
 impl<'a> SshCredential<'a> {
     pub fn new(config: &'a MgmtConfig) -> Self {
         Self {
-            username_password: OnceCell::new(),
+            username: Default::default(),
+            password: Default::default(),
             default_ssh_user: &config.default_ssh_user,
         }
     }
     /// Returns given username of user or the default user name if the user has given no username
-    pub fn username(&self) -> &str {
-        let (username, _) = self
-            .username_password
-            .get_or_init(|| super::ask_credentials_for_ssh(self.default_ssh_user));
+    pub fn username(&self) -> AppResult<&str> {
+        let username = self.username.get_or_try_init(|| {
+            user_input::ask_for_line_from_user_over_term(
+                "Enter your SSH username",
+                Some(self.default_ssh_user),
+            )
+        })?;
 
-        username
+        Ok(username)
     }
-    pub fn password(&self) -> &str {
-        let (_, password) = self
-            .username_password
-            .get_or_init(|| super::ask_credentials_for_ssh(self.default_ssh_user));
+    pub fn password(&self) -> AppResult<&str> {
+        let password = self.password.get_or_try_init(|| {
+            let maybe_password = user_input::ask_for_password("Enter your SSH password: ")?;
+            maybe_password.ok_or_else(|| anyhow!("No password provided"))
+        })?;
 
-        password
+        Ok(password)
     }
 }

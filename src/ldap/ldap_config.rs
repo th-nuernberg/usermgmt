@@ -1,4 +1,4 @@
-use crate::MgmtConfig;
+use crate::{prelude::AppResult, MgmtConfig};
 
 use super::ldap_paths::LdapPaths;
 #[derive(Debug, Default)]
@@ -11,7 +11,11 @@ pub struct LDAPConfig {
 }
 
 impl LDAPConfig {
-    pub fn new(config: &MgmtConfig, username: &Option<String>, password: &Option<String>) -> Self {
+    pub fn new(
+        config: &MgmtConfig,
+        username: &Option<String>,
+        password: &Option<String>,
+    ) -> AppResult<Self> {
         let (bind_prefix, ldap_server, dc, org_unit, bind_org_unit) = (
             &config.ldap_bind_prefix,
             &config.ldap_server,
@@ -24,7 +28,7 @@ impl LDAPConfig {
             username.as_deref(),
             password.as_deref(),
             super::ask_credentials_in_tty,
-        );
+        )?;
 
         let ldap_paths = LdapPaths::new(
             dc.clone(),
@@ -34,11 +38,11 @@ impl LDAPConfig {
             ldap_user,
         );
 
-        Self {
+        Ok(Self {
             ldap_server: ldap_server.to_string(),
             ldap_pass,
             ldap_paths,
-        }
+        })
     }
 
     pub fn bind(&self) -> &str {
