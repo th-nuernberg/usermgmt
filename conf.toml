@@ -59,4 +59,5 @@ include_dir_mgmt = false
 # We do not support directory management in the docker development set up
 use_homedir_helper = false
 run_slurm_remote = true
+ssh_agent = true
 ssh_port = 22

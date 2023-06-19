@@ -271,6 +271,8 @@ use_homedir_helper = true
 run_slurm_remote = true
 # Port to be used when connecting via ssh to any node
 ssh_port = 22
+# If true, the application will try to authenticate via a ssh agent before the simple password authentication
+ssh_agent = false
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
@@ -291,30 +293,6 @@ usermgmt modify teststaff123 --firstname Martha --mail bla@blubb.de --default-qo
 usermgmt delete teststaff123
 ```
 
-### Log-level
-The log-level can be changed using the `RUST_LOG` environment variable. 
-Available log-levels are *error*, *warn*, *info*, *debug*, and *trace*. 
-*Error* represents the highest-priority log messages and *trace* the lowest. 
-The default log-level is *info*. 
-You'll receive the most verbose output when you set it to *debug*. 
-
-```bash
-# Delete user with log-level debug
-RUST_LOG=debug usermgmt delete teststaff123
-```
-
-### Stack trace 
-
-Many of the errors, reported by the application, can also shown with their stack trace.
-The stack trace is quite useful for locating the place in the code where the error was started.
-Espeacially handy for debugging.
-By default the stack trace in Rust is disabled though.
-You need to set the environmental variable named "RUST_BACKTRACE" to 1.
-This can be accomplished via this command
-
-```bash 
-export RUST_BACKTRACE=1
-```
 
 ### Adding Users
 
@@ -338,6 +316,59 @@ A list of modifiable values can be obtained via `usermgmt modify --help`.
 ### Deleting Users
 
 User can be deleted via `usermgmt delete <username>`.  
+
+## Tips and advanced usage
+
+### Use SSH agent for ssh authentication 
+
+To save yourself entering password for ssh authentication again and again, 
+you can let the application use a running ssh agent. 
+
+Activate this feature via setting the field `ssh_agent` from false to true inside the configuration file.
+
+Start your ssh agent in the terminal via the command
+
+```sh
+ssh-agent
+```
+
+Then add your private ssh key to the ssh agent via this command. 
+You might be asked for the password to decrypt this key if a password was set during creation of the key pair. 
+```sh
+ssh-agent <path_to_private_ssh_key>
+```
+
+If authentication over ssh is requested, 
+the application will try to use one of your keys registered within the ssh agent 
+and does not ask you for a password.
+If more than one key are registered within the agent, 
+you will be asked for which key to use via a prompt in the terminal.
+
+### Show more logs
+
+The log-level can be changed using the `RUST_LOG` environment variable. 
+Available log-levels are *error*, *warn*, *info*, *debug*, and *trace*. 
+*Error* represents the highest-priority log messages and *trace* the lowest. 
+The default log-level is *info*. 
+You'll receive the most verbose output when you set it to *debug*. 
+
+```bash
+# Delete user with log-level debug
+RUST_LOG=debug usermgmt delete teststaff123
+```
+
+### Show stack trace in case of error
+
+Many of the errors, reported by the application, can also shown with their stack trace.
+The stack trace is quite useful for locating the place in the code where the error was caused.
+This is especially handy for debugging.
+By default the stack trace in Rust is disabled though.
+You need to set the environmental variable named "RUST_BACKTRACE" to 1.
+This can be accomplished via this command in the terminal.
+
+```bash 
+export RUST_BACKTRACE=1
+```
 
 ## Pitfalls 
 
