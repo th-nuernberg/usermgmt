@@ -3,7 +3,7 @@ use log::info;
 
 use crate::{
     prelude::AppResult,
-    ssh::{self, SshSession},
+    ssh::{self, SshConnection},
 };
 
 pub mod local {
@@ -199,7 +199,7 @@ pub mod remote {
 
     use crate::config::MgmtConfig;
     use crate::prelude::AppResult;
-    use crate::ssh::{SshCredential, SshSession};
+    use crate::ssh::{SshConnection, SshCredential};
     use crate::{Entity, Modifiable};
 
     /// Creates a user in slurm database on a remote machine over ssh
@@ -210,7 +210,7 @@ pub mod remote {
     ) -> AppResult {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
-        let session = SshSession::from_head_node(config, credentials);
+        let session = SshConnection::from_head_node(config, credentials);
 
         let cmd = format!(
             "{} add user {} Account={} --immediate",
@@ -249,7 +249,7 @@ pub mod remote {
         credentials: &SshCredential,
     ) -> AppResult {
         // Connect to the SSH server and authenticate
-        let sess = SshSession::from_head_node(config, credentials);
+        let sess = SshConnection::from_head_node(config, credentials);
 
         let cmd = format!("{} delete user {} --immediate", config.sacctmgr_path, user);
         super::run_remote_report_slurm_cmd(
@@ -276,7 +276,7 @@ pub mod remote {
     ) -> AppResult {
         // Connect to the SSH server and authenticate
         info!("Connecting to {}", config.head_node);
-        let sess = SshSession::from_head_node(config, credentials);
+        let sess = SshConnection::from_head_node(config, credentials);
 
         debug!("Start modifying user default qos");
         match &modifiable.default_qos {
@@ -318,7 +318,7 @@ pub mod remote {
     pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
         let cmd = "sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80";
 
-        let sess = SshSession::from_head_node(config, credentials);
+        let sess = SshConnection::from_head_node(config, credentials);
 
         let (output, _) = sess.exec(cmd)?;
         println!("{}", output);
@@ -329,7 +329,7 @@ pub mod remote {
     fn modify_qos(
         entity: &Entity,
         config: &MgmtConfig,
-        sess: &SshSession,
+        sess: &SshConnection,
         default_qos: bool,
     ) -> AppResult {
         let mut qos_str: String = "defaultQos=".to_owned();
@@ -368,7 +368,7 @@ pub mod remote {
 }
 
 fn run_remote_report_slurm_cmd(
-    session: &SshSession,
+    session: &SshConnection,
     cmd: &str,
     on_success: impl Fn() -> String,
     on_error: impl Fn() -> String,

@@ -4,7 +4,7 @@ use log::{debug, info, warn};
 
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
-use crate::ssh::{self, SshCredential, SshSession};
+use crate::ssh::{self, SshConnection, SshCredential};
 use crate::{Entity, Group};
 
 pub fn add_user_directories(
@@ -58,7 +58,7 @@ fn handle_compute_nodes(
     let mut quota_exit_codes = Vec::new();
     for server in config.compute_nodes.iter() {
         info!("Connecting to a compute node");
-        let sess = SshSession::new(server, config.ssh_port, credentials);
+        let sess = SshConnection::new(server, config, credentials);
         // Create directory
         let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
         let dir_exit_code = make_directory(&sess, &directory)?;
@@ -146,7 +146,7 @@ fn handle_nfs(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential)
     }
 
     info!("Connecting to NFS host");
-    let sess = SshSession::new(&config.nfs_host, config.ssh_port, credentials);
+    let sess = SshConnection::new(&config.nfs_host, config, credentials);
 
     // Create directory
     let mut group_dir = "staff";
@@ -221,7 +221,7 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
     }
 
     info!("Connecting to home host");
-    let sess = SshSession::new(&config.home_host, config.ssh_port, credentials);
+    let sess = SshConnection::new(&config.home_host, config, credentials);
 
     // Create directory
     let directory = format!("/home/{}", entity.username);
@@ -276,14 +276,14 @@ fn handle_home(entity: &Entity, config: &MgmtConfig, credentials: &SshCredential
     Ok(())
 }
 
-fn make_directory(sess: &SshSession, directory: &str) -> AppResult<i32> {
+fn make_directory(sess: &SshConnection, directory: &str) -> AppResult<i32> {
     debug!("Making directory {}", directory);
 
     let cmd = format!("sudo mkdir -p {directory}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn make_home_directory(sess: &SshSession, username: &str) -> AppResult<i32> {
+fn make_home_directory(sess: &SshConnection, username: &str) -> AppResult<i32> {
     debug!("Making home directory using the mkhomedir_helper");
 
     let cmd = format!("sudo mkhomedir_helper {username}");
@@ -291,7 +291,7 @@ fn make_home_directory(sess: &SshSession, username: &str) -> AppResult<i32> {
 }
 
 fn change_ownership(
-    sess: &SshSession,
+    sess: &SshConnection,
     directory: &str,
     username: &str,
     group: &str,
@@ -303,7 +303,7 @@ fn change_ownership(
 }
 
 fn set_quota(
-    sess: &SshSession,
+    sess: &SshConnection,
     username: &str,
     softlimit: &str,
     hardlimit: &str,

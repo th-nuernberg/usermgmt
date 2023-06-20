@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Option to try authentication via ssh agent before simple password authentication.
 - Added option to use different user prefix and org unit binding for readonly LDAP user.
 - Made username and password optional for readonly user to allow for prompting these credentials.
 - Used base dc, dn for user manipulation and dn for user bind are now logged.

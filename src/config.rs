@@ -47,6 +47,7 @@ pub struct MgmtConfig {
     pub use_homedir_helper: bool,
     pub run_slurm_remote: bool,
     pub ssh_port: u32,
+    pub ssh_agent: bool,
 }
 
 impl Default for MgmtConfig {
@@ -108,6 +109,7 @@ impl Default for MgmtConfig {
             head_node: "".to_string(),
             run_slurm_remote: false,
             ssh_port: 22,
+            ssh_agent: false,
         }
     }
 }
