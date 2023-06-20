@@ -1,5 +1,7 @@
 mod result_accumalator;
+mod trimmed_non_empty_text;
 pub use result_accumalator::ResultAccumalator;
+pub use trimmed_non_empty_text::TrimmedNonEmptyText;
 pub mod user_input;
 
 use crate::prelude::AppResult;
@@ -61,6 +63,33 @@ pub fn get_new_uid(uids: &[u32], group: crate::Group) -> AppResult<u32> {
             }
         }
     }
+}
+
+/// Check if sequence `qos` contains only valid QOS values.
+/// A value in `qos` is valid if `valid_qos` contains it.
+/// Valid QOS are defined in conf.toml
+///
+/// # Returns
+///
+/// - true if all values in `qos` are valid
+/// - false if at least one element in `qos` is invalid
+/// - true if `qos` and `valid_qos` are empty
+/// - true if `qos` is empty
+/// - false if `valid_qos` is empty
+///
+pub fn is_valid_qos<S>(qos: &[S], valid_qos: &[S]) -> bool
+where
+    S: AsRef<str> + PartialEq,
+{
+    for q in qos {
+        if !valid_qos.contains(q) {
+            return false;
+        }
+    }
+    true
+}
+pub fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
+    valid_groups.contains(group)
 }
 
 #[cfg(test)]

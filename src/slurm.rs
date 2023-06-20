@@ -103,7 +103,7 @@ pub mod local {
         match &modifiable.default_qos {
             Some(m) => {
                 let entity = Entity {
-                    username: modifiable.username.clone(),
+                    username: modifiable.username.clone().into(),
                     default_qos: m.to_string(),
                     ..Default::default()
                 };
@@ -121,7 +121,7 @@ pub mod local {
 
         if !modifiable.qos.is_empty() {
             let entity = Entity {
-                username: modifiable.username.clone(),
+                username: modifiable.username.clone().into(),
                 qos: modifiable.qos.clone(),
                 ..Default::default()
             };
@@ -282,7 +282,7 @@ pub mod remote {
         match &modifiable.default_qos {
             Some(m) => {
                 let entity = Entity {
-                    username: modifiable.username.clone(),
+                    username: modifiable.username.clone().into(),
                     default_qos: m.to_string(),
                     ..Default::default()
                 };
@@ -298,7 +298,7 @@ pub mod remote {
         debug!("Start modifying user qos");
         if !modifiable.qos.is_empty() {
             let entity = Entity {
-                username: modifiable.username.clone(),
+                username: modifiable.username.clone().into(),
                 qos: modifiable.qos.clone(),
                 ..Default::default()
             };
