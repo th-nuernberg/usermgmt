@@ -2,6 +2,8 @@ use clap::{Args, Parser, Subcommand};
 mod on_which_system;
 
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli};
+
+use crate::{prelude::AppResult, util::TrimmedNonEmptyText};
 /// Add, delete, or modify users in LDAP and Slurm simultaneously
 #[derive(Parser, Debug)]
 #[clap(author = "Authors: dwgnr and BoolPurist", version = env!("CARGO_PKG_VERSION"),
@@ -31,7 +33,8 @@ pub enum Commands {
     /// Delete a user from Slurm and/or LDAP
     Delete {
         /// A valid username e.g. wagnerdo.
-        user: String,
+        #[clap(value_parser = trimmed_non_empty)]
+        user: TrimmedNonEmptyText,
         #[command(flatten)]
         on_which_sys: OnSlurmLdapOnlyCli,
     },
@@ -51,13 +54,14 @@ pub enum Commands {
 #[derive(Args, Debug, Clone)]
 pub struct Modifiable {
     /// A valid username e.g. wagnerdo.
-    pub username: String,
+    #[clap(value_parser = trimmed_non_empty)]
+    pub username: TrimmedNonEmptyText,
     /// Firstname of the user.
-    #[clap(short, long)]
-    pub firstname: Option<String>,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub firstname: Option<TrimmedNonEmptyText>,
     /// Lastname of the user.
-    #[clap(short, long)]
-    pub lastname: Option<String>,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub lastname: Option<TrimmedNonEmptyText>,
     /// User's e-mail address.
     #[clap(short, long)]
     pub mail: Option<String>,
@@ -76,16 +80,17 @@ pub struct Modifiable {
 #[derive(Args, Debug, Clone)]
 pub struct UserToAdd {
     /// Username e.g. wagnerdo.
-    pub user: String,
+    #[clap(value_parser = trimmed_non_empty)]
+    pub user: TrimmedNonEmptyText,
     /// Unix group the user belongs to e.g. staff.
-    #[clap(short, long, default_value = "student")]
-    pub group: String,
+    #[clap(short, long, default_value = "student", value_parser = trimmed_non_empty)]
+    pub group: TrimmedNonEmptyText,
     /// Firstname of the user.
-    #[clap(short, long)]
-    pub firstname: String,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub firstname: TrimmedNonEmptyText,
     /// Lastname of the user.
-    #[clap(short, long)]
-    pub lastname: String,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub lastname: TrimmedNonEmptyText,
     /// User's e-mail address.
     #[clap(short, long, default_value = "")]
     pub mail: String,
@@ -98,4 +103,11 @@ pub struct UserToAdd {
     /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). QOS need to be provided as a whitespace separated list (e.g. interactive basic).
     #[clap(short, long, num_args(0..=20))]
     pub qos: Vec<String>,
+}
+
+/// Used by argument parser to ensure that
+/// the argument is not empty and white spaces are trimmed off from it
+pub fn trimmed_non_empty(s: &str) -> AppResult<TrimmedNonEmptyText> {
+    let to_validate = TrimmedNonEmptyText::try_from(s)?;
+    Ok(to_validate)
 }

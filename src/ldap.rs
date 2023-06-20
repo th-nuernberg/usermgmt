@@ -132,7 +132,7 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
 pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResult {
     let ldap_config = LDAPConfig::new(config, &None, &None)?;
 
-    let dn = find_dn_by_uid(&modifiable.username, &ldap_config)
+    let dn = find_dn_by_uid(modifiable.username.as_ref(), &ldap_config)
         .with_context(|| {
             format!(
                 "No DN found for username {}! Unable to modify user.",
@@ -147,7 +147,7 @@ pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResu
 
     // Prepare replace operation
     let old_qos = find_qos_by_uid(
-        &modifiable.username,
+        modifiable.username.as_ref(),
         config,
         ldap_config.username(),
         &ldap_config.ldap_pass,
@@ -227,12 +227,12 @@ fn make_modification_vec<'a>(
     if let Some(firstname) = &modifiable.firstname {
         modifications.push(Mod::Replace(
             "givenName",
-            HashSet::from([firstname.as_str()]),
+            HashSet::from([firstname.as_ref()]),
         ))
     }
 
     if let Some(lastname) = &modifiable.lastname {
-        modifications.push(Mod::Replace("sn", HashSet::from([lastname.as_str()])))
+        modifications.push(Mod::Replace("sn", HashSet::from([lastname.as_ref()])))
     }
 
     if let Some(mail) = &modifiable.mail {

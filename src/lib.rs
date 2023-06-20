@@ -1,19 +1,20 @@
+pub use entity::Entity;
+pub mod app_error;
 pub mod cli;
 pub mod config;
 pub mod dir;
 pub mod util;
 
+mod entity;
 mod ldap;
 mod slurm;
 mod ssh;
 use cli::{Commands, Modifiable, OnWhichSystem, UserToAdd};
 
 use config::MgmtConfig;
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
-
-pub mod app_error;
 
 pub mod prelude {
     pub use crate::app_error;
@@ -63,117 +64,6 @@ impl FromStr for Group {
     }
 }
 
-/// Representation of a user entity.
-/// It contains all information necessary to add/modify/delete the user.
-/// TODO: Add proper encapsulation via getter and setters
-pub struct Entity {
-    pub username: String,
-    pub firstname: String,
-    pub lastname: String,
-    pub mail: String,
-    pub gid: i32,
-    pub group: Group,
-    pub default_qos: String,
-    /// TODO: Add validation if a present publickey is in valid format, OpenSsh
-    pub publickey: String,
-    pub qos: Vec<String>,
-}
-
-pub struct User {}
-
-impl Entity {
-    fn new(to_add: &UserToAdd, config: &MgmtConfig) -> Self {
-        let staff_qos = &config.staff_qos;
-        let student_qos = &config.student_qos;
-        let valid_qos = &config.valid_qos;
-
-        let staff_default_qos = &config.staff_default_qos;
-        let student_default_qos = &config.student_default_qos;
-
-        let mut default_qos = &to_add.default_qos;
-        let mut group_str = to_add.group.to_lowercase();
-        let mut qos: &Vec<String> = &to_add.qos;
-
-        if !is_valid_group(&group_str, &config.valid_slurm_groups) {
-            warn!(
-                "Invalid group specified: {}. Group field will be student",
-                group_str
-            );
-            group_str = "student".to_string();
-        }
-
-        let group = Group::from_str(&group_str).unwrap();
-        let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
-
-        if qos.is_empty() || !is_valid_qos(qos, valid_qos) {
-            info!("Specified QOS are either invalid or empty. Using defaults in conf.toml.");
-            match group {
-                Group::Staff => qos = staff_qos,
-                Group::Student => qos = student_qos,
-                Group::Faculty => qos = staff_qos,
-            }
-        }
-
-        if default_qos.is_empty() || !is_valid_qos(&[default_qos.clone()], valid_qos) {
-            warn!(
-                "Specified default QOS is invalid or empty. Using the value specified in config."
-            );
-            match group {
-                Group::Staff => default_qos = staff_default_qos,
-                Group::Student => default_qos = student_default_qos,
-                Group::Faculty => default_qos = staff_default_qos,
-            }
-        }
-
-        let mut pubkey_from_file = "".to_string();
-        if !to_add.publickey.is_empty() {
-            debug!("Received PublicKey file path {}", to_add.publickey);
-            let pubkey_result = fs::read_to_string(&to_add.publickey);
-            match pubkey_result {
-                Ok(result) => pubkey_from_file = result,
-                Err(e) => error!("Unable to read PublicKey from file! {}", e),
-            }
-        }
-
-        Entity {
-            username: to_add.user.to_lowercase(),
-            firstname: to_add.firstname.to_string(),
-            lastname: to_add.lastname.to_string(),
-            group,
-            default_qos: default_qos.to_string(),
-            publickey: pubkey_from_file.trim().to_string(),
-            qos: qos.to_vec(),
-            gid,
-            mail: to_add.mail.to_string(),
-        }
-    }
-
-    /// Convert Group enum into integer gid
-    fn map_groupname_to_gid(group: Group, config: &MgmtConfig) -> Result<i32, ()> {
-        match group {
-            Group::Staff => Ok(config.staff_gid),
-            Group::Student => Ok(config.student_gid),
-            Group::Faculty => Ok(config.faculty_gid),
-        }
-    }
-}
-
-impl Default for Entity {
-    fn default() -> Self {
-        Entity {
-            username: "".to_string(),
-            firstname: "".to_string(),
-            lastname: "".to_string(),
-            mail: "".to_string(),
-            gid: -1,
-            group: Group::Student,
-            default_qos: "basic".to_string(),
-            publickey: "".to_string(),
-            qos: vec![],
-        }
-    }
-}
-
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
     match &args.command {
@@ -191,7 +81,7 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
             &config,
         )?,
         Commands::Delete { user, on_which_sys } => delete_user(
-            user,
+            user.as_ref(),
             &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
             &config,
         )?,
@@ -208,29 +98,6 @@ pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
     Ok(())
 }
 
-/// Check if sequence `qos` contains only valid QOS values.
-/// A value in `qos` is valid if `valid_qos` contains it.
-/// Valid QOS are defined in conf.toml
-///
-/// # Returns
-///
-/// - true if all values in `qos` are valid
-/// - false if at least one element in `qos` is invalid
-/// - true if `qos` and `valid_qos` are empty
-/// - true if `qos` is empty
-/// - false if `valid_qos` is empty
-///
-fn is_valid_qos<S>(qos: &[S], valid_qos: &[S]) -> bool
-where
-    S: AsRef<str> + PartialEq,
-{
-    for q in qos {
-        if !valid_qos.contains(q) {
-            return false;
-        }
-    }
-    true
-}
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
 /// Filters out duplicates too.
 /// Returns an empty vector if `qos` or `valid_qos` is empty.
@@ -262,17 +129,13 @@ where
     filtered_qos.into_iter().collect()
 }
 
-fn is_valid_group(group: &String, valid_groups: &[String]) -> bool {
-    valid_groups.contains(group)
-}
-
 /// TODO: reduce argument count
 fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start add_user");
 
     let sacctmgr_path = config.sacctmgr_path.clone();
 
-    let entity = Entity::new(to_add, config);
+    let entity = Entity::new(to_add, config)?;
 
     let ssh_credentials = SshCredential::new(config);
 
@@ -331,7 +194,7 @@ fn modify_user(
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
-        if !is_valid_qos(&[s.clone()], &config.valid_qos) {
+        if !util::is_valid_qos(&[s.clone()], &config.valid_qos) {
             warn!("Specified default QOS {s} is invalid and will be removed!");
             data.default_qos = None;
         }
@@ -418,7 +281,7 @@ mod testing {
         assert_case(&[], &[], true);
 
         fn assert_case(qos: &[&str], valid_qos: &[&str], expected: bool) {
-            let actual = is_valid_qos(qos, valid_qos);
+            let actual = util::is_valid_qos(qos, valid_qos);
             assert_eq!(
                 expected, actual,
                 "expected: {} with qos: {:?} and valid_qos: {:?}",

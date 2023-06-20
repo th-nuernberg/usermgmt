@@ -6,6 +6,8 @@ use anyhow::{anyhow, Context};
 
 use crate::prelude::AppResult;
 
+use super::TrimmedNonEmptyText;
+
 fn ask_for_line_from_user(
     on_input: impl Fn() -> AppResult<Option<String>>,
     on_output: impl Fn(String),
@@ -92,13 +94,7 @@ pub fn ask_for_password(prompt: &str) -> AppResult<Option<String>> {
 }
 
 fn trim_input(input: &str) -> Option<String> {
-    let input = input.trim().to_string();
-
-    if input.is_empty() {
-        None
-    } else {
-        Some(input)
-    }
+    TrimmedNonEmptyText::try_from(input).ok().map(|s| s.into())
 }
 
 #[cfg(test)]
