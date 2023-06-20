@@ -3,6 +3,16 @@
 All kinds of bug reports, feature requests or suggestion to improve code are written as issues
 on this Github repository.
 
+## Continuous Integration
+
+Every push on a branch of repository and pull request to it is guarded by the CI pipeline job.
+Changes to markdown files in general or files within the folder called "docker" are exceptions to that 
+and will trigger CI checks.
+The CI performs  formatting, linting and unit test checks. If any of this area fail, pull requests will be declined. 
+It's recommended that you start the checks locally before submitting a PR.
+You can do that by starting the script named "ci_local_check.sh" for local CI checks at the project root.
+If the script exits with 0 as the return code, the online CI should also succeed on Github.
+
 ## TODOs in code base
 
 In this code base there are lines with the prefix "TODO:".
