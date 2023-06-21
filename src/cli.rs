@@ -47,6 +47,9 @@ pub enum Commands {
         #[clap(long, verbatim_doc_comment)]
         simple_output_for_ldap: Option<bool>,
     },
+    /// Outputs a default configuration, aka conf.toml, to stdout.
+    /// Pipe it to a path for a file to generate a permanent configuration somewhere.
+    GenerateConfig,
 }
 
 /// Defines options that can be modified

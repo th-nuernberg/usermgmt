@@ -121,9 +121,38 @@ cp conf.toml /etc/usermgmt
 
 ## Configuration
 
-A basic configuration file (`conf.toml`) will be created upon first start of the application. 
-In development mode, the file can be found at `./conf.toml`, in release mode the file will be located at `/etc/usermgmt/conf.toml`. 
-You can savely modify the file after its initial creation. 
+### Location of configuration file
+
+A basic configuration file (`conf.toml`) is loaded during runtime. 
+This file determines a large portion of the behaviour of the program. 
+The programs tries load the configuration file from several places.
+The first found configuration file is loaded.
+The search is conducted in the following order: 
+
+- Under user specific configuration places according to the OS.
+  - Which folder on which OS is used, can be looked up [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html)
+  - In Addition under Linux: "~/.usermgmt" 
+- Under the system wide paths in respect to the OS
+  - Under Linux: "/usr/usermgmt"
+- The CWD as the last resort 
+
+The program does not create the configuration file and the locations listed above, automatically !
+You do not need to create the configuration from scratch though.
+By using the command generate-config like this 
+
+```sh
+usermgmt generate-config
+```
+
+You can acquire a default configuration. This ouput goes to the stdout of the terminal by default. 
+You can create a local configuration file via piping.
+This example creates a local default configuration file at '/home/foo/conf.toml' via piping
+
+```sh
+usermgmt generate-config > /home/foo/conf.toml
+```
+
+### Structure and content of configuration file
 
 The `conf.toml` file looks as follows:
 

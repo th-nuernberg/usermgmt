@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Configuration file is not created automatically anymore
 - Username and passwords which are empty or only white spaces and have default value are invalid 
 - Output of for LDAP user via the sub command list is now presented in a nicer ASCII table format
 - CLI argument for slurm, ldap and directory management can be toggled via cli and conf.toml individually
@@ -19,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Configuration file can be located in several places. 
+  It always try user specific configuration locations, then system configuration places and the CWD as the last resort.
+- Default configuration can be generated via new subcommand "generate-config".
 - Option to try authentication via ssh agent before simple password authentication.
 - Added option to use different user prefix and org unit binding for readonly LDAP user.
 - Made username and password optional for readonly user to allow for prompting these credentials.
