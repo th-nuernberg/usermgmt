@@ -1,3 +1,5 @@
+mod path_sources;
+pub use path_sources::get_path_to_conf;
 /// Definition of configuration options
 use serde::{Deserialize, Serialize};
 

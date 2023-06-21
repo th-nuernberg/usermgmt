@@ -12,7 +12,7 @@ mod ssh;
 use cli::{Commands, Modifiable, OnWhichSystem, UserToAdd};
 
 use config::MgmtConfig;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, fs, str::FromStr};
 
@@ -65,37 +65,71 @@ impl FromStr for Group {
 }
 
 /// Main function that handles user management
-pub fn run_mgmt(args: cli::GeneralArgs, config: MgmtConfig) -> AppResult {
+pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
     match &args.command {
+        Commands::GenerateConfig => {
+            println!(
+                "{}",
+                toml::to_string_pretty(&MgmtConfig::default())
+                    .expect("Could not turn default configuration into the toml format")
+            );
+        }
         Commands::Add {
             to_add,
             on_which_sys,
-        } => add_user(
-            to_add,
-            &OnWhichSystem::from_config_for_all(&config, on_which_sys),
-            &config,
-        )?,
-        Commands::Modify { data, on_which_sys } => modify_user(
-            data.clone(),
-            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
-            &config,
-        )?,
-        Commands::Delete { user, on_which_sys } => delete_user(
-            user.as_ref(),
-            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
-            &config,
-        )?,
+        } => {
+            let config = load_config()?;
+            add_user(
+                to_add,
+                &OnWhichSystem::from_config_for_all(&config, on_which_sys),
+                &config,
+            )?
+        }
+        Commands::Modify { data, on_which_sys } => {
+            let config = load_config()?;
+            modify_user(
+                data.clone(),
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                &config,
+            )?
+        }
+        Commands::Delete { user, on_which_sys } => {
+            let config = load_config()?;
+            delete_user(
+                user.as_ref(),
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                &config,
+            )?;
+        }
         Commands::List {
             on_which_sys,
             simple_output_for_ldap,
-        } => list_users(
-            &config,
-            &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
-            simple_output_for_ldap.unwrap_or(false),
-        )?,
+        } => {
+            let config = load_config()?;
+            list_users(
+                &config,
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                simple_output_for_ldap.unwrap_or(false),
+            )?
+        }
     };
 
-    Ok(())
+    return Ok(());
+
+    /// Tries to load  config.toml for application.
+    ///
+    /// # Error
+    ///
+    /// - Can not ensure if folder exits where conf.toml file exits
+    /// - Can not read or create a configuration file
+    fn load_config() -> AppResult<MgmtConfig> {
+        let path = config::get_path_to_conf()?;
+
+        info!("Loding configuraion file from path at {:?}", path);
+        // Load (or create if nonexistent) configuration file conf.toml
+        confy::load_path(&path)
+            .with_context(|| format!("Error in loading or creating config file at {:?}", path))
+    }
 }
 
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
