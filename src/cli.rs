@@ -17,6 +17,7 @@ pub struct GeneralArgs {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Add a user to Slurm and/or LDAP
+    #[clap(visible_alias = "a")]
     Add {
         #[command(flatten)]
         to_add: UserToAdd,
@@ -24,6 +25,7 @@ pub enum Commands {
         on_which_sys: OnWhichSystemCli,
     },
     /// Modify a user in Slurm and/or LDAP
+    #[clap(visible_alias = "m")]
     Modify {
         #[command(flatten)]
         data: Modifiable,
@@ -31,6 +33,7 @@ pub enum Commands {
         on_which_sys: OnSlurmLdapOnlyCli,
     },
     /// Delete a user from Slurm and/or LDAP
+    #[clap(visible_alias = "d")]
     Delete {
         /// A valid username e.g. wagnerdo.
         #[clap(value_parser = trimmed_non_empty)]
@@ -39,6 +42,7 @@ pub enum Commands {
         on_which_sys: OnSlurmLdapOnlyCli,
     },
     /// List users in Slurm and/or LDAP
+    #[clap(visible_alias = "l")]
     List {
         #[command(flatten)]
         on_which_sys: OnSlurmLdapOnlyCli,
@@ -47,6 +51,7 @@ pub enum Commands {
         #[clap(long, verbatim_doc_comment)]
         simple_output_for_ldap: Option<bool>,
     },
+    #[clap(visible_alias = "gc")]
     /// Outputs a default configuration, aka conf.toml, to stdout.
     /// Pipe it to a path for a file to generate a permanent configuration somewhere.
     GenerateConfig,
