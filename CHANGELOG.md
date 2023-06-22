@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Subcommands can be issued via shortcuts which consists of one or two letters.
 - Configuration file can be located in several places. 
   It always try user specific configuration locations, then system configuration places and the CWD as the last resort.
 - Default configuration can be generated via new subcommand "generate-config".
