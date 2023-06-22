@@ -94,7 +94,9 @@ pub fn ask_for_password(prompt: &str) -> AppResult<Option<String>> {
 }
 
 fn trim_input(input: &str) -> Option<String> {
-    TrimmedNonEmptyText::try_from(input).ok().map(|s| s.into())
+    TrimmedNonEmptyText::try_from(input)
+        .ok()
+        .map(|s| s.to_string())
 }
 
 #[cfg(test)]

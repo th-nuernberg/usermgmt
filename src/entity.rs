@@ -1,160 +1,165 @@
-use crate::util;
-use anyhow::Context;
-use log::{debug, error, info, warn};
-use std::{fs, str::FromStr};
-
 use crate::{
-    cli::UserToAdd, config::MgmtConfig, prelude::AppResult, util::TrimmedNonEmptyText, Group,
+    cli::{CommonUserFields, Modifiable, UserToAdd},
+    prelude::AppError,
+    util::{ResolvedGid, ValidGroupOfQos, ValidQos},
 };
+use anyhow::Context;
+use log::debug;
+use std::{fs, path::Path, str::FromStr};
+
+use crate::{config::MgmtConfig, prelude::AppResult, util::TrimmedNonEmptyText, Group};
 
 /// Representation of a user entity.
 /// It contains all information necessary to add/modify/delete the user.
 /// TODO: Add proper encapsulation via getter and setters
+#[derive(Debug)]
 pub struct Entity {
-    pub username: String,
-    pub firstname: String,
-    pub lastname: String,
-    pub mail: String,
-    pub gid: i32,
-    pub group: Group,
-    pub default_qos: String,
+    pub username: TrimmedNonEmptyText,
+    pub firstname: Option<TrimmedNonEmptyText>,
+    pub lastname: Option<TrimmedNonEmptyText>,
+    pub mail: Option<TrimmedNonEmptyText>,
+    pub group: Option<ResolvedGid>,
+    pub default_qos: Option<ValidQos>,
     /// TODO: Add validation if a present publickey is in valid format, OpenSsh
-    pub publickey: String,
-    pub qos: Vec<String>,
+    pub publickey: Option<TrimmedNonEmptyText>,
+    pub qos: Option<ValidGroupOfQos>,
 }
 
 impl Entity {
-    pub fn new(to_add: &UserToAdd, config: &MgmtConfig) -> AppResult<Self> {
-        let staff_qos = trim_and_check_qos_collection(
-            &config.staff_qos,
-            "qos for staff from field (staff_qos) in config",
-        )?;
-        let student_qos = trim_and_check_qos_collection(
-            &config.student_qos,
-            "qos for students from field (student_qos) in config",
-        )?;
-        let valid_qos = trim_and_check_qos_collection(
-            &config.valid_qos,
-            "general valid qos from field (valid_qos) in config",
-        )?;
-
-        let staff_default_qos = &config.staff_default_qos;
-        let student_default_qos = &config.student_default_qos;
-
-        let mut default_qos = &to_add.default_qos;
-        let mut group_str = to_add.group.as_ref().to_lowercase();
-        let mut qos = trim_and_check_qos_collection(&to_add.qos, "inidivuel qow's for user")?;
-
-        if !util::is_valid_group(&group_str, &config.valid_slurm_groups) {
-            warn!(
-                "Invalid group specified: {}. Group field will be student",
-                group_str
-            );
-            group_str = "student".to_string();
-        }
-
-        let group = Group::from_str(&group_str).unwrap();
-        let gid = Entity::map_groupname_to_gid(group.clone(), config).unwrap();
-
-        if qos.is_empty() || !util::is_valid_qos(&qos, &valid_qos) {
-            info!(
-                "Specified QOS {:?} are either invalid or empty. Using defaults in conf.toml.",
-                qos
-            );
-            match group {
-                Group::Staff => qos = staff_qos,
-                Group::Student => qos = student_qos,
-                Group::Faculty => qos = staff_qos,
-            }
-        }
-
-        default_qos = {
-            let no_default_qos = default_qos.is_empty();
-            let no_valid_default_qos = !util::is_valid_qos(&[default_qos.clone()], &valid_qos);
-            if no_default_qos {
-                warn!(
-                    "Specified default QOS {} is empty. Using the value specified in config.",
-                    default_qos
-                );
-            }
-            if no_valid_default_qos {
-                warn!(
-                  "Specified default QOS {} is not one of the valid qos. Using the value specified in config.
-                   Valid qos are {:?}", 
-                   default_qos,
-                   valid_qos
-                );
-            }
-
-            if no_default_qos && no_valid_default_qos {
-                match group {
-                    Group::Staff => staff_default_qos,
-                    Group::Student => student_default_qos,
-                    Group::Faculty => staff_default_qos,
-                }
-            } else {
-                default_qos
-            }
-        };
-
-        let mut pubkey_from_file = "".to_string();
-        if !to_add.publickey.is_empty() {
-            debug!("Received PublicKey file path {}", to_add.publickey);
-            let pubkey_result = fs::read_to_string(&to_add.publickey);
-            match pubkey_result {
-                Ok(result) => pubkey_from_file = result,
-                Err(e) => error!("Unable to read PublicKey from file! {}", e),
-            }
-        }
-
-        return Ok(Entity {
-            username: to_add.user.as_ref().to_lowercase(),
-            firstname: to_add.firstname.clone().into(),
-            lastname: to_add.lastname.clone().into(),
-            group,
-            default_qos: default_qos.to_string(),
-            publickey: pubkey_from_file.trim().to_string(),
-            qos: qos.to_vec(),
-            gid,
-            mail: to_add.mail.to_string(),
-        });
-
-        fn trim_and_check_qos_collection(
-            qos: &[impl AsRef<str>],
-            qos_name: &str,
-        ) -> AppResult<Vec<String>> {
-            qos.iter()
-                .map(|to_trim| {
-                    TrimmedNonEmptyText::try_from(to_trim.as_ref())
-                        .map(String::from)
-                        .with_context(|| format!("Invalid field in {}", qos_name))
-                })
-                .collect::<AppResult<Vec<String>>>()
-        }
+    pub fn new(
+        firstname: Option<TrimmedNonEmptyText>,
+        lastname: Option<TrimmedNonEmptyText>,
+        to_add: CommonUserFields,
+        config: &MgmtConfig,
+    ) -> AppResult<Self> {
+        Self::new_inner(firstname, lastname, to_add, config, |path| {
+            fs::read_to_string(path).with_context(|| {
+                format!(
+                    "Unable to read PublicKey from file from path {} !",
+                    path.to_string_lossy()
+                )
+            })
+        })
     }
 
-    /// Convert Group enum into integer gid
-    fn map_groupname_to_gid(group: Group, config: &MgmtConfig) -> Result<i32, ()> {
-        match group {
-            Group::Staff => Ok(config.staff_gid),
-            Group::Student => Ok(config.student_gid),
-            Group::Faculty => Ok(config.faculty_gid),
-        }
+    pub fn new_inner(
+        firstname: Option<TrimmedNonEmptyText>,
+        lastname: Option<TrimmedNonEmptyText>,
+        to_add: CommonUserFields,
+        config: &MgmtConfig,
+        on_load_pubkey: impl Fn(&Path) -> AppResult<String>,
+    ) -> AppResult<Self> {
+        let group = to_add
+            .group
+            .map(|group| {
+                let group_id = Group::from_str(group.as_ref().as_str())
+                    .context("Error in mapping name to group id")?;
+                Ok::<ResolvedGid, AppError>(ResolvedGid::new(group_id, config))
+            })
+            .transpose()?;
+
+        let qos = if to_add.qos.is_empty() {
+            None
+        } else {
+            let qos = to_add
+                .qos
+                .iter()
+                .map(|to_validate| TrimmedNonEmptyText::try_from(to_validate.as_str()))
+                .collect::<AppResult<_>>()?;
+            let qos = ValidGroupOfQos::new(qos, &config.valid_qos)?;
+            Some(qos)
+        };
+
+        let default_qos = to_add
+            .default_qos
+            .map(|to_validate| ValidQos::new(to_validate.into(), &config.valid_qos))
+            .transpose()?;
+
+        let publickey = to_add
+            .publickey
+            .map(|path| {
+                debug!("Trying to load the public key from path at {} .", path);
+
+                let content = on_load_pubkey(Path::new(path.as_ref()))?;
+                TrimmedNonEmptyText::try_from(content)
+            })
+            .transpose()?;
+
+        Ok(Entity {
+            username: to_add.username,
+            firstname,
+            lastname,
+            group,
+            default_qos,
+            publickey,
+            qos,
+            mail: to_add.mail,
+        })
+    }
+
+    pub fn new_modifieble_conf(modif: Modifiable, conf: &MgmtConfig) -> AppResult<Self> {
+        Self::new(
+            modif.firstname,
+            modif.lastname,
+            modif.common_user_fields,
+            conf,
+        )
+    }
+
+    pub fn new_user_addition_conf(modif: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
+        let (firstname, lastname) = (Some(modif.firstname), Some(modif.lastname));
+        Self::new(firstname, lastname, modif.common_user_fields, conf)
     }
 }
 
-impl Default for Entity {
-    fn default() -> Self {
-        Entity {
-            username: "".to_string(),
-            firstname: "".to_string(),
-            lastname: "".to_string(),
-            mail: "".to_string(),
-            gid: -1,
-            group: Group::Student,
-            default_qos: "basic".to_string(),
-            publickey: "".to_string(),
-            qos: vec![],
-        }
+#[cfg(test)]
+mod testing {
+    use super::*;
+
+    #[test]
+    fn error_for_not_valid_default_qos() {
+        let mut input = CommonUserFields::new("SomeUser".try_into().unwrap());
+        input.default_qos = Some("NotValid".try_into().unwrap());
+        let actual = Entity::new_inner(None, None, input, &MgmtConfig::default(), |_| panic!());
+
+        insta::assert_debug_snapshot!(actual);
+    }
+    #[test]
+    fn error_for_not_valid_group_of_qos() {
+        let mut input = CommonUserFields::new("SomeUser".try_into().unwrap());
+        input.qos = vec!["valid".into(), "not_valid".into()];
+        let actual = Entity::new_inner(
+            None,
+            None,
+            input,
+            &MgmtConfig {
+                valid_qos: vec!["valid".into()],
+                ..MgmtConfig::default()
+            },
+            |_| panic!(),
+        );
+
+        insta::assert_debug_snapshot!(actual);
+    }
+    #[test]
+    fn ok_with_valid_default_and_group_of_qos_pubkey() {
+        let mut input = CommonUserFields::new("Some_User".try_into().unwrap());
+        input.qos = vec!["valid".into(), "basic".into()];
+        input.default_qos = Some("valid".try_into().unwrap());
+        input.publickey = Some("Some_path".try_into().unwrap());
+        input.group = Some("staff".try_into().unwrap());
+        input.mail = Some("faculty@xxx.de".try_into().unwrap());
+        let actual = Entity::new_inner(
+            Some("First".try_into().unwrap()),
+            None,
+            input,
+            &MgmtConfig {
+                valid_qos: vec!["valid".into(), "basic".into()],
+                ..MgmtConfig::default()
+            },
+            |_path| Ok("xxxxxx".to_string()),
+        );
+
+        insta::assert_debug_snapshot!(actual);
     }
 }

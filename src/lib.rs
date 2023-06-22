@@ -1,4 +1,6 @@
 pub use entity::Entity;
+pub use new_entity::NewEntity;
+
 pub mod app_error;
 pub mod cli;
 pub mod config;
@@ -7,14 +9,15 @@ pub mod util;
 
 mod entity;
 mod ldap;
+mod new_entity;
 mod slurm;
 mod ssh;
-use cli::{Commands, Modifiable, OnWhichSystem, UserToAdd};
+use cli::{Commands, OnWhichSystem, UserToAdd};
 
 use config::MgmtConfig;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use prelude::*;
-use std::{collections::HashSet, fmt, fs, str::FromStr};
+use std::{collections::HashSet, fmt, str::FromStr};
 
 pub mod prelude {
     pub use crate::app_error;
@@ -27,7 +30,7 @@ pub mod prelude {
 use crate::{
     dir::add_user_directories,
     ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
-    ssh::SshCredential,
+    ssh::{SshConnection, SshCredential},
 };
 extern crate confy;
 
@@ -35,7 +38,7 @@ extern crate confy;
 // TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
 // A code block as example in the file slurm under function add_slurm_user is repeated quite often
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Copy, Debug, Eq)]
 pub enum Group {
     Staff,
     Student,
@@ -52,21 +55,27 @@ impl fmt::Display for Group {
     }
 }
 
+impl Default for Group {
+    fn default() -> Self {
+        Self::Student
+    }
+}
+
 impl FromStr for Group {
-    type Err = ();
+    type Err = AppError;
     fn from_str(input: &str) -> Result<Group, Self::Err> {
         match input {
             "Staff" | "staff" => Ok(Group::Staff),
             "Student" | "student" => Ok(Group::Student),
             "Faculty" | "faculty" => Ok(Group::Student),
-            _ => Err(()),
+            _ => Err(anyhow!("given group name ({}) is valid", input)),
         }
     }
 }
 
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
-    match &args.command {
+    match args.command {
         Commands::GenerateConfig => {
             println!(
                 "{}",
@@ -81,15 +90,16 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = load_config()?;
             add_user(
                 to_add,
-                &OnWhichSystem::from_config_for_all(&config, on_which_sys),
+                &OnWhichSystem::from_config_for_all(&config, &on_which_sys),
                 &config,
             )?
         }
         Commands::Modify { data, on_which_sys } => {
             let config = load_config()?;
+            let data = Entity::new_modifieble_conf(data, &config)?;
             modify_user(
-                data.clone(),
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                data,
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 &config,
             )?
         }
@@ -97,7 +107,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = load_config()?;
             delete_user(
                 user.as_ref(),
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 &config,
             )?;
         }
@@ -108,7 +118,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = load_config()?;
             list_users(
                 &config,
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, on_which_sys),
+                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 simple_output_for_ldap.unwrap_or(false),
             )?
         }
@@ -135,7 +145,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
 /// Filters out duplicates too.
 /// Returns an empty vector if `qos` or `valid_qos` is empty.
-fn filter_invalid_qos<S>(qos: &[S], valid_qos: &[S]) -> Vec<S>
+pub fn filter_invalid_qos<S>(qos: &[S], valid_qos: &[S]) -> Vec<S>
 where
     S: AsRef<str> + PartialEq + Clone + std::fmt::Display,
 {
@@ -164,27 +174,19 @@ where
 }
 
 /// TODO: reduce argument count
-fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start add_user");
 
-    let sacctmgr_path = config.sacctmgr_path.clone();
-
-    let entity = Entity::new(to_add, config)?;
-
-    let ssh_credentials = SshCredential::new(config);
+    let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
     if on_which_sys.ldap() {
         add_ldap_user(&entity, config)?;
     }
 
+    let ssh_credentials = SshCredential::new(config);
     if on_which_sys.slurm() {
-        if config.run_slurm_remote {
-            // Execute sacctmgr commands via SSH session
-            slurm::remote::add_slurm_user(&entity, config, &ssh_credentials)?;
-        } else {
-            // Call sacctmgr binary directly via subprocess
-            slurm::local::add_slurm_user(&entity, &sacctmgr_path)?;
-        }
+        let session = SshConnection::from_head_node(config, &ssh_credentials);
+        slurm::add_slurm_user(&entity, config, &session)?;
     }
 
     if on_which_sys.dirs() {
@@ -201,75 +203,37 @@ fn add_user(to_add: &UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfi
 fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start delete_user");
 
-    let credentials = SshCredential::new(config);
-
     if on_which_sys.ldap() {
         delete_ldap_user(user, config)?;
     }
 
     if on_which_sys.slurm() {
-        if config.run_slurm_remote {
-            slurm::remote::delete_slurm_user(user, config, &credentials)?;
-        } else {
-            slurm::local::delete_slurm_user(user, &config.sacctmgr_path)?;
-        }
+        let credentials = SshCredential::new(config);
+        let session = SshConnection::from_head_node(config, &credentials);
+        slurm::delete_slurm_user(user, config, &session)?;
     }
 
     debug!("Finished delete_user");
     Ok(())
 }
 
-/// TODO: reduce argument count
-fn modify_user(
-    mut data: Modifiable,
-    on_which_sys: &OnWhichSystem,
-    config: &MgmtConfig,
-) -> AppResult {
+fn modify_user(mut data: Entity, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
-        if !util::is_valid_qos(&[s.clone()], &config.valid_qos) {
+        if !util::is_valid_qos(&[s.to_string()], &config.valid_qos) {
             warn!("Specified default QOS {s} is invalid and will be removed!");
             data.default_qos = None;
         }
     }
 
-    let mut pubkey_from_file = None;
-
-    if let Some(ref pubk) = data.publickey {
-        debug!("Matched pubkey file {}", pubk);
-        if !pubk.is_empty() {
-            debug!("Reading publickey from {}", pubk);
-            let pubkey_result = fs::read_to_string(pubk);
-            match pubkey_result {
-                Ok(result) => pubkey_from_file = Some(result),
-                Err(e) => error!("Unable to read publickey from file! {}", e),
-            }
-        }
-    }
-
-    {
-        let filtered_qos = filter_invalid_qos(&data.qos, &config.valid_qos);
-        data.qos = filtered_qos;
-
-        debug!("Received pubkey as modifiable {:?}", pubkey_from_file);
-        data.publickey = pubkey_from_file;
-    }
-
-    let sacctmgr_path = config.sacctmgr_path.clone();
-
-    let credential = SshCredential::new(config);
     if on_which_sys.ldap() {
         modify_ldap_user(&data, config)?;
     }
     if on_which_sys.slurm() {
-        if config.run_slurm_remote {
-            // Execute sacctmgr commands via SSH session
-            slurm::remote::modify_slurm_user(&data, config, &credential)?;
-        } else {
-            // Call sacctmgr binary directly via subprocess
-            slurm::local::modify_slurm_user(&data, &sacctmgr_path)?;
-        }
+        let credential = SshCredential::new(config);
+        let session = SshConnection::from_head_node(config, &credential);
+        slurm::modify_slurm_user(&data, config, &session)?;
     }
 
     debug!("Finished modify_user");
@@ -281,18 +245,13 @@ fn list_users(
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,
 ) -> AppResult {
-    let credentials = SshCredential::new(config);
-
     if on_which_sys.ldap() {
         ldap::list_ldap_users(config, simple_output_ldap)?;
     }
 
     if on_which_sys.slurm() {
-        if config.run_slurm_remote {
-            slurm::remote::list_users(config, &credentials)?;
-        } else {
-            slurm::local::list_users(&config.sacctmgr_path)?;
-        }
+        let credentials = SshCredential::new(config);
+        slurm::list_users(config, &credentials)?;
     }
 
     Ok(())

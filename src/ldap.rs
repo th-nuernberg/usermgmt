@@ -8,10 +8,10 @@ pub use ldap_config::LDAPConfig;
 #[cfg(test)]
 pub mod testing;
 use crate::prelude::AppResult;
-use crate::prelude::*;
 use crate::util::user_input;
 use crate::util::{get_new_uid, hashset_from_vec_str};
-use crate::{Entity, MgmtConfig, Modifiable};
+use crate::MgmtConfig;
+use crate::{prelude::*, Entity, NewEntity};
 /// LDAP operations using the ldap3 lib
 use ldap3::controls::{MakeCritical, RelaxRules};
 use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
@@ -25,14 +25,10 @@ fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
     LdapConn::new(server)
 }
 
-pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
-    if entity.publickey.is_empty() {
-        warn!("No publickey supplied! Don't forget to manually add it in LDAP (or via the modify operation) afterwards.")
-    }
-
+pub fn add_ldap_user(entity: &NewEntity, config: &MgmtConfig) -> AppResult {
     let ldap_config = LDAPConfig::new(config, &None, &None)?;
 
-    let exitence_of_username = username_exists(&entity.username, &ldap_config)?;
+    let exitence_of_username = username_exists(entity.username.as_ref(), &ldap_config)?;
     if exitence_of_username {
         warn!(
             "User {} already exists in LDAP. Skipping LDAP user creation.",
@@ -41,7 +37,7 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
         return Ok(());
     }
 
-    let uid_number = find_next_available_uid(&ldap_config, entity.group.clone())
+    let uid_number = find_next_available_uid(&ldap_config, entity.group.id())
         .context("No users found or LDAP query failed. Unable to assign uid. Aborting...")?;
 
     let mut ldap_connection = make_ldap_connection(&ldap_config.ldap_server)?;
@@ -55,22 +51,34 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
     return Ok(());
 
     fn add_to_ldap_db(
-        entity: &Entity,
-        uid_number: u32,
+        entity: &NewEntity,
+        uid: u32,
         mut ldap_connection: LdapConn,
         config: &MgmtConfig,
         ldap_config: &LDAPConfig,
     ) -> AppResult {
-        let un = &*entity.username.to_owned();
-        let gid = &*format!("{}", entity.gid);
-        let uid = &*format!("{}", uid_number);
-        let ln = &*entity.lastname.to_owned();
-        let gn = &*entity.firstname.to_owned();
-        let mail = &*entity.mail.to_owned();
-        let def_qos = &*entity.default_qos.to_owned();
-        let home = &*format!("/home/{}", entity.username);
-        let qos = entity.qos.to_owned();
-        let pubkey = &*entity.publickey.to_owned();
+        let un = entity.username.as_ref().as_str();
+        let gid = entity.group.gid().to_string();
+        let uid = uid.to_string();
+        let ln = entity.lastname.as_ref().as_str();
+        let gn = entity.firstname.as_ref().as_str();
+        let mail: &str = entity
+            .mail
+            .as_ref()
+            .map(|trimmmed| trimmmed.as_ref().as_str())
+            .unwrap_or("");
+
+        let def_qos = entity.default_qos.as_ref().as_str();
+        let home = &format!("/home/{}", entity.username);
+        let qos: HashSet<&str> = (&entity.qos)
+            .into_iter()
+            .map(|qos| qos.as_ref().as_str())
+            .collect();
+        let pubkey = entity
+            .publickey
+            .as_ref()
+            .map(|trimmmed| trimmmed.as_ref().as_str())
+            .unwrap_or("");
 
         let result_form_adding = ldap_connection.add(
             &format!("uid={},{}", entity.username, ldap_config.base()),
@@ -80,15 +88,15 @@ pub fn add_ldap_user(entity: &Entity, config: &MgmtConfig) -> AppResult {
                     "objectClass",
                     hashset_from_vec_str(&config.objectclass_common).to_owned(),
                 ),
-                ("gidNumber", hashset! {gid}),
-                ("uidNumber", hashset! {uid}),
+                ("gidNumber", hashset! {gid.as_str()}),
+                ("uidNumber", hashset! {uid.as_str()}),
                 ("uid", hashset! {un}),
                 ("sn", hashset! {ln}),
                 ("givenName", hashset! {gn}),
                 ("mail", hashset! {mail}),
                 ("slurmDefaultQos", hashset! {def_qos}),
-                ("homeDirectory", hashset! {home}),
-                ("slurmQos", hashset_from_vec_str(&qos).to_owned()),
+                ("homeDirectory", hashset! {home.as_str()}),
+                ("slurmQos", qos),
                 ("sshPublicKey", hashset! {pubkey}),
                 ("loginShell", hashset! {config.login_shell.as_str()}),
             ],
@@ -129,14 +137,14 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
     Ok(())
 }
 
-pub fn modify_ldap_user(modifiable: &Modifiable, config: &MgmtConfig) -> AppResult {
+pub fn modify_ldap_user(modifiable: &Entity, config: &MgmtConfig) -> AppResult {
     let ldap_config = LDAPConfig::new(config, &None, &None)?;
 
     let dn = find_dn_by_uid(modifiable.username.as_ref(), &ldap_config)
         .with_context(|| {
             format!(
                 "No DN found for username {}! Unable to modify user.",
-                modifiable.username
+                modifiable.username.as_ref()
             )
         })?
         .ok_or(anyhow!("No dn found for uid"))?;
@@ -219,7 +227,7 @@ pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) -> AppResu
 }
 
 fn make_modification_vec<'a>(
-    modifiable: &'a Modifiable,
+    modifiable: &'a Entity,
     old_qos: &'a Vec<String>,
 ) -> Vec<Mod<&'a str>> {
     let mut modifications: Vec<Mod<&str>> = Vec::new();
@@ -227,22 +235,28 @@ fn make_modification_vec<'a>(
     if let Some(firstname) = &modifiable.firstname {
         modifications.push(Mod::Replace(
             "givenName",
-            HashSet::from([firstname.as_ref()]),
+            HashSet::from([firstname.as_ref().as_str()]),
         ))
     }
 
     if let Some(lastname) = &modifiable.lastname {
-        modifications.push(Mod::Replace("sn", HashSet::from([lastname.as_ref()])))
+        modifications.push(Mod::Replace(
+            "sn",
+            HashSet::from([lastname.as_ref().as_str()]),
+        ))
     }
 
     if let Some(mail) = &modifiable.mail {
-        modifications.push(Mod::Replace("mail", HashSet::from([mail.as_str()])))
+        modifications.push(Mod::Replace(
+            "mail",
+            HashSet::from([mail.as_ref().as_str()]),
+        ))
     }
 
     if let Some(default_qos) = &modifiable.default_qos {
         modifications.push(Mod::Replace(
             "slurmDefaultQos",
-            HashSet::from([default_qos.as_str()]),
+            HashSet::from([default_qos.as_ref().as_str()]),
         ))
     }
 
@@ -250,7 +264,7 @@ fn make_modification_vec<'a>(
         debug!("Pushing modifiable publickey {}", publickey);
         modifications.push(Mod::Replace(
             "sshPublicKey",
-            HashSet::from([publickey.as_str()]),
+            HashSet::from([publickey.as_ref().as_str()]),
         ))
     }
 
@@ -260,8 +274,9 @@ fn make_modification_vec<'a>(
             modifications.push(Mod::Delete("slurmQos", HashSet::from([q.as_str()])))
         }
         // then we add all new qos
-        for q in &modifiable.qos {
-            modifications.push(Mod::Add("slurmQos", HashSet::from([q.as_str()])))
+        for q in modifiable.qos.iter() {
+            let q: HashSet<&str> = q.into_iter().map(|qos| qos.as_ref().as_str()).collect();
+            modifications.push(Mod::Add("slurmQos", q))
         }
     }
     modifications
