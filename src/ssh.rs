@@ -19,14 +19,14 @@ pub enum EntitiesAndSshAgent {
 }
 
 /// Executes given command `cmd` on remote machine over ssh
-pub fn run_remote_command(sess: &SshConnection, cmd: &str) -> AppResult<i32> {
+pub fn run_remote_command(sess: &SshConnection, cmd: &str) -> AppResult<(i32, String)> {
     debug!("Running command {}", cmd);
 
     let (s, exit_status) = sess.exec(cmd)?;
 
     debug!("command output: {}", s);
     debug!("command exit status: {}", exit_status);
-    Ok(exit_status)
+    Ok((exit_status, s))
 }
 
 /// Tries get all identities, pub keys, from the active ssh agent.

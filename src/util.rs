@@ -1,7 +1,12 @@
+mod gid;
 mod result_accumalator;
 mod trimmed_non_empty_text;
+mod valid_qos;
+
+pub use gid::ResolvedGid;
 pub use result_accumalator::ResultAccumalator;
 pub use trimmed_non_empty_text::TrimmedNonEmptyText;
+pub use valid_qos::{ValidGroupOfQos, ValidQos};
 pub mod user_input;
 
 use crate::prelude::AppResult;

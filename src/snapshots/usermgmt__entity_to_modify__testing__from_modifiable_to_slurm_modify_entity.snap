@@ -1,0 +1,21 @@
+---
+source: src/entity_to_modify.rs
+expression: actual
+---
+Modifiable {
+    username: TrimmedNonEmptyText(
+        "Someone",
+    ),
+    firstname: None,
+    lastname: None,
+    mail: None,
+    default_qos: None,
+    publickey: None,
+    qos: Some(
+        [
+            "student",
+            "staff",
+        ],
+    ),
+    account: None,
+}

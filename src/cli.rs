@@ -61,56 +61,72 @@ pub enum Commands {
 /// TODO: consider encapsulation with getters and setters.
 #[derive(Args, Debug, Clone)]
 pub struct Modifiable {
-    /// A valid username e.g. wagnerdo.
-    #[clap(value_parser = trimmed_non_empty)]
-    pub username: TrimmedNonEmptyText,
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
     pub firstname: Option<TrimmedNonEmptyText>,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
     pub lastname: Option<TrimmedNonEmptyText>,
-    /// User's e-mail address.
-    #[clap(short, long)]
-    pub mail: Option<String>,
-    /// Slurm default QOS for the user e.g. basic.
-    #[clap(short, long)]
-    pub default_qos: Option<String>,
-    /// Path to SSH publickey.
-    #[clap(short, long)]
-    pub publickey: Option<String>,
-    /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). Max 20 values allowed.
-    #[clap(short, long, num_args(0..=20))]
-    pub qos: Vec<String>,
+    #[command(flatten)]
+    pub common_user_fields: CommonUserFields,
+}
+
+impl Modifiable {
+    pub fn new(username: TrimmedNonEmptyText) -> Self {
+        Self {
+            firstname: Default::default(),
+            lastname: Default::default(),
+            common_user_fields: CommonUserFields::new(username),
+        }
+    }
 }
 
 /// TODO: consider encapsulation with getters and setters.
 #[derive(Args, Debug, Clone)]
 pub struct UserToAdd {
-    /// Username e.g. wagnerdo.
-    #[clap(value_parser = trimmed_non_empty)]
-    pub user: TrimmedNonEmptyText,
-    /// Unix group the user belongs to e.g. staff.
-    #[clap(short, long, default_value = "student", value_parser = trimmed_non_empty)]
-    pub group: TrimmedNonEmptyText,
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
     pub firstname: TrimmedNonEmptyText,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
     pub lastname: TrimmedNonEmptyText,
+    #[command(flatten)]
+    pub common_user_fields: CommonUserFields,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct CommonUserFields {
+    /// Username e.g. wagnerdo.
+    #[clap(value_parser = trimmed_non_empty)]
+    pub username: TrimmedNonEmptyText,
+    /// Unix group the user belongs to e.g. staff.
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub group: Option<TrimmedNonEmptyText>,
     /// User's e-mail address.
-    #[clap(short, long, default_value = "")]
-    pub mail: String,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub mail: Option<TrimmedNonEmptyText>,
     /// Slurm default QOS for the user e.g. basic.
-    #[clap(short, long, default_value = "")]
-    pub default_qos: String,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub default_qos: Option<TrimmedNonEmptyText>,
     /// Path to SSH publickey.
-    #[clap(short, long, default_value = "")]
-    pub publickey: String,
+    #[clap(short, long, value_parser = trimmed_non_empty)]
+    pub publickey: Option<TrimmedNonEmptyText>,
     /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). QOS need to be provided as a whitespace separated list (e.g. interactive basic).
     #[clap(short, long, num_args(0..=20))]
     pub qos: Vec<String>,
+}
+
+impl CommonUserFields {
+    pub fn new(username: TrimmedNonEmptyText) -> Self {
+        Self {
+            username,
+            group: Default::default(),
+            mail: Default::default(),
+            default_qos: Default::default(),
+            publickey: Default::default(),
+            qos: Default::default(),
+        }
+    }
 }
 
 /// Used by argument parser to ensure that

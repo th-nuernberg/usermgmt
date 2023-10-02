@@ -1,0 +1,7 @@
+---
+source: src/slurm/commmand_builder.rs
+expression: actual
+---
+[
+    "some_path/sacctmgr show assoc format=User%30,Account,DefaultQOS,QOS%80",
+]
