@@ -46,82 +46,9 @@ impl<'a, 'b> SshConnection<'a, 'b> {
     /// - If output or exit code of executed remote command could not be retrieved.
     ///
     pub fn exec(&self, cmd: &str) -> AppResult<(String, i32)> {
-        let session = self.session.get_or_try_init(|| -> AppResult<Session> {
-            info!("Connecting to host {}", self.endpoint);
-
-            let mut sess = Session::new().context("Could not build up ssh session")?;
-
-            {
-                let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port))
-                    .with_context(|| {
-                        format!(
-                            "Could not connect over tcp to endpoint: {} over port: {}",
-                            self.endpoint, self.endpoint
-                        )
-                    })?;
-                sess.set_tcp_stream(tcp);
-            }
-
-            sess.handshake()
-                .context("Could not perform ssh handshake")?;
-
-            let username = self.credentials.username()?;
-
-            auth(self, &mut sess, username)?;
-
-            return Ok(sess);
-
-            fn simple_password_auth(
-                session: &mut Session,
-                session_connection: &SshConnection,
-                username: &str,
-            ) -> AppResult {
-                let password = session_connection.credentials.password()?;
-                session
-                    .userauth_password(username, password)
-                    .context("Authentication has failed with provided username/password.")?;
-                Ok(())
-            }
-
-            /// Conducts the authentication on the session.
-            /// It tries to first authenticate via ssh agent if allowed in the configuration.
-            /// After a failed ssh agent authentication or without it,
-            /// a simple username and password authentication is done as an alternative
-            ///
-            /// # Errors
-            ///
-            /// If none of authentication methods succeeded, ssh agent and password
-            /// authentication.
-            ///
-            fn auth(
-                connection: &SshConnection,
-                session: &mut Session,
-                username: &str,
-            ) -> AppResult {
-                if connection.ssh_agent {
-                    match try_authenticate_via_ssh_agent(session, username) {
-                        Ok(_) => {
-                            info!(
-                                "Authentication via ssh agent successeded with username {}",
-                                username
-                            );
-                        }
-                        Err(agent_error) => {
-                            warn!(
-                                "Authentication via ssh agent failed with username ({}).
-                                \n Details: {}",
-                                username, agent_error
-                            );
-                            simple_password_auth(session, connection, username)?;
-                        }
-                    }
-                } else {
-                    simple_password_auth(session, connection, username)?;
-                }
-
-                Ok(())
-            }
-        })?;
+        let session = self
+            .session
+            .get_or_try_init(|| -> AppResult<Session> { self.establish_connection() })?;
 
         let mut channel = session
             .channel_session()
@@ -140,6 +67,80 @@ impl<'a, 'b> SshConnection<'a, 'b> {
             .context("Could not retrieve exit code of executed command over ssh")?;
 
         Ok((output, exit_status))
+    }
+
+    fn establish_connection(&self) -> AppResult<Session> {
+        info!("Connecting to host {}", self.endpoint);
+
+        let mut sess = Session::new().context("Could not build up ssh session")?;
+
+        {
+            let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port)).with_context(
+                || {
+                    format!(
+                        "Could not connect over tcp to endpoint: {} over port: {}",
+                        self.endpoint, self.endpoint
+                    )
+                },
+            )?;
+            sess.set_tcp_stream(tcp);
+        }
+
+        sess.handshake()
+            .context("Could not perform ssh handshake")?;
+
+        let username = self.credentials.username()?;
+
+        auth(self, &mut sess, username)?;
+
+        return Ok(sess);
+
+        fn simple_password_auth(
+            session: &mut Session,
+            session_connection: &SshConnection,
+            username: &str,
+        ) -> AppResult {
+            let password = session_connection.credentials.password()?;
+            session
+                .userauth_password(username, password)
+                .context("Authentication has failed with provided username/password.")?;
+            Ok(())
+        }
+
+        /// Conducts the authentication on the session.
+        /// It tries to first authenticate via ssh agent if allowed in the configuration.
+        /// After a failed ssh agent authentication or without it,
+        /// a simple username and password authentication is done as an alternative
+        ///
+        /// # Errors
+        ///
+        /// If none of authentication methods succeeded, ssh agent and password
+        /// authentication.
+        ///
+        fn auth(connection: &SshConnection, session: &mut Session, username: &str) -> AppResult {
+            if connection.ssh_agent {
+                match try_authenticate_via_ssh_agent(session, username) {
+                    Ok(_) => {
+                        info!(
+                            "Authentication via ssh agent successeded with username {}",
+                            username
+                        );
+                    }
+                    Err(agent_error) => {
+                        warn!(
+                            "Authentication via ssh agent failed with username ({}).
+                                \n Details: {}",
+                            username, agent_error
+                        );
+                        simple_password_auth(session, connection, username)?;
+                    }
+                }
+            } else {
+                simple_password_auth(session, connection, username)?;
+            }
+
+            Ok(())
+        }
     }
 }
 
@@ -161,8 +162,9 @@ fn try_authenticate_via_ssh_agent(session: &mut Session, username: &str) -> AppR
         EntitiesAndSshAgent::One(agent, only_key) => (agent, only_key),
         EntitiesAndSshAgent::Many(agent, to_choose_from) => {
             let length = to_choose_from.len();
+            let last_index = length.saturating_sub(1);
             println!("Found more than one key in ssh agent !");
-            println!("Chooose one between {} and {} ssh key", 0, length);
+            println!("Chooose one between {} and {} ssh key", 0, last_index);
             println!("===========================================");
 
             for (index, next) in to_choose_from.iter().enumerate() {
@@ -174,8 +176,8 @@ fn try_authenticate_via_ssh_agent(session: &mut Session, username: &str) -> AppR
                 .ok_or_else(|| anyhow!("No number supplied"))?
                 .parse()?;
 
-            if length <= user_choice {
-                bail!("Choice should between {} and {}", 0, length);
+            if last_index < user_choice {
+                bail!("Choice should between {} and {}", 0, last_index);
             } else {
                 info!("{}. ssh key is chosen", user_choice);
                 (agent, to_choose_from.into_iter().nth(user_choice).unwrap())
