@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Used base dc, dn for user manipulation and dn for user bind are now logged.
 - Port for ssh connection can now specified via configuration file
 
+### Fixed
+
+- The prompt showing allowed number for selection for several keys under ssh agent is now correctly displayed. 
+  Before the maximum index selection was too big by one.
+
 ## [0.1.0] - 2022-06-20
 
 ### Added
