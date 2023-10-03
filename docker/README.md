@@ -74,6 +74,17 @@ Use this username and password when the app prompts for ssh credentials during d
 This user has admin rights in the slurmdb and can be used to add/modify/delete users in the slurmdb 
 of the docker set up. 
 
+### Authorize as dev_user via ssh-agent
+
+You can also authenticate as the user "dev_user" via a ssh agent.
+If you want to use or test the functionality with the ssh agent then type the following command: 
+
+```bash
+ssh-add docker/slurm-docker-cluster/dev_user_ed25519
+```
+
+It is presumed that you are at the project root before running the snippet.
+
 ## Initial data and specs for slurmdb
 
 - This is accomplished via this [script](./slurm-docker-cluster/add_slurm_data.sh)
