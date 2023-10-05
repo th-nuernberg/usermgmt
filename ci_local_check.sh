@@ -11,4 +11,4 @@ cargo clippy -- -Dwarnings
 echo "==================="
 
 echo "Checking unit test"
-cargo test
+cargo test --workspace

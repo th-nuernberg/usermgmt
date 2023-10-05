@@ -1,5 +1,5 @@
 ---
-source: src/slurm/commmand_builder.rs
+source: usermgmt_lib/src/slurm/commmand_builder.rs
 expression: actual
 ---
 [

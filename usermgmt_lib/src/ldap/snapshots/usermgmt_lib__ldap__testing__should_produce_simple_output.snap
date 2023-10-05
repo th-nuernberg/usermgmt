@@ -1,5 +1,5 @@
 ---
-source: src/ldap/testing.rs
+source: usermgmt_lib/src/ldap/testing.rs
 expression: actual
 ---
 qos=basic|default,name=Mr. X

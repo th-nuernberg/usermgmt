@@ -1452,12 +1452,21 @@ dependencies = [
 name = "usermgmt"
 version = "0.5.1"
 dependencies = [
+ "clap",
+ "env_logger",
+ "log",
+ "usermgmt_lib",
+]
+
+[[package]]
+name = "usermgmt_lib"
+version = "0.5.1"
+dependencies = [
  "anyhow",
  "clap",
  "confy",
  "derive_more",
  "dirs",
- "env_logger",
  "getset",
  "insta",
  "ldap3",

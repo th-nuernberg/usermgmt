@@ -7,15 +7,15 @@ pub mod config;
 pub mod dir;
 pub mod util;
 
-mod entity;
-mod ldap;
-mod new_entity;
-mod slurm;
-mod ssh;
-use cli::{Commands, OnWhichSystem, UserToAdd};
+pub mod entity;
+pub mod ldap;
+pub mod new_entity;
+pub mod slurm;
+pub mod ssh;
+use cli::{OnWhichSystem, UserToAdd};
 
 use config::MgmtConfig;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use prelude::*;
 use std::{collections::HashSet, fmt, str::FromStr};
 
@@ -73,75 +73,6 @@ impl FromStr for Group {
     }
 }
 
-/// Main function that handles user management
-pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
-    match args.command {
-        Commands::GenerateConfig => {
-            println!(
-                "{}",
-                toml::to_string_pretty(&MgmtConfig::default())
-                    .expect("Could not turn default configuration into the toml format")
-            );
-        }
-        Commands::Add {
-            to_add,
-            on_which_sys,
-        } => {
-            let config = load_config()?;
-            add_user(
-                to_add,
-                &OnWhichSystem::from_config_for_all(&config, &on_which_sys),
-                &config,
-            )?
-        }
-        Commands::Modify { data, on_which_sys } => {
-            let config = load_config()?;
-            let data = Entity::new_modifieble_conf(data, &config)?;
-            modify_user(
-                data,
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
-                &config,
-            )?
-        }
-        Commands::Delete { user, on_which_sys } => {
-            let config = load_config()?;
-            delete_user(
-                user.as_ref(),
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
-                &config,
-            )?;
-        }
-        Commands::List {
-            on_which_sys,
-            simple_output_for_ldap,
-        } => {
-            let config = load_config()?;
-            list_users(
-                &config,
-                &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
-                simple_output_for_ldap.unwrap_or(false),
-            )?
-        }
-    };
-
-    return Ok(());
-
-    /// Tries to load  config.toml for application.
-    ///
-    /// # Error
-    ///
-    /// - Can not ensure if folder exits where conf.toml file exits
-    /// - Can not read or create a configuration file
-    fn load_config() -> AppResult<MgmtConfig> {
-        let path = config::get_path_to_conf()?;
-
-        info!("Loding configuraion file from path at {:?}", path);
-        // Load (or create if nonexistent) configuration file conf.toml
-        confy::load_path(&path)
-            .with_context(|| format!("Error in loading or creating config file at {:?}", path))
-    }
-}
-
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
 /// Filters out duplicates too.
 /// Returns an empty vector if `qos` or `valid_qos` is empty.
@@ -174,7 +105,7 @@ where
 }
 
 /// TODO: reduce argument count
-fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+pub fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start add_user");
 
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
@@ -200,7 +131,7 @@ fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig
     Ok(())
 }
 
-fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+pub fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
     debug!("Start delete_user");
 
     if on_which_sys.ldap() {
@@ -217,7 +148,11 @@ fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) ->
     Ok(())
 }
 
-fn modify_user(mut data: Entity, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+pub fn modify_user(
+    mut data: Entity,
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+) -> AppResult {
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
@@ -240,7 +175,7 @@ fn modify_user(mut data: Entity, on_which_sys: &OnWhichSystem, config: &MgmtConf
     Ok(())
 }
 
-fn list_users(
+pub fn list_users(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,

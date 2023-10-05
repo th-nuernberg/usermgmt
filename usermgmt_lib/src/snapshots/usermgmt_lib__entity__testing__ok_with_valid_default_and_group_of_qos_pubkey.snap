@@ -1,5 +1,5 @@
 ---
-source: src/entity.rs
+source: usermgmt_lib/src/entity.rs
 expression: actual
 ---
 Ok(

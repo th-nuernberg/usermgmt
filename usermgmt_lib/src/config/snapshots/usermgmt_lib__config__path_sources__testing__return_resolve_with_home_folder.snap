@@ -1,5 +1,5 @@
 ---
-source: src/config/path_sources.rs
+source: usermgmt_lib/src/config/path_sources.rs
 expression: actual
 ---
 - /home/foo

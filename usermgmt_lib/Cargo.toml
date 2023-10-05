@@ -1,0 +1,35 @@
+[package]
+name = "usermgmt_lib"
+version = "0.5.1"
+edition = "2021"
+license-file = "LICENSE"
+description = "Simultaneous Slurm and LDAP user management library"
+readme = "README.md"
+rust-version = "1.70.0"
+
+[dependencies]
+log = { workspace = true }
+clap = { workspace = true }
+toml = "0.8.1"
+serde = { version = "1.0.188", features = ["derive"] }
+confy = "0.5.1"
+tempfile = "3.8.0"
+rpassword = "7.2.0"
+ldap3 = "0.11.3"
+maplit = "1.0.2"
+ssh2 = "0.9.4"
+once_cell = "1.18.0"
+anyhow = { version = "1.0.75", features = ["backtrace"] }
+prettytable = "0.10.0"
+getset = "0.1.2"
+dirs = "5.0.1"
+derive_more = { version = "0.99.17", default-features = false, features = [
+  "from",
+  "into",
+  "as_ref",
+  "display",
+  "into_iterator",
+] }
+
+[dev-dependencies]
+insta = { version = "1.33.0", features = ["yaml"] }

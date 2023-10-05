@@ -1,7 +1,11 @@
 mod path_sources;
+use anyhow::Context;
+use log::info;
 pub use path_sources::get_path_to_conf;
 /// Definition of configuration options
 use serde::{Deserialize, Serialize};
+
+use crate::{config, prelude::AppResult};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 /// TODO: consider implementing encapsulation with getters and setters
@@ -114,4 +118,24 @@ impl Default for MgmtConfig {
             ssh_agent: false,
         }
     }
+}
+
+/// Tries to load  config.toml for application.
+///
+/// # Error
+///
+/// - Can not ensure if folder exits where conf.toml file exits
+/// - Can not read or create a configuration file
+pub fn load_config() -> AppResult<MgmtConfig> {
+    let path = config::get_path_to_conf()?;
+
+    info!("Loding configuraion file from path at {:?}", path);
+    // Load (or create if nonexistent) configuration file conf.toml
+    confy::load_path(&path)
+        .with_context(|| format!("Error in loading or creating config file at {:?}", path))
+}
+
+pub fn config_for_save() -> String {
+    toml::to_string_pretty(&MgmtConfig::default())
+        .expect("Could not turn default configuration into the toml format")
 }
