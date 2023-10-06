@@ -1,0 +1,2 @@
+[alias]
+gui = "run -p usermgmt_gui --"

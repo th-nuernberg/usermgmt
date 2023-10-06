@@ -10,8 +10,8 @@ rust-version = "1.70.0"
 [dependencies]
 clap = { workspace = true }
 log = { workspace = true }
+env_logger = { workspace = true }
 usermgmt_lib = { path = "../usermgmt_lib" }
-env_logger = "0.10.0"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"
