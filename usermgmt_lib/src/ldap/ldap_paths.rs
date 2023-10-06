@@ -32,7 +32,7 @@ impl LdapPaths {
         let bind_org_unit = by_config_or_default(&bind, DEFAULT_BIND_ORG_UNIT);
         // create ldap paths by concat ldap components by comma
         let ldap_prefix_with_user_name = format!("{}={}", prefix, username);
-        let ldap_dc = dc.unwrap_or(String::new());
+        let ldap_dc = dc.unwrap_or_default();
         let ldap_base = concat_by_comma_if_both_not_empty(org_unit, ldap_dc.clone());
         let ldap_bind = {
             let dc_and_bind_org = concat_by_comma_if_both_not_empty(bind_org_unit, ldap_dc.clone());
