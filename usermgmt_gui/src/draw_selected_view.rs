@@ -5,34 +5,28 @@ use eframe::{
 
 use crate::{
     current_selected_view::CurrentSelectedView, gui_design::WHICH_GUI_VIEW_SIZE,
-    io_task_status::IoTaskStatus, usermgmt_window::UsermgmtWindow,
+    io_resource_manager::IoTaskStatus, usermgmt_window::UsermgmtWindow,
 };
 
 pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let current_view = window.selected_view();
     ui.label(RichText::new(current_view.to_str()).size(WHICH_GUI_VIEW_SIZE));
     match current_view {
-        CurrentSelectedView::Configuration => match &window.conf_state.io_status_conf {
-            crate::io_task_status::IoTaskStatus::NotStarted => {
+        CurrentSelectedView::Configuration => match &window.conf_state.io_conf.status() {
+            IoTaskStatus::NotStarted => {
                 ui.label("No configuration loaded yet");
             }
-            crate::io_task_status::IoTaskStatus::Loading => {
+            IoTaskStatus::Loading => {
                 ui.label(RichText::new("Loading configuration").color(Color32::BLUE));
-                match window.conf_state.io_load_conf.get_task_result() {
-                    Some(Ok(success)) => {
-                        window.conf_state.io_status_conf = IoTaskStatus::Successful;
-                        window.conf_state.conf = Some(success)
-                    }
-                    Some(Err(error)) => {
-                        window.conf_state.io_status_conf = IoTaskStatus::Failed(error)
-                    }
+                match window.conf_state.io_conf.query_task() {
+                    Some(conf) => window.conf_state.conf = Some(conf),
                     None => (),
                 }
             }
-            crate::io_task_status::IoTaskStatus::Successful => {
+            IoTaskStatus::Successful => {
                 ui.label(RichText::new("Configuration loaded").color(Color32::GREEN));
             }
-            crate::io_task_status::IoTaskStatus::Failed(error) => {
+            IoTaskStatus::Failed(error) => {
                 ui.label(
                     RichText::new("Error in loadiding configuration.")
                         .strong()

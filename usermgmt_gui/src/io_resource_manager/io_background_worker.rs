@@ -1,7 +1,7 @@
-use std::thread::{self, spawn, JoinHandle};
+use std::thread::{self, JoinHandle};
 
 use log::{error, info};
-use usermgmt_lib::prelude::{anyhow, AppError, AppResult};
+use usermgmt_lib::prelude::{anyhow, AppResult};
 
 #[derive(Debug, Default)]
 pub struct IoBackgroundWorker<T = ()> {
@@ -32,7 +32,10 @@ where
             let new_thread = thread::Builder::new()
                 .name(thread_name.clone())
                 .spawn(task)
-                .map_err(|error| anyhow!("{:?}", error))?;
+                .map_err(|error| {
+                    error!("Failed to spawn thread named {}", thread_name);
+                    anyhow!("{:?}", error)
+                })?;
             self.thread = Some(new_thread);
             info!("Started background task in thread ({})", thread_name);
             Ok(true)
@@ -41,7 +44,7 @@ where
         }
     }
 
-    pub fn is_loading(&self) -> bool {
+    pub fn _is_loading(&self) -> bool {
         self.thread.is_some()
     }
 
