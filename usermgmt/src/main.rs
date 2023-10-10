@@ -6,6 +6,7 @@ use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
 use usermgmt_lib::config::{self};
 use usermgmt_lib::{prelude::*, Entity};
 
+mod ldap_cli_credential;
 fn main() -> ExitCode {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format_timestamp(None)

@@ -1,3 +1,5 @@
+use crate::prelude::AppResult;
+
 use super::LdapCredential;
 
 #[derive(Debug)]
@@ -7,11 +9,11 @@ pub struct LdapSimpleCredential {
 }
 
 impl LdapCredential for LdapSimpleCredential {
-    fn username(&self) -> &str {
-        &self.username
+    fn username(&self) -> AppResult<&str> {
+        Ok(&self.username)
     }
 
-    fn password(&self) -> &str {
-        &self.password
+    fn password(&self) -> AppResult<&str> {
+        Ok(&self.password)
     }
 }

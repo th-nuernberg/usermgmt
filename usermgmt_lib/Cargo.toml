@@ -10,6 +10,7 @@ rust-version = "1.70.0"
 [dependencies]
 log = { workspace = true }
 clap = { workspace = true }
+once_cell = { workspace = true }
 toml = "0.8.1"
 serde = { version = "1.0.188", features = ["derive"] }
 confy = "0.5.1"
@@ -18,7 +19,6 @@ rpassword = "7.2.0"
 ldap3 = "0.11.3"
 maplit = "1.0.2"
 ssh2 = "0.9.4"
-once_cell = "1.18.0"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 prettytable = "0.10.0"
 getset = "0.1.2"

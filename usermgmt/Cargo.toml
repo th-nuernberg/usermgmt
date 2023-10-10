@@ -11,6 +11,7 @@ rust-version = "1.70.0"
 clap = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+once_cell = { workspace = true }
 usermgmt_lib = { path = "../usermgmt_lib" }
 
 [package.metadata.deb]
