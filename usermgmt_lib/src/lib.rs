@@ -1,4 +1,5 @@
 pub use entity::Entity;
+use ldap::LdapCredential;
 pub use new_entity::NewEntity;
 
 pub mod app_error;
@@ -29,7 +30,7 @@ pub mod prelude {
 
 use crate::{
     dir::add_user_directories,
-    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user},
+    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user, LDAPConfig},
     ssh::{SshConnection, SshCredential},
 };
 extern crate confy;
@@ -104,14 +105,22 @@ where
     filtered_qos.into_iter().collect()
 }
 
-/// TODO: reduce argument count
-pub fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+pub fn add_user<T>(
+    to_add: UserToAdd,
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+    ldap_credentials: T,
+) -> AppResult
+where
+    T: LdapCredential,
+{
     debug!("Start add_user");
 
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
     if on_which_sys.ldap() {
-        add_ldap_user(&entity, config)?;
+        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
+        add_ldap_user(&entity, config, &ldap_config)?;
     }
 
     let ssh_credentials = SshCredential::new(config);
@@ -131,11 +140,20 @@ pub fn add_user(to_add: UserToAdd, on_which_sys: &OnWhichSystem, config: &MgmtCo
     Ok(())
 }
 
-pub fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig) -> AppResult {
+pub fn delete_user<T>(
+    user: &str,
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+    ldap_credentials: T,
+) -> AppResult
+where
+    T: LdapCredential,
+{
     debug!("Start delete_user");
 
     if on_which_sys.ldap() {
-        delete_ldap_user(user, config)?;
+        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
+        delete_ldap_user(user, ldap_config)?;
     }
 
     if on_which_sys.slurm() {
@@ -148,11 +166,15 @@ pub fn delete_user(user: &str, on_which_sys: &OnWhichSystem, config: &MgmtConfig
     Ok(())
 }
 
-pub fn modify_user(
+pub fn modify_user<T>(
     mut data: Entity,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
-) -> AppResult {
+    ldap_credentials: T,
+) -> AppResult
+where
+    T: LdapCredential,
+{
     debug!("Start modify_user for {}", data.username);
 
     if let Some(ref s) = data.default_qos {
@@ -163,7 +185,8 @@ pub fn modify_user(
     }
 
     if on_which_sys.ldap() {
-        modify_ldap_user(&data, config)?;
+        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
+        modify_ldap_user(&data, config, ldap_config)?;
     }
     if on_which_sys.slurm() {
         let credential = SshCredential::new(config);

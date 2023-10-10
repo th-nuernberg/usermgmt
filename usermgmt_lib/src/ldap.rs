@@ -12,6 +12,7 @@ pub use ldap_credential::LdapCredential;
 
 #[cfg(test)]
 pub mod testing;
+use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
 use crate::prelude::AppResult;
 use crate::util::user_input;
 use crate::util::{get_new_uid, hashset_from_vec_str};
@@ -30,10 +31,15 @@ fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
     LdapConn::new(server)
 }
 
-pub fn add_ldap_user(entity: &NewEntity, config: &MgmtConfig) -> AppResult {
-    let ldap_config = LDAPConfig::new(config, &None, &None)?;
-
-    let exitence_of_username = username_exists(entity.username.as_ref(), &ldap_config)?;
+pub fn add_ldap_user<T>(
+    entity: &NewEntity,
+    config: &MgmtConfig,
+    ldap_config: &LDAPConfig<T>,
+) -> AppResult
+where
+    T: LdapCredential,
+{
+    let exitence_of_username = username_exists(entity.username.as_ref(), ldap_config)?;
     if exitence_of_username {
         warn!(
             "User {} already exists in LDAP. Skipping LDAP user creation.",
@@ -42,26 +48,29 @@ pub fn add_ldap_user(entity: &NewEntity, config: &MgmtConfig) -> AppResult {
         return Ok(());
     }
 
-    let uid_number = find_next_available_uid(&ldap_config, entity.group.id())
+    let uid_number = find_next_available_uid(ldap_config, entity.group.id())
         .context("No users found or LDAP query failed. Unable to assign uid. Aborting...")?;
 
     let mut ldap_connection = make_ldap_connection(&ldap_config.ldap_server)?;
 
-    ldap_connection.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    ldap_connection.simple_bind(ldap_config.bind(), ldap_config.password()?)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
-    add_to_ldap_db(entity, uid_number, ldap_connection, config, &ldap_config)?;
+    add_to_ldap_db(entity, uid_number, ldap_connection, config, ldap_config)?;
 
     info!("Added LDAP user {}", entity.username);
     return Ok(());
 
-    fn add_to_ldap_db(
+    fn add_to_ldap_db<T>(
         entity: &NewEntity,
         uid: u32,
         mut ldap_connection: LdapConn,
         config: &MgmtConfig,
-        ldap_config: &LDAPConfig,
-    ) -> AppResult {
+        ldap_config: &LDAPConfig<T>,
+    ) -> AppResult
+    where
+        T: LdapCredential,
+    {
         let un = entity.username.as_ref().as_str();
         let gid = entity.group.gid().to_string();
         let uid = uid.to_string();
@@ -112,8 +121,10 @@ pub fn add_ldap_user(entity: &NewEntity, config: &MgmtConfig) -> AppResult {
     }
 }
 
-pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
-    let ldap_config = LDAPConfig::new(config, &None, &None)?;
+pub fn delete_ldap_user<T>(username: &str, ldap_config: LDAPConfig<T>) -> AppResult
+where
+    T: LdapCredential,
+{
     // get dn for uid
     let dn = find_dn_by_uid(username, &ldap_config)
         .with_context(|| format!("No DN found for username {}!", username))?;
@@ -121,7 +132,7 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     let _ = ldap
-        .simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)
+        .simple_bind(ldap_config.bind(), ldap_config.password()?)
         .with_context(|| {
             format!(
                 "Failed to establish ldap connection via the bind {}",
@@ -142,9 +153,14 @@ pub fn delete_ldap_user(username: &str, config: &MgmtConfig) -> AppResult {
     Ok(())
 }
 
-pub fn modify_ldap_user(modifiable: &Entity, config: &MgmtConfig) -> AppResult {
-    let ldap_config = LDAPConfig::new(config, &None, &None)?;
-
+pub fn modify_ldap_user<T>(
+    modifiable: &Entity,
+    config: &MgmtConfig,
+    ldap_config: LDAPConfig<T>,
+) -> AppResult
+where
+    T: LdapCredential,
+{
     let dn = find_dn_by_uid(modifiable.username.as_ref(), &ldap_config)
         .with_context(|| {
             format!(
@@ -155,7 +171,8 @@ pub fn modify_ldap_user(modifiable: &Entity, config: &MgmtConfig) -> AppResult {
         .ok_or(anyhow!("No dn found for uid"))?;
 
     let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    let password = &ldap_config.password()?;
+    ldap.simple_bind(ldap_config.bind(), password)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Prepare replace operation
@@ -163,7 +180,7 @@ pub fn modify_ldap_user(modifiable: &Entity, config: &MgmtConfig) -> AppResult {
         modifiable.username.as_ref(),
         config,
         ldap_config.username(),
-        &ldap_config.ldap_pass,
+        password,
     )?;
     let mod_vec = make_modification_vec(modifiable, &old_qos);
 
@@ -288,17 +305,17 @@ fn make_modification_vec<'a>(
 }
 
 /// Do a LDAP search to determine the next available uid
-fn find_next_available_uid(ldap_config: &LDAPConfig, group: crate::Group) -> AppResult<u32> {
+fn find_next_available_uid<T>(ldap_config: &LDAPConfig<T>, group: crate::Group) -> AppResult<u32>
+where
+    T: LdapCredential,
+{
     let mut ldap =
         make_ldap_connection(&ldap_config.ldap_server).context("Error during uid search!")?;
 
-    debug!(
-        "Binding with dn: {}, pw: {}",
-        ldap_config.bind(),
-        ldap_config.ldap_pass
-    );
+    let password = ldap_config.password()?;
+    debug!("Binding with dn: {}, pw: {}", ldap_config.bind(), password);
 
-    let bind = ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    let bind = ldap.simple_bind(ldap_config.bind(), password)?;
     debug!(
         "find_next_available_uid: LDAP connection established to {}, {}",
         ldap_config.bind(),
@@ -329,9 +346,13 @@ fn find_next_available_uid(ldap_config: &LDAPConfig, group: crate::Group) -> App
 }
 
 /// Search for a specific uid and return the corresponding dn.
-fn find_dn_by_uid(username: &str, ldap_config: &LDAPConfig) -> AppResult<Option<String>> {
+fn find_dn_by_uid<T>(username: &str, ldap_config: &LDAPConfig<T>) -> AppResult<Option<String>>
+where
+    T: LdapCredential,
+{
     let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    let password = ldap_config.password()?;
+    ldap.simple_bind(ldap_config.bind(), password)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Search for all uids under base dn and return dn of user
@@ -363,8 +384,7 @@ fn find_qos_by_uid(
 ) -> AppResult<Vec<String>> {
     let ldap_config = LDAPConfig::new(
         config,
-        &Some(ldap_user.to_string()),
-        &Some(ldap_pass.to_string()),
+        LdapSimpleCredential::new(ldap_user.to_string(), ldap_pass.to_string()),
     )?;
     let mut fetched_all_qos: Vec<String> = Vec::new();
 
@@ -372,7 +392,8 @@ fn find_qos_by_uid(
     let mut ldap_connection = make_ldap_connection(ldap_server)
         .with_context(|| format!("Connection to {} failed", ldap_server))?;
 
-    ldap_connection.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    let password = ldap_config.password()?;
+    ldap_connection.simple_bind(ldap_config.bind(), password)?;
 
     debug!("LDAP connection established to {}", ldap_config.bind());
 
@@ -405,11 +426,13 @@ fn find_qos_by_uid(
 
 /// Check if username already exists in ldap.
 /// Must be an exact match on the uid attribute.
-/// TODO: Bubble up error instead of just logging it
-fn username_exists(username: &String, ldap_config: &LDAPConfig) -> AppResult<bool> {
+fn username_exists<T>(username: &String, ldap_config: &LDAPConfig<T>) -> AppResult<bool>
+where
+    T: LdapCredential,
+{
     let mut username_exists = false;
     let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    ldap.simple_bind(ldap_config.bind(), &ldap_config.ldap_pass)?;
+    ldap.simple_bind(ldap_config.bind(), ldap_config.password()?)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Search for all uid under base dn and return dn of user

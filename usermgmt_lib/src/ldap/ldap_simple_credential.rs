@@ -8,6 +8,12 @@ pub struct LdapSimpleCredential {
     password: String,
 }
 
+impl LdapSimpleCredential {
+    pub fn new(username: String, password: String) -> Self {
+        Self { username, password }
+    }
+}
+
 impl LdapCredential for LdapSimpleCredential {
     fn username(&self) -> AppResult<&str> {
         Ok(&self.username)

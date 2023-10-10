@@ -1,3 +1,5 @@
+use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
+
 use super::*;
 use maplit::hashmap;
 
@@ -12,8 +14,11 @@ fn should_give_correct_ldap_paths() {
         let given = MgmtConfig {
             ..MgmtConfig::default()
         };
-        let actual =
-            LDAPConfig::new(&given, &Some("xxx".to_owned()), &Some("xxxx".to_owned())).unwrap();
+        let actual = LDAPConfig::new(
+            &given,
+            LdapSimpleCredential::new("xxx".to_owned(), "xxxx".to_owned()),
+        )
+        .unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "".to_owned(),
@@ -28,28 +33,35 @@ fn should_give_correct_ldap_paths() {
             ldap_domain_components: Some("dc=example,dc=com".to_owned()),
             ldap_org_unit: Some("ou=it,ou=people".to_owned()),
             ldap_bind_org_unit: Some("ou=special".to_owned()),
-            ldap_bind_prefix: Some("uid".to_owned()),
+
             ..MgmtConfig::default()
         };
 
-        let actual =
-            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
+        let actual = LDAPConfig::new(
+            &given,
+            LdapSimpleCredential::new("alice".to_owned(), "xxxx".to_owned()),
+        )
+        .unwrap();
 
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "ou=it,ou=people,dc=example,dc=com".to_owned(),
-                ldap_bind: "uid=alice,ou=special,dc=example,dc=com".to_owned(),
+                ldap_bind: "cn=alice,ou=special,dc=example,dc=com".to_owned(),
             },
             &actual,
         );
     }
+
     {
         let given = MgmtConfig {
             ldap_domain_components: Some("dc=example,dc=com".to_owned()),
             ..MgmtConfig::default()
         };
-        let actual =
-            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
+        let actual = LDAPConfig::new(
+            &given,
+            LdapSimpleCredential::new("alice".to_owned(), "xxxx".to_owned()),
+        )
+        .unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "dc=example,dc=com".to_owned(),
@@ -58,24 +70,29 @@ fn should_give_correct_ldap_paths() {
             &actual,
         );
     }
+
     {
         let given = MgmtConfig {
             ldap_domain_components: Some("dc=example,dc=com".to_owned()),
             ldap_org_unit: Some("aaa=department,bbb=level".to_owned()),
+            ldap_bind_prefix: Some("uid".to_string()),
             ..MgmtConfig::default()
         };
-        let actual =
-            LDAPConfig::new(&given, &Some("alice".to_owned()), &Some("xxxx".to_owned())).unwrap();
+        let actual = LDAPConfig::new(
+            &given,
+            LdapSimpleCredential::new("alice".to_owned(), "xxxx".to_owned()),
+        )
+        .unwrap();
         assert_case(
             ExpectedLdapPaths {
                 ldap_base: "aaa=department,bbb=level,dc=example,dc=com".to_owned(),
-                ldap_bind: "cn=alice,dc=example,dc=com".to_owned(),
+                ldap_bind: "uid=alice,dc=example,dc=com".to_owned(),
             },
             &actual,
         );
     }
 
-    fn assert_case(expected: ExpectedLdapPaths, actual: &LDAPConfig) {
+    fn assert_case(expected: ExpectedLdapPaths, actual: &LDAPConfig<LdapSimpleCredential>) {
         assert_eq!(
             expected.ldap_base,
             actual.base(),

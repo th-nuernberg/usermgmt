@@ -13,13 +13,13 @@ pub struct LdapCliCredential {
 impl LdapCredential for LdapCliCredential {
     fn username(&self) -> AppResult<&str> {
         self.username
-            .get_or_try_init(|| ldap::ask_cli_username())
+            .get_or_try_init(ldap::ask_cli_username)
             .map(|string| string.as_str())
     }
 
     fn password(&self) -> AppResult<&str> {
         self.password
-            .get_or_try_init(|| ldap::ask_cli_password())
+            .get_or_try_init(ldap::ask_cli_password)
             .map(|string| string.as_str())
     }
 }

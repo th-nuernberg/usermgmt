@@ -1,5 +1,6 @@
 use clap::Parser;
 use env_logger::Env;
+use ldap_cli_credential::LdapCliCredential;
 use log::error;
 use std::process::ExitCode;
 use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
@@ -29,6 +30,7 @@ fn execute_command() -> AppResult {
 
 /// Main function that handles user management
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
+    let ldap_credential = LdapCliCredential::default();
     match args.command {
         Commands::GenerateConfig => {
             println!("{}", config::config_for_save())
@@ -42,6 +44,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
                 to_add,
                 &OnWhichSystem::from_config_for_all(&config, &on_which_sys),
                 &config,
+                ldap_credential,
             )?
         }
         Commands::Modify { data, on_which_sys } => {
@@ -51,6 +54,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
                 data,
                 &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 &config,
+                ldap_credential,
             )?
         }
         Commands::Delete { user, on_which_sys } => {
@@ -59,6 +63,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
                 user.as_ref(),
                 &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 &config,
+                ldap_credential,
             )?;
         }
         Commands::List {
