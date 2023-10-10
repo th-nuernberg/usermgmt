@@ -18,7 +18,6 @@ where
 {
     pub fn new_readonly(config: &MgmtConfig, mut credentials: T) -> AppResult<Self> {
         let ldap_server = config.ldap_server.clone();
-        dbg!("aaaa");
         let (ldap_user, ldap_pass) = super::ask_credentials_if_not_provided(
             config.ldap_readonly_user.as_deref(),
             config.ldap_readonly_pw.as_deref(),
@@ -52,6 +51,7 @@ where
             ldap_server,
         })
     }
+
     pub fn new(config: &MgmtConfig, credentials: T) -> AppResult<Self> {
         let (bind_prefix, ldap_server, dc, org_unit, bind_org_unit) = (
             &config.ldap_bind_prefix,
@@ -89,5 +89,77 @@ where
     }
     pub fn password(&self) -> AppResult<&str> {
         self.ldap_credentails.password()
+    }
+}
+
+#[cfg(test)]
+mod testing {
+    use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
+
+    use super::*;
+
+    #[test]
+    fn takes_all_from_readonly_conf() {
+        let config = MgmtConfig {
+            ldap_readonly_pw: Some("Password".to_string()),
+            ldap_readonly_user: Some("User".to_string()),
+            ..Default::default()
+        };
+
+        let ldap_config = LDAPConfig::new_readonly(
+            &config,
+            LdapSimpleCredential::new(String::from("Password"), String::from("User")),
+        )
+        .unwrap();
+        assert_eq!(
+            ("User", "Password"),
+            (ldap_config.username(), ldap_config.password().unwrap())
+        );
+    }
+
+    #[test]
+    fn takes_username_from_readonly_conf() {
+        const EXPECTED_PASSWORD: &str = "Password user provided";
+        const EXPECTED_USERNAME: &str = "User from user provided";
+        let config = MgmtConfig {
+            ldap_readonly_user: Some(EXPECTED_USERNAME.to_string()),
+            ..Default::default()
+        };
+
+        let ldap_config = LDAPConfig::new_readonly(
+            &config,
+            LdapSimpleCredential::new(
+                String::from(EXPECTED_USERNAME),
+                String::from(EXPECTED_PASSWORD),
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            (EXPECTED_USERNAME, EXPECTED_PASSWORD),
+            (ldap_config.username(), ldap_config.password().unwrap())
+        );
+    }
+
+    #[test]
+    fn takes_password_from_readonly_conf() {
+        const EXPECTED_USERNAME: &str = "Username from user provided";
+        const EXPECTED_PASSWORD: &str = "Password from config";
+        let config = MgmtConfig {
+            ldap_readonly_pw: Some(EXPECTED_PASSWORD.to_string()),
+            ..Default::default()
+        };
+
+        let ldap_config = LDAPConfig::new_readonly(
+            &config,
+            LdapSimpleCredential::new(
+                String::from(EXPECTED_USERNAME),
+                String::from("Password from user provided"),
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            (EXPECTED_USERNAME, EXPECTED_PASSWORD),
+            (ldap_config.username(), ldap_config.password().unwrap())
+        );
     }
 }
