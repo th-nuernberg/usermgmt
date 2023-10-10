@@ -1,3 +1,5 @@
+use log::info;
+
 use crate::{prelude::AppResult, MgmtConfig};
 
 use super::{ldap_paths::LdapPaths, LdapCredential};
@@ -14,6 +16,42 @@ impl<T> LDAPConfig<T>
 where
     T: LdapCredential,
 {
+    pub fn new_readonly(config: &MgmtConfig, mut credentials: T) -> AppResult<Self> {
+        let ldap_server = config.ldap_server.clone();
+        dbg!("aaaa");
+        let (ldap_user, ldap_pass) = super::ask_credentials_if_not_provided(
+            config.ldap_readonly_user.as_deref(),
+            config.ldap_readonly_pw.as_deref(),
+            &credentials,
+        )?;
+        credentials.set_password(ldap_pass);
+
+        let (bind, prefix) = (
+            config.ldap_readonly_bind.clone().or_else(|| {
+                info!(
+                    "No org bind for readonly user provided, falling back to normal user bind org unit."
+                );
+                config.ldap_bind_org_unit.clone()
+            }),
+            config.ldap_readonly_user_prefix.clone().or_else(|| {
+                info!("No prefix for readonly user provided, falling back to normal user prefix.");
+                config.ldap_bind_prefix.clone()
+            }),
+        );
+        let ldap_paths = LdapPaths::new(
+            config.ldap_domain_components.clone(),
+            config.ldap_org_unit.clone(),
+            bind,
+            prefix,
+            ldap_user,
+        );
+
+        Ok(Self {
+            ldap_paths,
+            ldap_credentails: credentials,
+            ldap_server,
+        })
+    }
     pub fn new(config: &MgmtConfig, credentials: T) -> AppResult<Self> {
         let (bind_prefix, ldap_server, dc, org_unit, bind_org_unit) = (
             &config.ldap_bind_prefix,

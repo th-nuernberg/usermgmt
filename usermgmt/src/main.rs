@@ -7,6 +7,7 @@ use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
 use usermgmt_lib::config::{self};
 use usermgmt_lib::{prelude::*, Entity};
 
+mod cli_user_input;
 mod ldap_cli_credential;
 fn main() -> ExitCode {
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
@@ -75,6 +76,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
                 &config,
                 &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),
                 simple_output_for_ldap.unwrap_or(false),
+                ldap_credential,
             )?
         }
     };

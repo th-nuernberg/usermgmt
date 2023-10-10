@@ -13,6 +13,9 @@ pub mod ldap;
 pub mod new_entity;
 pub mod slurm;
 pub mod ssh;
+
+pub use util::user_input;
+
 use cli::{OnWhichSystem, UserToAdd};
 
 use config::MgmtConfig;
@@ -198,13 +201,18 @@ where
     Ok(())
 }
 
-pub fn list_users(
+pub fn list_users<T>(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,
-) -> AppResult {
+    ldap_credentials: T,
+) -> AppResult
+where
+    T: LdapCredential,
+{
     if on_which_sys.ldap() {
-        ldap::list_ldap_users(config, simple_output_ldap)?;
+        let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
+        ldap::list_ldap_users(simple_output_ldap, ldap_config)?;
     }
 
     if on_which_sys.slurm() {

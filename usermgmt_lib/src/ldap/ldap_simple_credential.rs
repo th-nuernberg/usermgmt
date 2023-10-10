@@ -22,4 +22,8 @@ impl LdapCredential for LdapSimpleCredential {
     fn password(&self) -> AppResult<&str> {
         Ok(&self.password)
     }
+
+    fn set_password(&mut self, new: String) {
+        self.password = new;
+    }
 }

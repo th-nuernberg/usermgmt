@@ -3,7 +3,6 @@
 mod ldap_config;
 mod ldap_credential;
 mod ldap_paths;
-mod ldap_readonly_config;
 mod ldap_simple_credential;
 mod text_list_output;
 
@@ -14,7 +13,6 @@ pub use ldap_credential::LdapCredential;
 pub mod testing;
 use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
 use crate::prelude::AppResult;
-use crate::util::user_input;
 use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::MgmtConfig;
 use crate::{prelude::*, Entity, NewEntity};
@@ -24,8 +22,6 @@ use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
 use log::{debug, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
-
-use self::ldap_readonly_config::LdapReadonlyConfig;
 
 fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
     LdapConn::new(server)
@@ -197,14 +193,15 @@ where
 /// List all LDAP users and some attributes
 ///
 /// It currently outputs all values in line separated by commas.
-pub fn list_ldap_users(config: &MgmtConfig, simple_output_ldap: bool) -> AppResult {
-    let ldap_config = LdapReadonlyConfig::new(config)?;
-
+pub fn list_ldap_users<T>(simple_output_ldap: bool, ldap_config: LDAPConfig<T>) -> AppResult
+where
+    T: LdapCredential,
+{
     // Establish LDAP connection and bind
-    let mut ldap = make_ldap_connection(ldap_config.ldap_server())
+    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)
         .context("Error while connecting via LDAP !")?;
 
-    ldap.simple_bind(ldap_config.bind(), ldap_config.ldap_pass())
+    ldap.simple_bind(ldap_config.bind(), ldap_config.password()?)
         .context("Error during LDAP binding!")?;
 
     debug!(
@@ -468,40 +465,20 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
     }
 }
 
-fn ask_credentials_if_not_provided(
+fn ask_credentials_if_not_provided<T>(
     username: Option<&str>,
     password: Option<&str>,
-    on_credentials: impl FnOnce() -> AppResult<(String, String)>,
-) -> AppResult<(String, String)> {
-    let (ldap_user, ldap_pass) = match username {
-        Some(u) => match password {
-            Some(p) => Ok((u.to_owned(), p.to_owned())),
-            None => on_credentials(),
-        },
-        None => on_credentials(),
-    }?;
+    credential: &T,
+) -> AppResult<(String, String)>
+where
+    T: LdapCredential,
+{
+    let (ldap_user, ldap_pass) = match (username, password) {
+        (None, None) => (credential.username()?, credential.password()?),
+        (Some(username), None) => (username, credential.password()?),
+        (None, Some(password)) => (credential.username()?, password),
+        (Some(username), Some(password)) => (username, password),
+    };
 
     return Ok((ldap_user.trim().to_owned(), ldap_pass.trim().to_owned()));
-}
-
-fn ask_credentials_in_tty() -> AppResult<(String, String)> {
-    println!("Enter your LDAP username (defaults to admin):");
-    let username = user_input::line_input_from_user()?.unwrap_or_else(|| "admin".to_string());
-    let password = user_input::ask_for_password("Enter your LDAP password: ")
-        .context("Failed to retrieve password from user in a terminal")?
-        .ok_or_else(|| anyhow!("No password provided"))?;
-    Ok((username, password))
-}
-
-pub fn ask_cli_username() -> AppResult<String> {
-    println!("Enter your LDAP username (defaults to admin):");
-    let username = user_input::line_input_from_user()?.unwrap_or_else(|| "admin".to_string());
-    Ok(username)
-}
-
-pub fn ask_cli_password() -> AppResult<String> {
-    let password = user_input::ask_for_password("Enter your LDAP password: ")
-        .context("Failed to retrieve password from user in a terminal")?
-        .ok_or_else(|| anyhow!("No password provided"))?;
-    Ok(password)
 }
