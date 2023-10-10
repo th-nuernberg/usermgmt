@@ -1,6 +1,11 @@
+mod configuration_state;
+mod start_screeen_state;
+
+pub use configuration_state::ConfigurationState;
+pub use start_screeen_state::StartScreeenState;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum CurrentSelectedView {
-    Nothing,
     SshConnection,
     LdapConnection,
     Configuration,
@@ -13,7 +18,6 @@ pub enum CurrentSelectedView {
 impl CurrentSelectedView {
     pub fn to_str(&self) -> &'static str {
         match self {
-            CurrentSelectedView::Nothing => "Nothing",
             CurrentSelectedView::SshConnection => "Ssh connection",
             CurrentSelectedView::LdapConnection => "Ldap connection",
             CurrentSelectedView::Configuration => "Configuration",
@@ -27,6 +31,6 @@ impl CurrentSelectedView {
 
 impl Default for CurrentSelectedView {
     fn default() -> Self {
-        Self::Nothing
+        Self::Configuration
     }
 }

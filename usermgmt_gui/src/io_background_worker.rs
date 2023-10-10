@@ -24,27 +24,28 @@ impl<T> IoBackgroundWorker<T>
 where
     T: Send + 'static,
 {
-    fn spawn<F>(&mut self, task: F, thread_name: String) -> AppResult<bool>
+    pub fn spawn<F>(&mut self, task: F, thread_name: String) -> AppResult<bool>
     where
         F: Fn() -> AppResult<T> + Send + 'static,
     {
         if self.thread.is_none() {
             let new_thread = thread::Builder::new()
-                .name(thread_name)
+                .name(thread_name.clone())
                 .spawn(task)
                 .map_err(|error| anyhow!("{:?}", error))?;
             self.thread = Some(new_thread);
+            info!("Started background task in thread ({})", thread_name);
             Ok(true)
         } else {
             Ok(false)
         }
     }
 
-    fn is_loading(&self) -> bool {
+    pub fn is_loading(&self) -> bool {
         self.thread.is_some()
     }
 
-    fn get_task_result(&mut self) -> Option<AppResult<T>> {
+    pub fn get_task_result(&mut self) -> Option<AppResult<T>> {
         if self
             .thread
             .as_ref()

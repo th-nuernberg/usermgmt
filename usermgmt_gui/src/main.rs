@@ -6,6 +6,7 @@ use usermgmt_window::UsermgmtWindow;
 
 mod gui_design;
 mod io_background_worker;
+mod io_task_status;
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {

@@ -1,11 +1,33 @@
 use eframe::egui;
 use log::info;
+use usermgmt_lib::config::load_config;
 
-use crate::{current_selected_view::CurrentSelectedView, draw_selected_view::draw_selected_view};
+use crate::{
+    current_selected_view::{ConfigurationState, CurrentSelectedView},
+    draw_selected_view::draw_selected_view,
+    io_task_status::IoTaskStatus,
+};
 
-#[derive(Default)]
+#[derive(Debug)]
 pub struct UsermgmtWindow {
-    selected_view: CurrentSelectedView,
+    pub selected_view: CurrentSelectedView,
+    pub conf_state: ConfigurationState,
+}
+
+impl Default for UsermgmtWindow {
+    fn default() -> Self {
+        let mut conf_state: ConfigurationState = Default::default();
+        conf_state.io_status_conf = IoTaskStatus::Loading;
+        conf_state
+            .io_load_conf
+            .spawn(|| load_config(), "Loading configuration".to_string())
+            .unwrap();
+
+        Self {
+            selected_view: Default::default(),
+            conf_state,
+        }
+    }
 }
 
 impl UsermgmtWindow {
