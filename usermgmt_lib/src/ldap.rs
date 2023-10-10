@@ -1,10 +1,15 @@
 //! TODO: Implement LDAP credential Struct for centralizing username and password acquisition.
 
 mod ldap_config;
+mod ldap_credential;
 mod ldap_paths;
 mod ldap_readonly_config;
+mod ldap_simple_credential;
 mod text_list_output;
+
 pub use ldap_config::LDAPConfig;
+pub use ldap_credential::LdapCredential;
+
 #[cfg(test)]
 pub mod testing;
 use crate::prelude::AppResult;
