@@ -3,7 +3,7 @@ use log::info;
 use usermgmt_lib::config::load_config;
 
 use crate::{
-    current_selected_view::{ConfigurationState, CurrentSelectedView},
+    current_selected_view::{ConfigurationState, CurrentSelectedView, ListingState},
     draw_selected_view::draw_selected_view,
 };
 
@@ -11,6 +11,7 @@ use crate::{
 pub struct UsermgmtWindow {
     pub selected_view: CurrentSelectedView,
     pub conf_state: ConfigurationState,
+    pub listin_state: ListingState,
 }
 
 impl Default for UsermgmtWindow {
@@ -21,6 +22,7 @@ impl Default for UsermgmtWindow {
             .spawn_task(|| load_config(), "Loading configuration".to_string());
 
         Self {
+            listin_state: Default::default(),
             selected_view: Default::default(),
             conf_state,
         }
@@ -42,6 +44,7 @@ impl eframe::App for UsermgmtWindow {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui_top_general(self, ui);
             ui.separator();
+            query_pending_io_taks(self);
             draw_selected_view(self, ui);
         });
     }
@@ -49,6 +52,25 @@ impl eframe::App for UsermgmtWindow {
 
 fn ui_top_general(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     ui.menu_button("Actions", |ui| ui_action_menu(window, ui));
+}
+fn query_pending_io_taks(window: &mut UsermgmtWindow) {
+    if let Some(conf) = window.conf_state.io_conf.query_task() {
+        let listing_state = &mut window.listin_state;
+        if listing_state.rw_user_name.is_none() {
+            if let Some(rw_user) = conf.ldap_readonly_user.as_deref() {
+                listing_state.rw_user_name = Some(rw_user.to_owned());
+            }
+        }
+        if listing_state.rw_pw.is_none() {
+            if let Some(rw_password) = conf.ldap_readonly_pw.as_deref() {
+                listing_state.rw_pw = Some(rw_password.to_owned());
+            }
+        }
+        window.conf_state.conf = Some(conf);
+    }
+    if let Some(success_listing) = window.listin_state.list_ldap_res.query_task() {
+        window.listin_state.listed_ldap_user = success_listing
+    }
 }
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     change_to_if_clicked(window, ui, CurrentSelectedView::LdapConnection);

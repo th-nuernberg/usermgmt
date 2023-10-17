@@ -26,7 +26,7 @@ where
 {
     pub fn spawn<F>(&mut self, task: F, thread_name: String) -> AppResult<bool>
     where
-        F: Fn() -> AppResult<T> + Send + 'static,
+        F: FnOnce() -> AppResult<T> + Send + 'static,
     {
         if self.thread.is_none() {
             let new_thread = thread::Builder::new()

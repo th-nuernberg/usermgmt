@@ -21,9 +21,13 @@ where
         &self.status
     }
 
+    pub fn is_loading(&self) -> bool {
+        IoTaskStatus::Loading == self.status
+    }
+
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
     where
-        F: Fn() -> AppResult<T> + Send + 'static,
+        F: FnOnce() -> AppResult<T> + Send + 'static,
     {
         let did_spawn = self.task.spawn(task, thread_name);
         match did_spawn {

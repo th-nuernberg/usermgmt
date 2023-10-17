@@ -8,10 +8,10 @@ mod text_list_output;
 
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
+pub use ldap_simple_credential::LdapSimpleCredential;
 
 #[cfg(test)]
 pub mod testing;
-use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
 use crate::prelude::AppResult;
 use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::MgmtConfig;
@@ -193,7 +193,7 @@ where
 /// List all LDAP users and some attributes
 ///
 /// It currently outputs all values in line separated by commas.
-pub fn list_ldap_users<T>(simple_output_ldap: bool, ldap_config: LDAPConfig<T>) -> AppResult
+pub fn list_ldap_users<T>(simple_output_ldap: bool, ldap_config: LDAPConfig<T>) -> AppResult<String>
 where
     T: LdapCredential,
 {
@@ -241,8 +241,7 @@ where
         text_list_output::ldap_search_to_pretty_table(&attrs, &search_result)
     };
 
-    println!("{}", output);
-    Ok(())
+    Ok(output)
 }
 
 fn make_modification_vec<'a>(

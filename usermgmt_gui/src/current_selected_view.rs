@@ -1,6 +1,8 @@
 mod configuration_state;
+mod listing_state;
 
 pub use configuration_state::ConfigurationState;
+pub use listing_state::ListingState;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum CurrentSelectedView {

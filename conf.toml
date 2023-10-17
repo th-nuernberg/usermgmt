@@ -51,7 +51,7 @@ ldap_org_unit = 'ou=people'
 # ldap_readonly_user_prefix = "read_only_uid"
 # ldap_readonly_bind = "ou=readonly,ou=realm"
 ldap_server = 'ldap://localhost:389'
-# ldap_readonly_user = 'admin'
+ldap_readonly_user = 'admin'
 # ldap_readonly_pw = 'admin'
 include_slurm = true
 include_ldap = true
