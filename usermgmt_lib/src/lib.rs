@@ -212,7 +212,8 @@ where
 {
     if on_which_sys.ldap() {
         let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
-        ldap::list_ldap_users(simple_output_ldap, ldap_config)?;
+        let output = ldap::list_ldap_users(simple_output_ldap, ldap_config)?;
+        println!("{}", &output);
     }
 
     if on_which_sys.slurm() {
