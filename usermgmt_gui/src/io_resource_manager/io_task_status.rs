@@ -1,24 +1,23 @@
 use usermgmt_lib::prelude::AppError;
 
 #[derive(Debug)]
-pub enum IoTaskStatus {
+pub enum IoTaskStatus<T> {
     NotStarted,
     Loading,
-    Successful,
+    Successful(T),
     Failed(AppError),
 }
 
-impl PartialEq for IoTaskStatus {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Failed(_), Self::Failed(_)) => true,
-            (Self::Failed(_), _) | (_, Self::Failed(_)) => false,
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
-        }
+impl<T> IoTaskStatus<T> {
+    pub fn _is_loading(&self) -> bool {
+        matches!(self, IoTaskStatus::Loading)
+    }
+    pub fn is_there(&self) -> bool {
+        matches!(self, IoTaskStatus::Successful(_))
     }
 }
 
-impl Default for IoTaskStatus {
+impl<T> Default for IoTaskStatus<T> {
     fn default() -> Self {
         Self::NotStarted
     }

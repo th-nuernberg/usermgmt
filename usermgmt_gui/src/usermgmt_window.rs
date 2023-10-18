@@ -66,11 +66,8 @@ fn query_pending_io_taks(window: &mut UsermgmtWindow) {
                 listing_state.rw_pw = Some(rw_password.to_owned());
             }
         }
-        window.conf_state.conf = Some(conf);
     }
-    if let Some(success_listing) = window.listin_state.list_ldap_res.query_task() {
-        window.listin_state.listed_ldap_user = success_listing
-    }
+    let _ = window.listin_state.list_ldap_res.query_task();
 }
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     change_to_if_clicked(window, ui, CurrentSelectedView::LdapConnection);

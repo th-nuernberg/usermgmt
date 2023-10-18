@@ -9,7 +9,7 @@ pub use io_task_status::IoTaskStatus;
 
 #[derive(Default, Debug)]
 pub struct IoResourceManager<T = ()> {
-    status: IoTaskStatus,
+    status: IoTaskStatus<T>,
     task: IoBackgroundWorker<T>,
 }
 
@@ -17,12 +17,15 @@ impl<T> IoResourceManager<T>
 where
     T: Send + 'static,
 {
-    pub fn status(&self) -> &IoTaskStatus {
+    pub fn status(&self) -> &IoTaskStatus<T> {
         &self.status
     }
 
-    pub fn is_loading(&self) -> bool {
-        IoTaskStatus::Loading == self.status
+    pub fn _is_loading(&self) -> bool {
+        self.status._is_loading()
+    }
+    pub fn is_there(&self) -> bool {
+        self.status.is_there()
     }
 
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
@@ -42,12 +45,15 @@ where
         }
     }
 
-    pub fn query_task(&mut self) -> Option<T> {
+    pub fn query_task(&mut self) -> Option<&T> {
         if let Some(result) = self.task.get_task_result() {
             match result {
                 Ok(to_return) => {
-                    self.status = IoTaskStatus::Successful;
-                    Some(to_return)
+                    self.status = IoTaskStatus::Successful(to_return);
+                    if let IoTaskStatus::Successful(to_return) = &self.status {
+                        return Some(to_return);
+                    }
+                    unreachable!()
                 }
                 Err(error) => {
                     self.status = IoTaskStatus::Failed(error);

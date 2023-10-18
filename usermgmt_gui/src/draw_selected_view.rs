@@ -23,14 +23,15 @@ pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     }
 }
 fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
-    let (conf_user_name, conf_pw) = if let Some(configuration) = &window.conf_state.conf {
-        (
-            configuration.ldap_readonly_user.as_deref(),
-            configuration.ldap_readonly_pw.as_deref(),
-        )
-    } else {
-        Default::default()
-    };
+    let (conf_user_name, conf_pw) =
+        if let IoTaskStatus::Successful(configuration) = &window.conf_state.io_conf.status() {
+            (
+                configuration.ldap_readonly_user.as_deref(),
+                configuration.ldap_readonly_pw.as_deref(),
+            )
+        } else {
+            Default::default()
+        };
     ui.horizontal(|ui| {
         let mut rw_user =
             field_conf_or_state(window.listin_state.rw_user_name.as_deref(), conf_user_name);
@@ -54,32 +55,36 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 
     let list_ldap_btn_enabled = {
         let list_state = &window.listin_state;
-        let is_not_loading = !list_state.list_ldap_res.is_loading();
-
+        let conf_is_there = !list_state.list_ldap_res.is_there();
         let enabled =
-            list_state.rw_user_name.is_some() && list_state.rw_pw.is_some() && is_not_loading;
+            list_state.rw_user_name.is_some() && list_state.rw_pw.is_some() && conf_is_there;
         enabled
     };
+
     if ui
         .add_enabled(list_ldap_btn_enabled, egui::Button::new("List ldap users"))
         .clicked()
     {
-        let mgmt_conf = window.conf_state.conf.clone().unwrap();
-        let lising_state = &window.listin_state;
-        let (username, password) = (
-            lising_state.rw_user_name.clone().unwrap(),
-            lising_state.rw_pw.clone().unwrap(),
-        );
-        window.listin_state.list_ldap_res.spawn_task(
-            move || {
-                let config =
-                    LDAPConfig::new(&mgmt_conf, LdapSimpleCredential::new(username, password))
-                        .unwrap();
-                list_ldap_users(config)
-                    .map(|to_map| text_list_output::ldap_search_to_pretty_table(&to_map))
-            },
-            "Listing ldap user".to_owned(),
-        );
+        if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
+            let lising_state = &window.listin_state;
+            let (username, password) = (
+                lising_state.rw_user_name.clone().unwrap(),
+                lising_state.rw_pw.clone().unwrap(),
+            );
+            let mgmt_conf = mgmt_conf.clone();
+            window.listin_state.list_ldap_res.spawn_task(
+                move || {
+                    let config =
+                        LDAPConfig::new(&mgmt_conf, LdapSimpleCredential::new(username, password))
+                            .unwrap();
+                    list_ldap_users(config)
+                        .map(|to_map| text_list_output::ldap_search_to_pretty_table(&to_map))
+                },
+                "Listing ldap user".to_owned(),
+            );
+        } else {
+            unreachable!();
+        }
     };
 
     let listing_state = &window.listin_state;
@@ -87,7 +92,7 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     match listing_state.list_ldap_res.status() {
         IoTaskStatus::NotStarted => ui.label("No ldap user listed yet."),
         IoTaskStatus::Loading => ui.label("Fetching ldap users"),
-        IoTaskStatus::Successful => ui.label(&listing_state.listed_ldap_user),
+        IoTaskStatus::Successful(listed_ldap_user) => ui.label(listed_ldap_user),
         IoTaskStatus::Failed(error) => ui.label(format!("Failed to fetch ldpa users:\n{}", error)),
     };
 
@@ -106,7 +111,7 @@ fn draw_configuration_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         IoTaskStatus::Loading => {
             ui.label(RichText::new("Loading configuration").color(Color32::BLUE));
         }
-        IoTaskStatus::Successful => {
+        IoTaskStatus::Successful(_) => {
             ui.label(RichText::new("Configuration loaded").color(Color32::GREEN));
         }
         IoTaskStatus::Failed(error) => {
