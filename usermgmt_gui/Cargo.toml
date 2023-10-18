@@ -12,3 +12,4 @@ usermgmt_lib = { path = "../usermgmt_lib" }
 env_logger = { workspace = true }
 log = { workspace = true }
 eframe = { version = "0.23.0" }
+egui_extras = "0.23.0"

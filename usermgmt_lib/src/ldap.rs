@@ -9,11 +9,11 @@ pub mod text_list_output;
 
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
+pub use ldap_search_result::LdapSearchResult;
 pub use ldap_simple_credential::LdapSimpleCredential;
 
 #[cfg(test)]
 pub mod testing;
-use crate::ldap::ldap_search_result::LdapSearchResult;
 use crate::prelude::AppResult;
 use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::MgmtConfig;

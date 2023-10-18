@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use ldap3::{SearchEntry, SearchResult};
 use log::warn;
 
+#[derive(Debug, Default)]
 pub struct LdapSearchResult {
     header: Vec<String>,
     fields: Vec<Vec<Vec<String>>>,

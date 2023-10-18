@@ -2,11 +2,13 @@ use eframe::{
     egui::{self, RichText},
     epaint::Color32,
 };
-use usermgmt_lib::ldap::{list_ldap_users, text_list_output, LDAPConfig, LdapSimpleCredential};
+use usermgmt_lib::ldap::{list_ldap_users, LDAPConfig, LdapSearchResult, LdapSimpleCredential};
 
 use crate::{
-    current_selected_view::CurrentSelectedView, gui_design::WHICH_GUI_VIEW_SIZE,
-    io_resource_manager::IoTaskStatus, usermgmt_window::UsermgmtWindow,
+    current_selected_view::CurrentSelectedView,
+    gui_design::{self, WHICH_GUI_VIEW_SIZE},
+    io_resource_manager::IoTaskStatus,
+    usermgmt_window::UsermgmtWindow,
 };
 
 pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
@@ -22,6 +24,7 @@ pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         ui.label(format!("The action {} is not implemented yet", action_name));
     }
 }
+
 fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let (conf_user_name, conf_pw) =
         if let IoTaskStatus::Successful(configuration) = &window.conf_state.io_conf.status() {
@@ -55,9 +58,12 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 
     let list_ldap_btn_enabled = {
         let list_state = &window.listin_state;
-        let conf_is_there = !list_state.list_ldap_res.is_there();
-        let enabled =
-            list_state.rw_user_name.is_some() && list_state.rw_pw.is_some() && conf_is_there;
+        let no_ldpa_loading = !list_state.list_ldap_res._is_loading();
+        let configuration_is_loaded = window.conf_state.io_conf.is_there();
+        let enabled = list_state.rw_user_name.is_some()
+            && list_state.rw_pw.is_some()
+            && no_ldpa_loading
+            && configuration_is_loaded;
         enabled
     };
 
@@ -78,7 +84,6 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                         LDAPConfig::new(&mgmt_conf, LdapSimpleCredential::new(username, password))
                             .unwrap();
                     list_ldap_users(config)
-                        .map(|to_map| text_list_output::ldap_search_to_pretty_table(&to_map))
                 },
                 "Listing ldap user".to_owned(),
             );
@@ -90,16 +95,66 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let listing_state = &window.listin_state;
 
     match listing_state.list_ldap_res.status() {
-        IoTaskStatus::NotStarted => ui.label("No ldap user listed yet."),
-        IoTaskStatus::Loading => ui.label("Fetching ldap users"),
-        IoTaskStatus::Successful(listed_ldap_user) => ui.label(listed_ldap_user),
-        IoTaskStatus::Failed(error) => ui.label(format!("Failed to fetch ldpa users:\n{}", error)),
+        IoTaskStatus::NotStarted => _ = ui.label("No ldap user listed yet."),
+        IoTaskStatus::Loading => _ = ui.label("Fetching ldap users"),
+        IoTaskStatus::Successful(listed_ldap_user) => draw_table_from_ldap(ui, listed_ldap_user),
+        IoTaskStatus::Failed(error) => {
+            _ = ui.label(format!("Failed to fetch ldpa users:\n{}", error))
+        }
     };
 
     fn field_conf_or_state(from_window: Option<&str>, from_conf: Option<&str>) -> String {
         from_window
             .unwrap_or(from_conf.unwrap_or_default())
             .to_owned()
+    }
+
+    fn draw_table_from_ldap(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+        use egui_extras::{Column, Size, StripBuilder, TableBuilder};
+        ui.label("Ldap users were Successfully fetched.");
+        StripBuilder::new(ui)
+            .size(Size::remainder().at_most(gui_design::MAX_HEIGHT_LDAP_TABLE)) // top cell
+            .vertical(|mut strip| {
+                // Add the top 'cell'
+                strip.cell(|ui| {
+                    draw_table(ui, raw);
+                });
+            });
+
+        return;
+
+        fn draw_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+            let mut table = TableBuilder::new(ui)
+                .striped(true)
+                .resizable(true)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                .min_scrolled_height(0.);
+
+            let headers = raw.headers();
+            let rows = raw.fields();
+            table = table
+                .columns(Column::auto(), headers.len().saturating_sub(1))
+                .column(Column::remainder());
+            table
+                .header(gui_design::HEADER_HEIGHT_LDAP_TABLE, |mut header| {
+                    for &next_title in headers.iter() {
+                        header.col(|ui| {
+                            ui.strong(next_title);
+                        });
+                    }
+                })
+                .body(|mut body| {
+                    for single_row in rows.iter() {
+                        body.row(10., |mut row| {
+                            for column in single_row {
+                                row.col(|ui| {
+                                    _ = ui.label(column.join(gui_design::LDAP_MULTI_FIELD_SEP))
+                                });
+                            }
+                        });
+                    }
+                });
+        }
     }
 }
 
