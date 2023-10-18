@@ -33,7 +33,7 @@ pub mod prelude {
 
 use crate::{
     dir::add_user_directories,
-    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user, LDAPConfig},
+    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user, text_list_output, LDAPConfig},
     ssh::{SshConnection, SshCredential},
 };
 extern crate confy;
@@ -212,7 +212,13 @@ where
 {
     if on_which_sys.ldap() {
         let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
-        let output = ldap::list_ldap_users(simple_output_ldap, ldap_config)?;
+        let search_result_data = ldap::list_ldap_users(ldap_config)?;
+
+        let output = if simple_output_ldap {
+            text_list_output::ldap_simple_output(&search_result_data)
+        } else {
+            text_list_output::ldap_search_to_pretty_table(&search_result_data)
+        };
         println!("{}", &output);
     }
 

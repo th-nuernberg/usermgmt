@@ -3,8 +3,9 @@
 mod ldap_config;
 mod ldap_credential;
 mod ldap_paths;
+mod ldap_search_result;
 mod ldap_simple_credential;
-mod text_list_output;
+pub mod text_list_output;
 
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
@@ -12,6 +13,7 @@ pub use ldap_simple_credential::LdapSimpleCredential;
 
 #[cfg(test)]
 pub mod testing;
+use crate::ldap::ldap_search_result::LdapSearchResult;
 use crate::prelude::AppResult;
 use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::MgmtConfig;
@@ -193,7 +195,7 @@ where
 /// List all LDAP users and some attributes
 ///
 /// It currently outputs all values in line separated by commas.
-pub fn list_ldap_users<T>(simple_output_ldap: bool, ldap_config: LDAPConfig<T>) -> AppResult<String>
+pub fn list_ldap_users<T>(ldap_config: LDAPConfig<T>) -> AppResult<LdapSearchResult>
 where
     T: LdapCredential,
 {
@@ -235,13 +237,9 @@ where
         )
         .context("Error during LDAP search!")?;
 
-    let output = if simple_output_ldap {
-        text_list_output::ldap_simple_output(&attrs, &search_result)
-    } else {
-        text_list_output::ldap_search_to_pretty_table(&attrs, &search_result)
-    };
+    let search_result = LdapSearchResult::from_ldap_raw_search(&attrs, &search_result);
 
-    Ok(output)
+    Ok(search_result)
 }
 
 fn make_modification_vec<'a>(

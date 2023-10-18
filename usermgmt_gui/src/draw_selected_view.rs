@@ -2,7 +2,7 @@ use eframe::{
     egui::{self, RichText},
     epaint::Color32,
 };
-use usermgmt_lib::ldap::{list_ldap_users, LDAPConfig, LdapSimpleCredential};
+use usermgmt_lib::ldap::{list_ldap_users, text_list_output, LDAPConfig, LdapSimpleCredential};
 
 use crate::{
     current_selected_view::CurrentSelectedView, gui_design::WHICH_GUI_VIEW_SIZE,
@@ -75,7 +75,8 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 let config =
                     LDAPConfig::new(&mgmt_conf, LdapSimpleCredential::new(username, password))
                         .unwrap();
-                list_ldap_users(false, config)
+                list_ldap_users(config)
+                    .map(|to_map| text_list_output::ldap_search_to_pretty_table(&to_map))
             },
             "Listing ldap user".to_owned(),
         );

@@ -1,4 +1,6 @@
-use crate::ldap::ldap_simple_credential::LdapSimpleCredential;
+use crate::ldap::{
+    ldap_search_result::LdapSearchResult, ldap_simple_credential::LdapSimpleCredential,
+};
 
 use super::*;
 use maplit::hashmap;
@@ -110,23 +112,21 @@ fn should_give_correct_ldap_paths() {
 fn should_produce_simple_output() {
     let given_entries = vec![
         hashmap! {
-            "qos" => vec!["basic", "default"],
-            "name" => vec!["Mr. X"],
-            "age" => vec!["2"]
+            "qos".to_string() => vec!["basic".to_string(), "default".to_string()],
+            "name".to_string() => vec!["Mr. X".to_string()],
+            "age".to_string() => vec!["2".to_string()]
         },
         hashmap! {
-            "name" => vec!["example"]
+            "name".to_string() => vec!["example".to_string()]
         },
         hashmap! {
-            "qos" => vec!["default"],
-            "name" => vec!["example_man"],
+            "qos".to_string() => vec!["default".to_string()],
+            "name".to_string() => vec!["example_man".to_string()],
         },
     ];
     let given_search_entries = vec!["qos", "name"];
-    let actual = text_list_output::contruct_simple_output_from_vec_hash_map(
-        &given_search_entries,
-        given_entries.as_slice(),
-    );
+    let ldap_search_result = LdapSearchResult::new(given_search_entries, given_entries);
+    let actual = text_list_output::ldap_simple_output(&ldap_search_result);
     insta::assert_display_snapshot!(actual);
 }
 
@@ -134,19 +134,17 @@ fn should_produce_simple_output() {
 fn should_produce_table_from_ldap_search() {
     let given_entries = vec![
         hashmap! {
-            "qos" => vec!["basic", "default"],
-            "name" => vec!["Mr. X"],
-            "age" => vec!["2"]
+            "qos".to_string() => vec!["basic".to_string(), "default".to_string()],
+            "name".to_string() => vec!["Mr. X".to_string()],
+            "age".to_string() => vec!["2".to_string()]
         },
         hashmap! {
-            "name" => vec!["example"]
+            "name".to_string() => vec!["example".to_string()]
         },
     ];
 
     let given_search_entries = vec!["qos", "name"];
-    let actual = text_list_output::contruct_table_from_vec_hash_map(
-        &given_search_entries,
-        given_entries.as_slice(),
-    );
+    let ldap_search_result = LdapSearchResult::new(given_search_entries, given_entries);
+    let actual = text_list_output::ldap_search_to_pretty_table(&ldap_search_result);
     insta::assert_display_snapshot!(actual);
 }
