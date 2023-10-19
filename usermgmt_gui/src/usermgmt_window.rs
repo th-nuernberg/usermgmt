@@ -1,9 +1,11 @@
 use eframe::egui;
-use log::info;
+use log::{debug, info};
 use usermgmt_lib::config::load_config;
 
 use crate::{
-    current_selected_view::{ConfigurationState, CurrentSelectedView, ListingState},
+    current_selected_view::{
+        ConfigurationState, CurrentSelectedView, ListingState, SshConnectionState,
+    },
     draw_selected_view::draw_selected_view,
 };
 
@@ -12,6 +14,7 @@ pub struct UsermgmtWindow {
     pub selected_view: CurrentSelectedView,
     pub conf_state: ConfigurationState,
     pub listin_state: ListingState,
+    pub ssh_state: SshConnectionState,
 }
 
 impl Default for UsermgmtWindow {
@@ -24,6 +27,7 @@ impl Default for UsermgmtWindow {
         Self {
             listin_state: Default::default(),
             selected_view: Default::default(),
+            ssh_state: Default::default(),
             conf_state,
         }
     }
@@ -56,6 +60,7 @@ fn ui_top_general(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 fn query_pending_io_taks(window: &mut UsermgmtWindow) {
     if let Some(conf) = window.conf_state.io_conf.query_task() {
         let listing_state = &mut window.listin_state;
+        let ssh_state = &mut window.ssh_state;
         if listing_state.rw_user_name.is_none() {
             if let Some(rw_user) = conf.ldap_readonly_user.as_deref() {
                 listing_state.rw_user_name = Some(rw_user.to_owned());
@@ -64,6 +69,12 @@ fn query_pending_io_taks(window: &mut UsermgmtWindow) {
         if listing_state.rw_pw.is_none() {
             if let Some(rw_password) = conf.ldap_readonly_pw.as_deref() {
                 listing_state.rw_pw = Some(rw_password.to_owned());
+            }
+        }
+        if ssh_state.username.is_none() {
+            if !conf.default_ssh_user.is_empty() {
+                debug!("GUI: Ssh user name taken from default ssh user in loaded config");
+                ssh_state.username = Some(conf.default_ssh_user.to_owned());
             }
         }
     }

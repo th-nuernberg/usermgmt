@@ -10,13 +10,18 @@ use crate::{
     io_resource_manager::IoTaskStatus,
     usermgmt_window::UsermgmtWindow,
 };
+mod util;
 
+pub fn draw_ssh_connection(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
+    util::draw_ssh_credentials(ui, &mut window.ssh_state);
+}
 pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let current_view = window.selected_view();
     ui.label(RichText::new(current_view.to_str()).size(WHICH_GUI_VIEW_SIZE));
     match current_view {
         CurrentSelectedView::Configuration => draw_configuration_view(window, ui),
         CurrentSelectedView::Listing => draw_listing_view(window, ui),
+        CurrentSelectedView::SshConnection => draw_ssh_connection(window, ui),
         _ => not_implemented_yet(current_view.to_str(), ui),
     }
 
@@ -55,6 +60,9 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             window.listin_state.rw_pw = Some(rw_password);
         }
     });
+
+    ui.separator();
+    util::draw_ssh_credentials(ui, &mut window.ssh_state);
 
     let list_ldap_btn_enabled = {
         let list_state = &window.listin_state;
@@ -97,7 +105,7 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     match listing_state.list_ldap_res.status() {
         IoTaskStatus::NotStarted => _ = ui.label("No ldap user listed yet."),
         IoTaskStatus::Loading => _ = ui.label("Fetching ldap users"),
-        IoTaskStatus::Successful(listed_ldap_user) => draw_table_from_ldap(ui, listed_ldap_user),
+        IoTaskStatus::Successful(listed_ldap_user) => draw_tables(ui, listed_ldap_user),
         IoTaskStatus::Failed(error) => {
             _ = ui.label(format!("Failed to fetch ldpa users:\n{}", error))
         }
@@ -109,7 +117,7 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             .to_owned()
     }
 
-    fn draw_table_from_ldap(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+    fn draw_tables(ui: &mut egui::Ui, raw: &LdapSearchResult) {
         use egui_extras::{Column, Size, StripBuilder, TableBuilder};
         ui.label("Ldap users were Successfully fetched.");
         StripBuilder::new(ui)
@@ -117,13 +125,13 @@ fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             .vertical(|mut strip| {
                 // Add the top 'cell'
                 strip.cell(|ui| {
-                    draw_table(ui, raw);
+                    draw_ldap_table(ui, raw);
                 });
             });
 
         return;
 
-        fn draw_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+        fn draw_ldap_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
             let mut table = TableBuilder::new(ui)
                 .striped(true)
                 .resizable(true)
