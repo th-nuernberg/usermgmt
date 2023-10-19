@@ -11,18 +11,28 @@ use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
 use crate::ssh::{self, EntitiesAndSshAgent};
 
-use super::SshCredential;
+use super::SshCredentials;
 
-pub struct SshConnection<'a, 'b> {
+pub struct SshConnection<'a, T> {
     endpoint: &'a str,
     port: u32,
     ssh_agent: bool,
-    credentials: &'b SshCredential<'b>,
+    credentials: T,
     session: OnceCell<Session>,
 }
 
-impl<'a, 'b> SshConnection<'a, 'b> {
-    pub fn new(endpoint: &'a str, config: &MgmtConfig, credentials: &'b SshCredential) -> Self {
+impl<'a, T> SshConnection<'a, T>
+where
+    T: SshCredentials,
+{
+    pub fn password(&self) -> AppResult<&str> {
+        self.credentials.password()
+    }
+    pub fn username(&self) -> AppResult<&str> {
+        self.credentials.username()
+    }
+
+    pub fn new(endpoint: &'a str, config: &MgmtConfig, credentials: T) -> Self {
         Self {
             endpoint,
             port: config.ssh_port,
@@ -32,7 +42,7 @@ impl<'a, 'b> SshConnection<'a, 'b> {
         }
     }
 
-    pub fn from_head_node(config: &'a MgmtConfig, credentials: &'b SshCredential) -> Self {
+    pub fn from_head_node(config: &'a MgmtConfig, credentials: T) -> Self {
         Self::new(&config.head_node, config, credentials)
     }
 
@@ -95,12 +105,15 @@ impl<'a, 'b> SshConnection<'a, 'b> {
 
         return Ok(sess);
 
-        fn simple_password_auth(
+        fn simple_password_auth<T>(
             session: &mut Session,
-            session_connection: &SshConnection,
+            session_connection: &SshConnection<T>,
             username: &str,
-        ) -> AppResult {
-            let password = session_connection.credentials.password()?;
+        ) -> AppResult
+        where
+            T: SshCredentials,
+        {
+            let password = session_connection.password()?;
             session
                 .userauth_password(username, password)
                 .context("Authentication has failed with provided username/password.")?;
@@ -117,7 +130,14 @@ impl<'a, 'b> SshConnection<'a, 'b> {
         /// If none of authentication methods succeeded, ssh agent and password
         /// authentication.
         ///
-        fn auth(connection: &SshConnection, session: &mut Session, username: &str) -> AppResult {
+        fn auth<T>(
+            connection: &SshConnection<T>,
+            session: &mut Session,
+            username: &str,
+        ) -> AppResult
+        where
+            T: SshCredentials,
+        {
             if connection.ssh_agent {
                 match try_authenticate_via_ssh_agent(session, username) {
                     Ok(_) => {

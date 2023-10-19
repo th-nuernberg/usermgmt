@@ -8,15 +8,18 @@ use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
 use self::commmand_builder::CommandBuilder;
 
-use crate::ssh::{SshConnection, SshCredential};
+use crate::ssh::{SshConnection, SshCredentials};
 use crate::{Entity, NewEntity};
 
 /// Creates a user in slurm database on a remote machine over ssh
-pub fn add_slurm_user(
+pub fn add_slurm_user<C>(
     entity: &NewEntity,
     config: &MgmtConfig,
-    session: &SshConnection,
-) -> AppResult {
+    session: &SshConnection<C>,
+) -> AppResult
+where
+    C: SshCredentials,
+{
     let action = CommandBuilder::new_add(
         entity.username.to_string(),
         entity.group.id(),
@@ -40,7 +43,14 @@ pub fn add_slurm_user(
 }
 
 /// Deletes a user in a slurm database  via SSH session on a remote machine
-pub fn delete_slurm_user(user: &str, config: &MgmtConfig, session: &SshConnection) -> AppResult {
+pub fn delete_slurm_user<C>(
+    user: &str,
+    config: &MgmtConfig,
+    session: &SshConnection<C>,
+) -> AppResult
+where
+    C: SshCredentials,
+{
     let action = CommandBuilder::new_delete(user.to_string());
     run_slurm_action(action, config, session)
         .with_context(|| format!("Failed to delete user with name {}", user))?;
@@ -50,11 +60,14 @@ pub fn delete_slurm_user(user: &str, config: &MgmtConfig, session: &SshConnectio
 
 /// Modifies a user in a slurm database via SSH session on a remote machine
 /// It currently only modifies the quality of services of a user !
-pub fn modify_slurm_user(
+pub fn modify_slurm_user<C>(
     modifiable: &Entity,
     config: &MgmtConfig,
-    session: &SshConnection,
-) -> AppResult {
+    session: &SshConnection<C>,
+) -> AppResult
+where
+    C: SshCredentials,
+{
     if let Some(ref default_qos) = modifiable.default_qos {
         debug!("Slurm: Start modifying user default qos");
         let action = CommandBuilder::new_modify(
@@ -80,7 +93,7 @@ pub fn modify_slurm_user(
 }
 
 /// Lists all users in slurm database on a remote machine
-pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
+pub fn list_users(config: &MgmtConfig, credentials: impl SshCredentials) -> AppResult {
     let action = CommandBuilder::new_show();
     let session = SshConnection::from_head_node(config, credentials);
     let output = run_slurm_action(action, config, &session)?;
@@ -90,11 +103,14 @@ pub fn list_users(config: &MgmtConfig, credentials: &SshCredential) -> AppResult
     Ok(())
 }
 
-fn run_slurm_action(
+fn run_slurm_action<C>(
     mut actions: CommandBuilder,
     config: &MgmtConfig,
-    session: &SshConnection,
-) -> AppResult<String> {
+    session: &SshConnection<C>,
+) -> AppResult<String>
+where
+    C: SshCredentials,
+{
     let mut output = String::new();
     actions = actions
         .immediate(true)
@@ -114,7 +130,10 @@ fn run_slurm_action(
     Ok(output)
 }
 
-fn run_remote_report_slurm_cmd(session: &SshConnection, cmd: &str) -> AppResult<String> {
+fn run_remote_report_slurm_cmd<C>(session: &SshConnection<C>, cmd: &str) -> AppResult<String>
+where
+    C: SshCredentials,
+{
     let (exit_code, output) = ssh::run_remote_command(session, cmd)
         .with_context(|| format!("Error: For remote slurm command ({}).", cmd,))?;
 

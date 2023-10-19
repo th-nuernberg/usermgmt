@@ -4,14 +4,17 @@ use log::{debug, info, warn};
 
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
-use crate::ssh::{self, SshConnection, SshCredential};
+use crate::ssh::{self, SshConnection, SshCredentials};
 use crate::{Group, NewEntity};
 
-pub fn add_user_directories(
+pub fn add_user_directories<T>(
     entity: &NewEntity,
     config: &MgmtConfig,
-    credentials: &SshCredential,
-) -> AppResult {
+    credentials: &T,
+) -> AppResult
+where
+    T: SshCredentials,
+{
     handle_compute_nodes(entity, config, credentials)?;
 
     handle_nfs(entity, config, credentials)?;
@@ -23,11 +26,10 @@ pub fn add_user_directories(
 
 /// TODO: Bubble up errors instead of just logging
 /// Establish SSH connection to each compute node, make user directory and set quota
-fn handle_compute_nodes(
-    entity: &NewEntity,
-    config: &MgmtConfig,
-    credentials: &SshCredential,
-) -> AppResult {
+fn handle_compute_nodes<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
+where
+    T: SshCredentials,
+{
     debug!("Start handling directories on compute nodes");
 
     if config.compute_nodes.is_empty() {
@@ -58,7 +60,7 @@ fn handle_compute_nodes(
     let mut quota_exit_codes = Vec::new();
     for server in config.compute_nodes.iter() {
         info!("Connecting to a compute node");
-        let sess = SshConnection::new(server, config, credentials);
+        let sess = SshConnection::new(server, config, credentials.clone());
         // Create directory
         let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
         let (dir_exit_code, _) = make_directory(&sess, &directory)?;
@@ -124,7 +126,10 @@ fn handle_compute_nodes(
 
 /// Establish SSH connection to NFS host, make user directory and set quota
 /// TODO: Bubble up errors instead of just logging
-fn handle_nfs(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
+fn handle_nfs<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
+where
+    T: SshCredentials,
+{
     debug!("Start handling NFS user directory");
 
     if config.nfs_host.is_empty() {
@@ -146,7 +151,7 @@ fn handle_nfs(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredenti
     }
 
     info!("Connecting to NFS host");
-    let sess = SshConnection::new(&config.nfs_host, config, credentials);
+    let sess = SshConnection::new(&config.nfs_host, config, credentials.clone());
 
     // Create directory
     let mut group_dir = "staff";
@@ -203,7 +208,10 @@ fn handle_nfs(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredenti
 
 /// Establish SSH connection to home host, make user directory and set quota
 /// TODO: Bubble up errors instead of just logging
-fn handle_home(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredential) -> AppResult {
+fn handle_home<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
+where
+    T: SshCredentials,
+{
     debug!("Start handling home directory");
 
     if config.home_host.is_empty() {
@@ -221,7 +229,7 @@ fn handle_home(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredent
     }
 
     info!("Connecting to home host");
-    let sess = SshConnection::new(&config.home_host, config, credentials);
+    let sess = SshConnection::new(&config.home_host, config, credentials.clone());
 
     // Create directory
     let directory = format!("/home/{}", entity.username);
@@ -276,39 +284,51 @@ fn handle_home(entity: &NewEntity, config: &MgmtConfig, credentials: &SshCredent
     Ok(())
 }
 
-fn make_directory(sess: &SshConnection, directory: &str) -> AppResult<(i32, String)> {
+fn make_directory<C>(sess: &SshConnection<C>, directory: &str) -> AppResult<(i32, String)>
+where
+    C: SshCredentials,
+{
     debug!("Making directory {}", directory);
 
     let cmd = format!("sudo mkdir -p {directory}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn make_home_directory(sess: &SshConnection, username: &str) -> AppResult<(i32, String)> {
+fn make_home_directory<C>(sess: &SshConnection<C>, username: &str) -> AppResult<(i32, String)>
+where
+    C: SshCredentials,
+{
     debug!("Making home directory using the mkhomedir_helper");
 
     let cmd = format!("sudo mkhomedir_helper {username}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn change_ownership(
-    sess: &SshConnection,
+fn change_ownership<C>(
+    sess: &SshConnection<C>,
     directory: &str,
     username: &str,
     group: &str,
-) -> AppResult<(i32, String)> {
+) -> AppResult<(i32, String)>
+where
+    C: SshCredentials,
+{
     debug!("Changing ownership for directory {}", directory);
 
     let cmd = format!("sudo chown {username}:{group} {directory}");
     ssh::run_remote_command(sess, &cmd)
 }
 
-fn set_quota(
-    sess: &SshConnection,
+fn set_quota<C>(
+    sess: &SshConnection<C>,
     username: &str,
     softlimit: &str,
     hardlimit: &str,
     filesystem: &str,
-) -> AppResult<(i32, String)> {
+) -> AppResult<(i32, String)>
+where
+    C: SshCredentials,
+{
     debug!(
         "Setting quota for user {} on filesystem {}",
         username, filesystem

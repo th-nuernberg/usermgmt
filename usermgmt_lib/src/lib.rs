@@ -14,6 +14,7 @@ pub mod new_entity;
 pub mod slurm;
 pub mod ssh;
 
+use ssh::SshCredentials;
 pub use util::user_input;
 
 use cli::{OnWhichSystem, UserToAdd};
@@ -34,7 +35,7 @@ pub mod prelude {
 use crate::{
     dir::add_user_directories,
     ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user, text_list_output, LDAPConfig},
-    ssh::{SshConnection, SshCredential},
+    ssh::SshConnection,
 };
 extern crate confy;
 
@@ -108,14 +109,16 @@ where
     filtered_qos.into_iter().collect()
 }
 
-pub fn add_user<T>(
+pub fn add_user<T, C>(
     to_add: UserToAdd,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
+    ssh_credentials: C,
 ) -> AppResult
 where
     T: LdapCredential,
+    C: SshCredentials,
 {
     debug!("Start add_user");
 
@@ -126,9 +129,8 @@ where
         add_ldap_user(&entity, config, &ldap_config)?;
     }
 
-    let ssh_credentials = SshCredential::new(config);
     if on_which_sys.slurm() {
-        let session = SshConnection::from_head_node(config, &ssh_credentials);
+        let session = SshConnection::from_head_node(config, ssh_credentials.clone());
         slurm::add_slurm_user(&entity, config, &session)?;
     }
 
@@ -143,14 +145,16 @@ where
     Ok(())
 }
 
-pub fn delete_user<T>(
+pub fn delete_user<T, C>(
     user: &str,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
+    credentials: C,
 ) -> AppResult
 where
     T: LdapCredential,
+    C: SshCredentials,
 {
     debug!("Start delete_user");
 
@@ -160,8 +164,7 @@ where
     }
 
     if on_which_sys.slurm() {
-        let credentials = SshCredential::new(config);
-        let session = SshConnection::from_head_node(config, &credentials);
+        let session = SshConnection::from_head_node(config, credentials);
         slurm::delete_slurm_user(user, config, &session)?;
     }
 
@@ -169,13 +172,15 @@ where
     Ok(())
 }
 
-pub fn modify_user<T>(
+pub fn modify_user<T, C>(
     mut data: Entity,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
+    credential: C,
 ) -> AppResult
 where
+    C: SshCredentials,
     T: LdapCredential,
 {
     debug!("Start modify_user for {}", data.username);
@@ -192,8 +197,7 @@ where
         modify_ldap_user(&data, config, ldap_config)?;
     }
     if on_which_sys.slurm() {
-        let credential = SshCredential::new(config);
-        let session = SshConnection::from_head_node(config, &credential);
+        let session = SshConnection::from_head_node(config, credential);
         slurm::modify_slurm_user(&data, config, &session)?;
     }
 
@@ -201,14 +205,16 @@ where
     Ok(())
 }
 
-pub fn list_users<T>(
+pub fn list_users<T, C>(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,
     ldap_credentials: T,
+    credentials: C,
 ) -> AppResult
 where
     T: LdapCredential,
+    C: SshCredentials,
 {
     if on_which_sys.ldap() {
         let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
@@ -223,8 +229,7 @@ where
     }
 
     if on_which_sys.slurm() {
-        let credentials = SshCredential::new(config);
-        slurm::list_users(config, &credentials)?;
+        slurm::list_users(config, credentials)?;
     }
 
     Ok(())

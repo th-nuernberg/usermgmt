@@ -9,6 +9,7 @@ pub struct SshGivenCredential {
 }
 
 impl SshGivenCredential {
+    #[allow(dead_code)]
     pub fn new(username: &str, password: &str) -> Self {
         let (username, password) = (username.into(), password.into());
         Self { username, password }

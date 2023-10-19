@@ -23,7 +23,10 @@ pub enum EntitiesAndSshAgent {
 }
 
 /// Executes given command `cmd` on remote machine over ssh
-pub fn run_remote_command(sess: &SshConnection, cmd: &str) -> AppResult<(i32, String)> {
+pub fn run_remote_command<C>(sess: &SshConnection<C>, cmd: &str) -> AppResult<(i32, String)>
+where
+    C: SshCredentials,
+{
     debug!("Running command {}", cmd);
 
     let (s, exit_status) = sess.exec(cmd)?;
