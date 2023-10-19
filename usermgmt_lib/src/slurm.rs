@@ -4,12 +4,15 @@ use anyhow::{anyhow, Context};
 use log::{debug, info};
 
 mod commmand_builder;
+mod listed_user;
 use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
 use self::commmand_builder::CommandBuilder;
 
 use crate::ssh::{SshConnection, SshCredentials};
 use crate::{Entity, NewEntity};
+
+pub use listed_user::ListedUser;
 
 /// Creates a user in slurm database on a remote machine over ssh
 pub fn add_slurm_user<C>(
@@ -93,8 +96,12 @@ where
 }
 
 /// Lists all users in slurm database on a remote machine
-pub fn list_users(config: &MgmtConfig, credentials: impl SshCredentials) -> AppResult<String> {
-    let action = CommandBuilder::new_show();
+pub fn list_users(
+    config: &MgmtConfig,
+    credentials: impl SshCredentials,
+    parseable: bool,
+) -> AppResult<String> {
+    let action = CommandBuilder::new_show(parseable);
     let session = SshConnection::from_head_node(config, credentials);
     let output = run_slurm_action(action, config, &session)?;
 

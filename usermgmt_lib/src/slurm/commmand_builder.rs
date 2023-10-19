@@ -16,6 +16,7 @@ const USER: &str = "User";
 const ACCOUNT: &str = "Account";
 const DEFAULT_QOS: &str = "DefaultQOS";
 const QOS: &str = "QOS";
+const SLURM_PRASEABLE_ARG: &str = "--parsable";
 
 pub enum Modifier {
     Qos,
@@ -42,7 +43,9 @@ enum SlurmSubCommand {
         prefix: &'static str,
         value: Vec<String>,
     },
-    Show,
+    Show {
+        parseable: bool,
+    },
 }
 
 fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
@@ -65,11 +68,19 @@ fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
                 format!("{}={}", prefix, value.join(",")),
             ]
         }
-        SlurmSubCommand::Show => vec![
-            SUB_COMMAND_SHOW.into(),
-            ASSOCIATION.into(),
-            format!("format={}%30,{},{},{}%80", USER, ACCOUNT, DEFAULT_QOS, QOS),
-        ],
+        SlurmSubCommand::Show { parseable } => {
+            let mut command = if parseable {
+                vec![SLURM_PRASEABLE_ARG.to_owned()]
+            } else {
+                Vec::new()
+            };
+            command.extend_from_slice(&[
+                SUB_COMMAND_SHOW.into(),
+                ASSOCIATION.into(),
+                format!("format={}%30,{},{},{}%80", USER, ACCOUNT, DEFAULT_QOS, QOS),
+            ]);
+            command
+        }
     }
 }
 // User%30,Account,DefaultQOS,QOS%80
@@ -94,8 +105,11 @@ impl CommandBuilder {
         Self::new_inner(username, vec![SlurmSubCommand::Delete])
     }
 
-    pub fn new_show() -> Self {
-        Self::new_inner(Default::default(), vec![SlurmSubCommand::Show])
+    pub fn new_show(parseable: bool) -> Self {
+        Self::new_inner(
+            Default::default(),
+            vec![SlurmSubCommand::Show { parseable }],
+        )
     }
 
     pub fn new_modify(username: String, modifier: Modifier, value: Vec<String>) -> Self {
@@ -224,7 +238,13 @@ mod testing {
     }
     #[test]
     fn list_user() {
-        let input = CommandBuilder::new_show().sacctmgr_path("some_path/sacctmgr".to_owned());
+        let input = CommandBuilder::new_show(false).sacctmgr_path("some_path/sacctmgr".to_owned());
+        let actual = input.remote_command();
+        insta::assert_debug_snapshot!(actual);
+    }
+    #[test]
+    fn list_user_parserable() {
+        let input = CommandBuilder::new_show(true).sacctmgr_path("some_path/sacctmgr".to_owned());
         let actual = input.remote_command();
         insta::assert_debug_snapshot!(actual);
     }

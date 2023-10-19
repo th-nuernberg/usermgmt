@@ -229,7 +229,7 @@ where
     }
 
     if on_which_sys.slurm() {
-        let output = slurm::list_users(config, credentials)?;
+        let output = slurm::list_users(config, credentials, false)?;
         println!("{}", output);
     }
 

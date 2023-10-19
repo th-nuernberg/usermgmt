@@ -1,0 +1,46 @@
+---
+source: usermgmt_lib/src/slurm/listed_user.rs
+expression: actual
+---
+Some(
+    ListedUser {
+        headers: [
+            "User",
+            "Account",
+            "Def QOS",
+            "QOS",
+        ],
+        fields: [
+            [
+                "",
+                "root",
+                "",
+                "normal",
+            ],
+            [
+                "dev_user",
+                "root",
+                "",
+                "normal",
+            ],
+            [
+                "root",
+                "root",
+                "",
+                "normal",
+            ],
+            [
+                "",
+                "thn",
+                "",
+                "normal",
+            ],
+            [
+                "",
+                "cs",
+                "",
+                "normal",
+            ],
+        ],
+    },
+)
