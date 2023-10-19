@@ -22,7 +22,7 @@ impl Default for UsermgmtWindow {
         let mut conf_state: ConfigurationState = Default::default();
         conf_state
             .io_conf
-            .spawn_task(|| load_config(), "Loading configuration".to_string());
+            .spawn_task(load_config, "Loading configuration".to_string());
 
         Self {
             listin_state: Default::default(),
@@ -71,14 +71,13 @@ fn query_pending_io_taks(window: &mut UsermgmtWindow) {
                 listing_state.rw_pw = Some(rw_password.to_owned());
             }
         }
-        if ssh_state.username.is_none() {
-            if !conf.default_ssh_user.is_empty() {
-                debug!("GUI: Ssh user name taken from default ssh user in loaded config");
-                ssh_state.username = Some(conf.default_ssh_user.to_owned());
-            }
+        if ssh_state.username.is_none() && !conf.default_ssh_user.is_empty() {
+            debug!("GUI: Ssh user name taken from default ssh user in loaded config");
+            ssh_state.username = Some(conf.default_ssh_user.to_owned());
         }
     }
     let _ = window.listin_state.list_ldap_res.query_task();
+    let _ = window.listin_state.list_slurm_user_res.query_task();
 }
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     change_to_if_clicked(window, ui, CurrentSelectedView::LdapConnection);
@@ -94,7 +93,7 @@ fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         ui: &mut egui::Ui,
         view: CurrentSelectedView,
     ) {
-        if ui.button(view.to_str()).clicked() {
+        if ui.button(view.create_str()).clicked() {
             let previous_view = window.selected_view();
             info!("Changed from ({:?}) to ({:?}) view", previous_view, view);
             window.set_selected_view(view);

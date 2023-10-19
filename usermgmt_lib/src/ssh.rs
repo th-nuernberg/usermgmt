@@ -9,6 +9,7 @@ mod ssh_given_credential;
 
 pub use ssh_connection::SshConnection;
 pub use ssh_credentials::SshCredentials;
+pub use ssh_given_credential::SshGivenCredential;
 
 pub use ssh_credential::SshCredential;
 

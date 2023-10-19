@@ -7,7 +7,7 @@ cargo fmt --check --all
 echo "==================="
 
 echo "Checking linting"
-cargo clippy -- -Dwarnings
+cargo clippy --all -- -Dwarnings
 echo "==================="
 
 echo "Checking unit test"

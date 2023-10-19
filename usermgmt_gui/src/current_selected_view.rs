@@ -18,7 +18,7 @@ pub enum CurrentSelectedView {
 }
 
 impl CurrentSelectedView {
-    pub fn to_str(&self) -> &'static str {
+    pub fn create_str(&self) -> &'static str {
         match self {
             CurrentSelectedView::SshConnection => "Ssh connection",
             CurrentSelectedView::LdapConnection => "Ldap connection",
