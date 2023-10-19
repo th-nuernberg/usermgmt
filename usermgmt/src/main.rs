@@ -7,6 +7,7 @@ use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
 use usermgmt_lib::config::{self};
 use usermgmt_lib::{prelude::*, Entity};
 
+mod cli_ssh_credential;
 mod cli_user_input;
 mod ldap_cli_credential;
 fn main() -> ExitCode {

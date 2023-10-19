@@ -4,7 +4,11 @@ mod ssh_connection;
 mod ssh_credential;
 
 use ssh2::{Agent, PublicKey, Session};
+mod ssh_credentials;
+mod ssh_given_credential;
+
 pub use ssh_connection::SshConnection;
+pub use ssh_credentials::SshCredentials;
 
 pub use ssh_credential::SshCredential;
 
