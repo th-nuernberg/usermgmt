@@ -1,5 +1,10 @@
 import {SideBar} from "side_bar.slint";
 import { AboutSection } from "about.slint";
+import { ListingPage } from "listing.slint";
+import { RustBackend, AppState } from "global.slint";
+
+export { RustBackend, AppState }
+
 export component AppWindow inherits Window {
     preferred-width: 700px;
     title: "Usermgmt Tool";
@@ -11,7 +16,7 @@ export component AppWindow inherits Window {
         }
 
         if(side-bar.current-item == 0) : Text { text: "configuration";}
-        if(side-bar.current-item == 1) : Text { text: "listing";}
+        if(side-bar.current-item == 1) : ListingPage { title: "listing"; height: 200px;}
         if(side-bar.current-item == 2) : Text { text: "adding";}
         if(side-bar.current-item == 3) : Text { text: "deleting";}
         if(side-bar.current-item == 4) : AboutSection { title: "About"; }
