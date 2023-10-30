@@ -1,5 +1,19 @@
+import {SideBar} from "side_bar.slint";
+import { AboutSection } from "about.slint";
 export component AppWindow inherits Window {
-    Text {
-        text: "Hello from slint";
+    preferred-width: 700px;
+    title: "Usermgmt Tool";
+
+    HorizontalLayout {
+        side-bar := SideBar {
+            title: "Possible Actions";
+            model: ["Configuration", "Listing users", "Adding users", "Deleting users", "About"];
+        }
+
+        if(side-bar.current-item == 0) : Text { text: "configuration";}
+        if(side-bar.current-item == 1) : Text { text: "listing";}
+        if(side-bar.current-item == 2) : Text { text: "adding";}
+        if(side-bar.current-item == 3) : Text { text: "deleting";}
+        if(side-bar.current-item == 4) : AboutSection { title: "About"; }
     }
 }

@@ -453,3 +453,8 @@ Development of this app can be done locally via a docker container set up. As mo
 the functionallity for LDAP and Slurm can be used via docker. Directory management does not work in
 docker. Read this [Readme](./docker/README.md) for how to set up local development via docker.
 
+## GUI 
+
+The GUI version of the usermgmt tool is made by slint
+
+![Logo of slint](./assets/slint_logo_dark.png)

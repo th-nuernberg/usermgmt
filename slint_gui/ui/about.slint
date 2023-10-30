@@ -1,0 +1,41 @@
+import { AboutSlint , VerticalBox, HorizontalBox} from "std-widgets.slint";
+import {Page} from "page.slint";
+import { Item } from "item.slint";
+import { LinkText } from "link.slint";
+
+export component AboutSection inherits Page { 
+    property<string> source-code-link: "https://github.com/th-nuernberg/usermgmt";
+    Item {
+        title: "License";
+        VerticalBox {
+            Text {
+                text: "MIT"; 
+                color: blue; 
+                font-size: 20px; 
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+            HorizontalBox {  
+                Text {padding: 0px; text: "Link: "; }
+                LinkText {  
+                    text: "https://github.com/th-nuernberg/usermgmt/blob/main/LICENSE"; 
+                }
+            }
+        }
+    }
+    Item { 
+        title: "Source Code"; 
+        HorizontalBox {  
+            Text {
+                padding: 0px; 
+                text: "Link: "; 
+            }
+            LinkText {  
+                text: source-code-link; 
+            }
+        }
+    }
+    Item {
+        title: "Used GUI libaray"; 
+        AboutSlint {}
+    }
+}
