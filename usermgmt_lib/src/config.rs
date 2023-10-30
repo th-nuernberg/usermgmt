@@ -1,4 +1,6 @@
 mod path_sources;
+use std::path::PathBuf;
+
 use anyhow::Context;
 use log::info;
 pub use path_sources::get_path_to_conf;
@@ -126,13 +128,20 @@ impl Default for MgmtConfig {
 ///
 /// - Can not ensure if folder exits where conf.toml file exits
 /// - Can not read or create a configuration file
-pub fn load_config() -> AppResult<MgmtConfig> {
+pub fn load_config() -> AppResult<LoadedMgmtConfig> {
     let path = config::get_path_to_conf()?;
 
     info!("Loding configuraion file from path at {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
-    confy::load_path(&path)
-        .with_context(|| format!("Error in loading or creating config file at {:?}", path))
+    let config = confy::load_path(&path)
+        .with_context(|| format!("Error in loading or creating config file at {:?}", path))?;
+    Ok(LoadedMgmtConfig { path, config })
+}
+
+#[derive(Debug)]
+pub struct LoadedMgmtConfig {
+    pub path: PathBuf,
+    pub config: MgmtConfig,
 }
 
 pub fn config_for_save() -> String {

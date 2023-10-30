@@ -20,9 +20,13 @@ pub struct UsermgmtWindow {
 impl Default for UsermgmtWindow {
     fn default() -> Self {
         let mut conf_state: ConfigurationState = Default::default();
-        conf_state
-            .io_conf
-            .spawn_task(load_config, "Loading configuration".to_string());
+        conf_state.io_conf.spawn_task(
+            || {
+                let loaded = load_config()?;
+                Ok(loaded.config)
+            },
+            "Loading configuration".to_string(),
+        );
 
         Self {
             listin_state: Default::default(),

@@ -42,7 +42,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             to_add,
             on_which_sys,
         } => {
-            let config = config::load_config()?;
+            let config = config::load_config()?.config;
             let cli_ssh_credential = CliSshCredential::new(&config);
             usermgmt_lib::add_user(
                 to_add,
@@ -53,7 +53,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             )?
         }
         Commands::Modify { data, on_which_sys } => {
-            let config = config::load_config()?;
+            let config = config::load_config()?.config;
             let cli_ssh_credential = CliSshCredential::new(&config);
             let data = Entity::new_modifieble_conf(data, &config)?;
             usermgmt_lib::modify_user(
@@ -65,7 +65,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             )?
         }
         Commands::Delete { user, on_which_sys } => {
-            let config = config::load_config()?;
+            let config = config::load_config()?.config;
             let cli_ssh_credential = CliSshCredential::new(&config);
             usermgmt_lib::delete_user(
                 user.as_ref(),
@@ -79,7 +79,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             on_which_sys,
             simple_output_for_ldap,
         } => {
-            let config = config::load_config()?;
+            let config = config::load_config()?.config;
             let cli_ssh_credential = CliSshCredential::new(&config);
             usermgmt_lib::list_users(
                 &config,
