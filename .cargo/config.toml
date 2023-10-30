@@ -1,2 +1,3 @@
 [alias]
 gui = "run -p usermgmt_gui --"
+sgui = "run -p slint_gui --"
