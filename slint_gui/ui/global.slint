@@ -1,7 +1,19 @@
 export global RustBackend {
-    callback on_listing_ldap_users();
+    callback listing_ldap_users();
+    callback loading_configuration();
+}
+
+export enum LoadStatus {
+    Empty,
+    Loading,
+    Failure,
+    Succees,
 }
 
 export global AppState {
-    in property <bool> is_listing_ldap_user: false;
+    in property <string> conf_path: "/home/some_user/Some path";
+    in property <string> configuration_status_msg: "Some status message";
+    in property <LoadStatus> is_listing_ldap_user: LoadStatus.Empty;
+    in property <LoadStatus> configuration: LoadStatus.Empty;
+    
 }

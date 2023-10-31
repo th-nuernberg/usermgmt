@@ -1,0 +1,32 @@
+
+import { Page } from "page.slint";
+import { Item } from "item.slint";
+import { RustBackend, AppState, LoadStatus } from "global.slint";
+import { Button , ProgressIndicator, VerticalBox, LineEdit, Switch} from "std-widgets.slint";
+
+export component StatusBox inherits Item {  
+    property<color> empty_color: #748c78;
+    property<color> success_color: #00ff2f;
+    property<color> err_color: #c30f18;
+    property<color> loading_color: #15aba9;
+    in property <string> msg <=> msg_text.text;
+    in property <LoadStatus> status;
+    msg_text := Text {
+        font-size: 35px;
+    }
+    states [
+        loaded when status == LoadStatus.Empty: {
+          msg_text.color: empty-color;
+        }
+        failed when status == LoadStatus.Failure: {
+          msg_text.color: err-color;
+        }
+        loaded when status == LoadStatus.Succees: {
+          msg_text.color: success-color;
+        }
+        loaded when status == LoadStatus.Loading: {
+          msg_text.color: loading-color;
+        }
+    ]
+
+}

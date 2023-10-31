@@ -1,6 +1,6 @@
 import { Page } from "page.slint";
 import { Item } from "item.slint";
-import { RustBackend, AppState } from "global.slint";
+import { RustBackend, AppState, LoadStatus } from "global.slint";
 import { Button , ProgressIndicator, VerticalBox} from "std-widgets.slint";
 
 export component ListingPage inherits Page {
@@ -10,12 +10,12 @@ export component ListingPage inherits Page {
             Button { 
                 text: "List ldap users"; 
                 clicked => {
-                    RustBackend.on-listing-ldap-users()
+                    RustBackend.listing-ldap-users()
                 } 
             }
             ProgressIndicator { 
-                visible <=> AppState.is-listing-ldap-user; 
-                indeterminate <=> AppState.is-listing-ldap-user;  
+                visible:  AppState.is-listing-ldap-user == LoadStatus.Loading; 
+                indeterminate: AppState.is-listing-ldap-user == LoadStatus.Loading; 
             }
         }
     }
