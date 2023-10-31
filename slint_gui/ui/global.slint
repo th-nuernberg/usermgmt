@@ -2,6 +2,10 @@ export global RustBackend {
     callback listing_ldap_users();
     callback loading_configuration();
 }
+export struct TableForListing {
+  headers: [TableColumn],
+  columns: [[StandardListViewItem]],
+}
 
 export enum LoadStatus {
     Empty,
@@ -13,7 +17,9 @@ export enum LoadStatus {
 export global AppState {
     in property <string> conf_path: "/home/some_user/Some path";
     in property <string> configuration_status_msg: "Some status message";
+    in property <string> listing_ldap_msg: "Some status message";
     in property <LoadStatus> is_listing_ldap_user: LoadStatus.Empty;
     in property <LoadStatus> configuration: LoadStatus.Empty;
+    in property <TableForListing> table_ldap_users;
     
 }

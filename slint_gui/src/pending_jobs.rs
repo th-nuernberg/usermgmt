@@ -1,10 +1,10 @@
-use usermgmt_lib::{config::LoadedMgmtConfig, prelude::anyhow};
+use usermgmt_lib::{config::LoadedMgmtConfig, ldap::LdapSearchResult, prelude::anyhow};
 
 use crate::task::AppTask;
 
 #[derive(Debug)]
 pub struct PendingJobs {
-    pub listing_ldap_users: AppTask<String>,
+    pub listing_ldap_users: AppTask<LdapSearchResult>,
     pub load_config: AppTask<LoadedMgmtConfig>,
 }
 

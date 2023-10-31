@@ -5,7 +5,11 @@ use std::{
 };
 
 use log::{error, info};
-use slint::{ComponentHandle, Timer, TimerMode};
+use slint::{
+    ComponentHandle, ModelRc, SharedString, StandardListViewItem, TableColumn, Timer, TimerMode,
+    VecModel,
+};
+use usermgmt_lib::ldap::{LDAPConfig, LdapSearchResult, LdapSimpleCredential};
 
 use crate::{io_resources::UnsyncSharedResources, pending_jobs::PendingJobs};
 
@@ -29,26 +33,41 @@ fn main() {
     rust_backend.on_listing_ldap_users({
         let jobs = jobs.clone();
         let app = app.as_weak().unwrap();
+        let io_resources = io_resources.clone();
         move || {
+            log_callback_from_gui("on_listing_ldap_users");
             let listing_job = &jobs.listing_ldap_users;
             if !listing_job.is_thread_running() {
-                listing_job.spawn_task(|| {
-                    info!("Spawning thread");
-                    std::thread::sleep(Duration::from_secs(2));
-                    Ok("Success".to_lowercase())
+                let app_state = app.global::<AppState>();
+                app_state.set_is_listing_ldap_user(LoadStatus::Loading);
+                app_state.set_listing_ldap_msg("Fetching LDAP users".into());
+                listing_job.spawn_task({
+                    let config =
+                        if let Some(Ok(ref must_be_here)) = io_resources.borrow().configuration {
+                            must_be_here.config.clone()
+                        } else {
+                            unreachable!(
+                                "App should not come here without successful loaded configuration"
+                            );
+                        };
+                    let ldap_config = LDAPConfig::new_readonly(
+                        &config,
+                        LdapSimpleCredential::new(Default::default(), Default::default()),
+                    )
+                    .unwrap();
+                    move || usermgmt_lib::ldap::list_ldap_users(ldap_config)
                 });
-                app.global::<AppState>()
-                    .set_is_listing_ldap_user(LoadStatus::Loading);
             }
         }
     });
+
     rust_backend.on_loading_configuration({
         let jobs = jobs.clone();
         let app = app.as_weak().unwrap();
         move || {
+            log_callback_from_gui("on_listing_ldap_users");
             let conf_job = &jobs.load_config;
             let app_state = app.global::<AppState>();
-            info!("Callback {} is called.", stringify!(on_listing_ldap_users));
             if !conf_job.is_thread_running() {
                 app_state.set_configuration(LoadStatus::Loading);
                 app_state.set_configuration_status_msg("Configuration is being loaded.".into());
@@ -72,9 +91,15 @@ fn main() {
                         &app,
                         &result,
                         |app, status| app.set_is_listing_ldap_user(status),
-                        |_, _| (),
-                        || "Ldap users to be list was returned.",
+                        |app, msg| app.set_listing_ldap_msg(msg.into()),
+                        || "Ldap users to be listed was returned.",
                     );
+                    if let Ok(ref resource) = result {
+                        let table = listed_ldap_to_slint_table(resource.clone());
+                        app.global::<AppState>().set_table_ldap_users(table);
+                    }
+
+                    io_resources.borrow_mut().listed_ldap_users = Some(result)
                 }
                 if let Some(result) = all_jobs.load_config.query_task() {
                     report_changed_load_status(
@@ -127,4 +152,63 @@ fn result_to_load_status<T, E>(result: &Result<T, E>) -> LoadStatus {
     } else {
         LoadStatus::Succees
     }
+}
+
+fn listed_ldap_to_slint_table(to_conver: LdapSearchResult) -> TableForListing {
+    let (header, _body) = to_conver.into();
+    let slint_headers = {
+        let iterator: Vec<TableColumn> = header
+            .into_iter()
+            .map(SharedString::from)
+            .map(|shared_str| {
+                let mut column = TableColumn::default();
+                column.title = shared_str;
+                column
+            })
+            .collect();
+        to_modle_rc(iterator)
+    };
+    let columns = {
+        let rows: Vec<ModelRc<StandardListViewItem>> = _body
+            .into_iter()
+            .map(cells_to_row)
+            .map(to_modle_rc)
+            .collect();
+        to_modle_rc(rows)
+    };
+
+    return TableForListing {
+        headers: slint_headers,
+        columns,
+    };
+
+    fn to_modle_rc<T>(iterator: Vec<T>) -> ModelRc<T>
+    where
+        T: Clone + 'static,
+    {
+        let vec_model = VecModel::from(iterator);
+        let as_rc = Rc::new(vec_model);
+        ModelRc::from(as_rc.clone())
+    }
+
+    fn cells_to_row(cells: Vec<Vec<String>>) -> Vec<StandardListViewItem> {
+        cells
+            .into_iter()
+            .map(cell_fields_to_shared)
+            .map(|shared| {
+                let mut list_item = StandardListViewItem::default();
+                list_item.text = shared;
+                list_item
+            })
+            .collect()
+    }
+
+    fn cell_fields_to_shared(cells: Vec<String>) -> SharedString {
+        let joined: String = cells.join(" | ");
+        SharedString::from(joined)
+    }
+}
+
+fn log_callback_from_gui(call_back_name: &str) {
+    info!("Callback {} is called.", call_back_name);
 }

@@ -1,13 +1,16 @@
 import {SideBar} from "side_bar.slint";
 import { AboutSection } from "about.slint";
 import { ListingPage } from "listing.slint";
-import { RustBackend, AppState, LoadStatus } from "global.slint";
+import { RustBackend, AppState, LoadStatus, TableForListing} from "global.slint";
 import { ConfigurationPage } from "configuration_page.slint";
 
-export { RustBackend, AppState, LoadStatus }
+export { RustBackend, AppState, LoadStatus, TableForListing }
 
 export component AppWindow inherits Window {
     preferred-width: 700px;
+    preferred-height: 900px;
+    width: self.preferred-width;
+    height: self.preferred-height;
     title: "Usermgmt Tool";
 
     HorizontalLayout {

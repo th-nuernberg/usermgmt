@@ -3,10 +3,22 @@ use std::collections::HashMap;
 use ldap3::{SearchEntry, SearchResult};
 use log::warn;
 
-#[derive(Debug, Default)]
+/// Table with depth 3:
+/// 1st: Rows of table
+/// 2st: columns of a row
+/// 3st: cells of a column
+type LDAPTableBody = Vec<Vec<Vec<String>>>;
+type LDAPHeaders = Vec<String>;
+#[derive(Debug, Default, Clone)]
 pub struct LdapSearchResult {
-    header: Vec<String>,
-    fields: Vec<Vec<Vec<String>>>,
+    header: LDAPHeaders,
+    fields: LDAPTableBody,
+}
+
+impl From<LdapSearchResult> for (LDAPHeaders, LDAPTableBody) {
+    fn from(value: LdapSearchResult) -> Self {
+        (value.header, value.fields)
+    }
 }
 
 impl LdapSearchResult {

@@ -1,0 +1,22 @@
+
+import {  HorizontalBox, TextEdit, LineEdit} from "std-widgets.slint";
+export component EntryField inherits HorizontalBox   {
+    in property <length> label_width: 150px;
+    in property <string> label_text <=> label.text;
+    in property <string> input_text <=> input_field.text;
+    in property <string> placehodler_text <=> input_field.placeholder-text;
+    in property <bool> as_password: false;
+     
+    
+    label := Text { 
+        text: "Label: "; 
+        font-size: 30px; 
+        width: label-width; 
+    }
+    input_field := LineEdit { 
+        horizontal-stretch: 1;
+        text: "some content"; 
+        font-size: 20px; 
+        input-type: as-password ? InputType.password : InputType.text;
+    }
+}
