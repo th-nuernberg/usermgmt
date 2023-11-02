@@ -61,11 +61,11 @@ impl UsermgmtWindow {
         self.conf_path = new.into();
     }
 
-    pub fn is_ssh_cred_needed(&self) -> bool {
-        self.which_sys.dir || self.which_sys.slurm
+    pub fn is_ssh_cred_needed(&self, supporsts_dir: bool) -> bool {
+        self.which_sys.is_ssh_cred_needed(supporsts_dir)
     }
     pub fn is_ldap_needed(&self) -> bool {
-        self.which_sys.ldap
+        self.which_sys.is_ldap_needed()
     }
 
     pub fn create_ssh_credentials(&self) -> Option<SshGivenCredential> {

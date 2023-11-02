@@ -21,8 +21,9 @@ pub struct PreparationBeforIoTask {
 pub fn prep_conf_creds<T>(
     app: &mut UsermgmtWindow,
     on_error: impl FnOnce(&mut UsermgmtWindow) -> &mut IoResourceManager<T>,
+    supports_dir: bool,
 ) -> Result<PreparationBeforIoTask, &'static str> {
-    return match try_prep(app) {
+    return match try_prep(app, supports_dir) {
         Ok(result) => Ok(result),
         Err(error) => {
             on_error(app).set_error(error);
@@ -33,16 +34,26 @@ Details of error are embeded within respective io resource state.",
         }
     };
 
-    fn try_prep(window: &mut UsermgmtWindow) -> AppResult<PreparationBeforIoTask> {
-        let (ssh_cred, ldap_cred, on_which_sys) = (
-            window
-                .create_ssh_credentials()
-                .ok_or_else(|| anyhow!("Ssh"))?,
+    fn try_prep(
+        window: &mut UsermgmtWindow,
+        supports_dir: bool,
+    ) -> AppResult<PreparationBeforIoTask> {
+        let which_sys = &window.which_sys;
+        let ldap_cred = if which_sys.is_ldap_needed() {
             window
                 .create_ldap_credentials()
-                .ok_or_else(|| anyhow!("LDAP"))?,
-            window.which_sys.create_on_which_system(),
-        );
+                .ok_or_else(|| anyhow!("LDAP credentials are missing."))?
+        } else {
+            Default::default()
+        };
+        let ssh_cred = if which_sys.is_ssh_cred_needed(supports_dir) {
+            window
+                .create_ssh_credentials()
+                .ok_or_else(|| anyhow!("Ssh credentials are missing."))?
+        } else {
+            Default::default()
+        };
+        let on_which_sys = window.which_sys.create_on_which_system();
         if let IoTaskStatus::Successful(LoadedMgmtConfig { config, .. }) =
             &window.conf_state.io_conf.status()
         {

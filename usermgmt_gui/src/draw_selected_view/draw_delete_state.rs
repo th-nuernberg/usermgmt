@@ -12,7 +12,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         });
         !remove_state.username.trim().is_empty()
     };
-    util::draw_credentails(ui, window);
+    util::draw_credentails(ui, window, false);
     ui.add_enabled_ui(allow_deletion, |ui| {
         if ui.button("Delete").clicked() {
             delte_user(window)
@@ -33,7 +33,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
 fn delte_user(window: &mut UsermgmtWindow) {
     window.remove_state.last_username = window.remove_state.username.clone();
     if let Ok(prep) =
-        general_utils::prep_conf_creds(window, |app| &mut app.remove_state.remove_res_io)
+        general_utils::prep_conf_creds(window, |app| &mut app.remove_state.remove_res_io, false)
     {
         let username = window.remove_state.username.clone();
         let _ = window.remove_state.remove_res_io.spawn_task(

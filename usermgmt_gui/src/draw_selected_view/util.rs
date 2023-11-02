@@ -109,9 +109,9 @@ pub fn draw_status_msg<T>(
         ui.label(text);
     });
 }
-pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
-    which_systems::draw_which_system(ui, &mut window.which_sys);
-    if window.is_ssh_cred_needed() {
+pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports_dir: bool) {
+    which_systems::draw_which_system(ui, &mut window.which_sys, supports_dir);
+    if window.is_ssh_cred_needed(supports_dir) {
         draw_ssh_credentials(ui, &mut window.ssh_state);
     }
     if window.is_ldap_needed() {

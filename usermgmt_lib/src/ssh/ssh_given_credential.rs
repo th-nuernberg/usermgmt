@@ -8,6 +8,12 @@ pub struct SshGivenCredential {
     password: Arc<str>,
 }
 
+impl Default for SshGivenCredential {
+    fn default() -> Self {
+        Self::new("", "")
+    }
+}
+
 impl SshGivenCredential {
     #[allow(dead_code)]
     pub fn new(username: &str, password: &str) -> Self {

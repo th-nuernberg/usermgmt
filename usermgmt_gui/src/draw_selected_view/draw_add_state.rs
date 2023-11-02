@@ -52,7 +52,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         });
     }
 
-    util::draw_credentails(ui, window);
+    util::draw_credentails(ui, window, true);
     let adding_fields = &mut window.adding_state;
     let last_username = &adding_fields.last_added_username;
     util::draw_status_msg(
@@ -75,7 +75,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     fn request_addition_of_user(window: &mut UsermgmtWindow) -> AppResult {
         window.adding_state.last_added_username = window.adding_state.username.clone();
         if let Ok(prep) =
-            general_utils::prep_conf_creds(window, |app| &mut app.adding_state.adding_res_io)
+            general_utils::prep_conf_creds(window, |app| &mut app.adding_state.adding_res_io, true)
         {
             let adding_state = &mut window.adding_state;
             let to_add = adding_state.create_user_to_add()?;
