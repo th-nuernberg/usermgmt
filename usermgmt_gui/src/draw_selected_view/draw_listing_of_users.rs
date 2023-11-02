@@ -185,27 +185,19 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             } else {
                 Default::default()
             };
-        ui.horizontal(|ui| {
-            let mut rw_user =
-                field_conf_or_state(window.listin_state.rw_user_name.as_deref(), conf_user_name);
-
-            ui.label("Readonly Username: ");
-            if ui.text_edit_singleline(&mut rw_user).changed() {
-                window.listin_state.rw_user_name = Some(rw_user);
-            }
-        });
-        ui.horizontal(|ui| {
-            let mut rw_password =
-                field_conf_or_state(window.listin_state.rw_pw.as_deref(), conf_pw);
-            ui.label("Readonly Password: ");
-
-            if ui
-                .add(egui::TextEdit::singleline(&mut rw_password).password(true))
-                .changed()
-            {
-                window.listin_state.rw_pw = Some(rw_password);
-            }
-        });
+        let mut rw_user =
+            field_conf_or_state(window.listin_state.rw_user_name.as_deref(), conf_user_name);
+        let mut rw_password = field_conf_or_state(window.listin_state.rw_pw.as_deref(), conf_pw);
+        util::user_password_box(
+            ui,
+            "Ldap readonly credentials",
+            &mut rw_user,
+            &mut rw_password,
+            |rw_user| window.listin_state.rw_user_name = Some(rw_user.clone()),
+            |rw_password| {
+                window.listin_state.rw_pw = Some(rw_password.to_string());
+            },
+        );
     }
 
     fn field_conf_or_state(from_window: Option<&str>, from_conf: Option<&str>) -> String {
