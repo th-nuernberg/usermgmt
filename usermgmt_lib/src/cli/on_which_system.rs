@@ -38,6 +38,10 @@ pub struct OnWhichSystem {
 }
 
 impl OnWhichSystem {
+    pub fn new(slurm: bool, ldap: bool, dirs: bool) -> Self {
+        Self { slurm, ldap, dirs }
+    }
+
     pub fn from_config_for_all(config: &MgmtConfig, from_cli: &OnWhichSystemCli) -> Self {
         let mut slurm_ldap = Self::from_config_for_slurm_ldap(config, &from_cli.ldap_slurm);
         slurm_ldap.dirs = Self::use_cli_over_config(from_cli.dirs(), config.include_dir_mgmt);

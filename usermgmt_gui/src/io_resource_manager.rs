@@ -1,4 +1,5 @@
-use usermgmt_lib::prelude::AppResult;
+use log::warn;
+use usermgmt_lib::prelude::{AppError, AppResult};
 
 use self::io_background_worker::IoBackgroundWorker;
 
@@ -13,10 +14,14 @@ pub struct IoResourceManager<T = ()> {
     task: IoBackgroundWorker<T>,
 }
 
-impl<T> IoResourceManager<T>
-where
-    T: Send + 'static,
-{
+impl<T> IoResourceManager<T> {
+    pub fn set_error(&mut self, error: AppError) {
+        if self._is_loading() {
+            warn!("Tried to set failure for loading io resource. Failure is not set.");
+            return;
+        }
+        self.status = IoTaskStatus::Failed(error);
+    }
     pub fn status(&self) -> &IoTaskStatus<T> {
         &self.status
     }
@@ -27,7 +32,11 @@ where
     pub fn is_there(&self) -> bool {
         self.status.is_there()
     }
-
+}
+impl<T> IoResourceManager<T>
+where
+    T: Send + 'static,
+{
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
     where
         F: FnOnce() -> AppResult<T> + Send + 'static,

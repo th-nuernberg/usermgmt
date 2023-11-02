@@ -1,3 +1,4 @@
+use crate::current_selected_view::ConnectionState;
 use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use usermgmt_lib::{
@@ -106,7 +107,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             let ssh_state = &window.ssh_state;
             let listing_state = &window.listin_state;
             let conf_state = &window.conf_state;
-            ssh_state.fields_filled()
+            ssh_state.are_fields_filled()
                 && !listing_state.list_slurm_user_res._is_loading()
                 && conf_state.io_conf.is_there()
         };

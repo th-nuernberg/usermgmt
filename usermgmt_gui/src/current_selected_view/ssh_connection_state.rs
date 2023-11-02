@@ -1,18 +1,17 @@
+use super::connection_state::ConnectionState;
+
 #[derive(Debug, Default)]
 pub struct SshConnectionState {
     pub username: Option<String>,
     pub password: Option<String>,
 }
 
-impl SshConnectionState {
-    pub fn all_fields_filled(&self) -> Option<(&str, &str)> {
-        match (self.username.as_deref(), self.password.as_deref()) {
-            (Some(username), Some(password)) => Some((username, password)),
-            _ => None,
-        }
+impl ConnectionState for SshConnectionState {
+    fn username(&self) -> Option<&str> {
+        self.username.as_deref()
     }
 
-    pub fn fields_filled(&self) -> bool {
-        self.all_fields_filled().is_some()
+    fn password(&self) -> Option<&str> {
+        self.password.as_deref()
     }
 }

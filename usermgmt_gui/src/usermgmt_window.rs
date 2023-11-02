@@ -2,13 +2,15 @@ use std::{path::PathBuf, time::Duration};
 
 use eframe::egui;
 use log::{debug, info};
-use usermgmt_lib::config;
+use usermgmt_lib::{config, ldap::LdapSimpleCredential, ssh::SshGivenCredential};
 
 use crate::{
     current_selected_view::{
-        ConfigurationState, CurrentSelectedView, ListingState, SshConnectionState,
+        AddState, ConfigurationState, CurrentSelectedView, LdapConnectionState, ListingState,
+        RemoveState, SshConnectionState,
     },
-    draw_selected_view::draw_selected_view,
+    draw_selected_view::{draw_selected_view, util::draw_box_group},
+    which_systems::WhichSystem,
 };
 
 #[derive(Debug)]
@@ -18,6 +20,10 @@ pub struct UsermgmtWindow {
     pub conf_path: PathBuf,
     pub listin_state: ListingState,
     pub ssh_state: SshConnectionState,
+    pub ldap_state: LdapConnectionState,
+    pub which_sys: WhichSystem,
+    pub adding_state: AddState,
+    pub remove_state: RemoveState,
 }
 
 impl Default for UsermgmtWindow {
@@ -30,6 +36,10 @@ impl Default for UsermgmtWindow {
             selected_view: Default::default(),
             ssh_state: Default::default(),
             conf_path: Default::default(),
+            which_sys: Default::default(),
+            ldap_state: Default::default(),
+            adding_state: Default::default(),
+            remove_state: Default::default(),
             conf_state,
         }
     }
@@ -50,22 +60,41 @@ impl UsermgmtWindow {
     pub fn set_conf_path(&mut self, new: impl Into<PathBuf>) {
         self.conf_path = new.into();
     }
+
+    pub fn is_ssh_cred_needed(&self) -> bool {
+        self.which_sys.dir || self.which_sys.slurm
+    }
+    pub fn is_ldap_needed(&self) -> bool {
+        self.which_sys.ldap
+    }
+
+    pub fn create_ssh_credentials(&self) -> Option<SshGivenCredential> {
+        let ssh_state = &self.ssh_state;
+        let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_ref());
+        let cred = SshGivenCredential::new(username?, password?);
+        Some(cred)
+    }
+    pub fn create_ldap_credentials(&self) -> Option<LdapSimpleCredential> {
+        let ldap_state = &self.ldap_state;
+        let (username, password) = (ldap_state.username.as_ref(), ldap_state.password.as_ref());
+
+        let cred = LdapSimpleCredential::new(username?.to_owned(), password?.to_owned());
+        Some(cred)
+    }
 }
 
 impl eframe::App for UsermgmtWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui_top_general(self, ui);
-            ui.separator();
             query_pending_io_taks(self);
-            draw_selected_view(self, ui);
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| draw_box_group(ui, "Actions", |ui| ui_action_menu(self, ui)));
+                ui.vertical(|ui| draw_selected_view(self, ui));
+            });
         });
     }
 }
 
-fn ui_top_general(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
-    ui.menu_button("Actions", |ui| ui_action_menu(window, ui));
-}
 fn query_pending_io_taks(window: &mut UsermgmtWindow) {
     if let Some(conf) = window.conf_state.io_conf.query_task() {
         let listing_state = &mut window.listin_state;
@@ -90,6 +119,8 @@ fn query_pending_io_taks(window: &mut UsermgmtWindow) {
     }
     let _ = window.listin_state.list_ldap_res.query_task();
     let _ = window.listin_state.list_slurm_user_res.query_task();
+    let _ = window.adding_state.adding_res_io.query_task();
+    let _ = window.remove_state.remove_res_io.query_task();
 }
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     change_to_if_clicked(window, ui, CurrentSelectedView::LdapConnection);

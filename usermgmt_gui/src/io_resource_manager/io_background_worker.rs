@@ -1,6 +1,6 @@
 use std::thread::{self, JoinHandle};
 
-use log::{error, info};
+use log::{error, info, warn};
 use usermgmt_lib::prelude::{anyhow, AppResult};
 
 #[derive(Debug, Default)]
@@ -40,6 +40,7 @@ where
             info!("Started background task in thread ({})", thread_name);
             Ok(true)
         } else {
+            warn!("Start of thread ({}) was rejected because a thread for this responsility is still running", thread_name);
             Ok(false)
         }
     }

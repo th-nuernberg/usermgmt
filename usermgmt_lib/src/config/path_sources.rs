@@ -65,7 +65,7 @@ fn get_path_to_conf_with_dep(
 
     home_dirs = if let Some(manual) = manual_path {
         let mut new = vec![manual];
-        new.extend(home_dirs.into_iter());
+        new.extend(home_dirs);
         new
     } else {
         home_dirs

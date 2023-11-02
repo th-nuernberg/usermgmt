@@ -11,8 +11,10 @@ use crate::{
 
 use self::util::draw_box_group;
 
+mod draw_add_state;
+mod draw_delete_state;
 mod draw_listing_of_users;
-mod util;
+pub mod util;
 
 pub fn draw_ssh_connection(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     util::draw_ssh_credentials(ui, &mut window.ssh_state);
@@ -25,6 +27,8 @@ pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         CurrentSelectedView::Configuration => draw_configuration_view(window, ui),
         CurrentSelectedView::Listing => draw_listing_view(window, ui),
         CurrentSelectedView::SshConnection => draw_ssh_connection(window, ui),
+        CurrentSelectedView::Adding => draw_add_state::draw(ui, window),
+        CurrentSelectedView::Removing => draw_delete_state::draw(ui, window),
         _ => not_implemented_yet(current_view.create_str(), ui),
     }
 
