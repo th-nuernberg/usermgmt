@@ -44,8 +44,9 @@ static SYSTEM_LOCATIONS: Lazy<Vec<PathBuf>> = Lazy::new(|| {
 /// - If CWD can not be determined after the configuration file could not be found under the home and
 /// system paths.
 ///
-pub fn get_path_to_conf() -> AppResult<PathBuf> {
+pub fn get_path_to_conf(manual_path: Option<PathBuf>) -> AppResult<PathBuf> {
     get_path_to_conf_with_dep(
+        manual_path,
         try_resolve_paths_with_home,
         |to_check| may_return_path_to_conf(io_try_exists, to_check),
         try_cwd_as_last_resort,
@@ -54,13 +55,21 @@ pub fn get_path_to_conf() -> AppResult<PathBuf> {
 }
 
 fn get_path_to_conf_with_dep(
+    manual_path: Option<PathBuf>,
     on_resolve_paths_with_home: impl Fn(Option<PathBuf>, &[PathBuf]) -> Vec<PathBuf>,
-    on_may_return_path_to_conf: impl Fn(&Path) -> Option<PathBuf>,
+    on_try_exits: impl Fn(&Path) -> Option<PathBuf>,
     on_try_cwd_as_last_resort: impl Fn() -> AppResult<PathBuf>,
     system_paths: &[PathBuf],
 ) -> AppResult<PathBuf> {
-    let home_dirs: Vec<PathBuf> = on_resolve_paths_with_home(dirs::home_dir(), &HOME_LOCATIONS);
+    let mut home_dirs: Vec<PathBuf> = on_resolve_paths_with_home(dirs::home_dir(), &HOME_LOCATIONS);
 
+    home_dirs = if let Some(manual) = manual_path {
+        let mut new = vec![manual];
+        new.extend(home_dirs.into_iter());
+        new
+    } else {
+        home_dirs
+    };
     let first_find: Option<PathBuf> = home_dirs
         .into_iter()
         .chain(
@@ -68,7 +77,7 @@ fn get_path_to_conf_with_dep(
                 .iter()
                 .map(|to_resolve| PathBuf::from(&to_resolve)),
         )
-        .flat_map(|to_check| on_may_return_path_to_conf(&to_check))
+        .flat_map(|to_check| on_try_exits(&to_check))
         .next();
 
     match first_find {
@@ -203,13 +212,14 @@ mod testing {
     #[test]
     fn error_for_no_path_found() {
         let actual =
-            get_path_to_conf_with_dep(|_, _| Vec::new(), |_| None, || Err(anyhow!("")), &[]);
+            get_path_to_conf_with_dep(None, |_, _| Vec::new(), |_| None, || Err(anyhow!("")), &[]);
         assert!(actual.is_err());
     }
     #[test]
     fn cwd_if_home_and_others_are_none() {
         let expected = PathBuf::from("/home");
         let actual = get_path_to_conf_with_dep(
+            None,
             |_, _| Vec::new(),
             |_| None,
             || Ok(PathBuf::from("/home")),
@@ -221,6 +231,7 @@ mod testing {
     fn others_before_cwd() {
         let expected = PathBuf::from("/usr/home");
         let actual = get_path_to_conf_with_dep(
+            None,
             |_, _| Vec::new(),
             |to_match| {
                 if to_match == &expected {
@@ -239,6 +250,7 @@ mod testing {
     fn home_before_others_before_cwd() {
         let expected = PathBuf::from("/home/bar");
         let actual = get_path_to_conf_with_dep(
+            None,
             |_, _| vec![expected.clone()],
             |to_match| {
                 if to_match == &expected {

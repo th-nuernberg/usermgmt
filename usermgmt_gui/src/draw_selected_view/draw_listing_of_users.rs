@@ -121,7 +121,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
                 let (username, password) = window.ssh_state.all_fields_filled().unwrap();
                 let ssh_credentials = SshGivenCredential::new(username, password);
-                let mgmt_conf = mgmt_conf.clone();
+                let mgmt_conf = mgmt_conf.config.clone();
                 _ = window.listin_state.list_slurm_user_res.spawn_task(
                     move || {
                         let slurm_users_raw = slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
@@ -157,7 +157,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                     lising_state.rw_user_name.clone().unwrap(),
                     lising_state.rw_pw.clone().unwrap(),
                 );
-                let mgmt_conf = mgmt_conf.clone();
+                let mgmt_conf = mgmt_conf.config.clone();
                 window.listin_state.list_ldap_res.spawn_task(
                     move || {
                         let config = LDAPConfig::new(
@@ -178,6 +178,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     fn draw_readonly_ldap_cred(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let (conf_user_name, conf_pw) =
             if let IoTaskStatus::Successful(configuration) = &window.conf_state.io_conf.status() {
+                let configuration = &configuration.config;
                 (
                     configuration.ldap_readonly_user.as_deref(),
                     configuration.ldap_readonly_pw.as_deref(),

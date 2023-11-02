@@ -1,6 +1,8 @@
+use std::{path::PathBuf, time::Duration};
+
 use eframe::egui;
 use log::{debug, info};
-use usermgmt_lib::config::load_config;
+use usermgmt_lib::config;
 
 use crate::{
     current_selected_view::{
@@ -13,6 +15,7 @@ use crate::{
 pub struct UsermgmtWindow {
     pub selected_view: CurrentSelectedView,
     pub conf_state: ConfigurationState,
+    pub conf_path: PathBuf,
     pub listin_state: ListingState,
     pub ssh_state: SshConnectionState,
 }
@@ -20,18 +23,13 @@ pub struct UsermgmtWindow {
 impl Default for UsermgmtWindow {
     fn default() -> Self {
         let mut conf_state: ConfigurationState = Default::default();
-        conf_state.io_conf.spawn_task(
-            || {
-                let loaded = load_config()?;
-                Ok(loaded.config)
-            },
-            "Loading configuration".to_string(),
-        );
+        start_load_config(&mut conf_state, None);
 
         Self {
             listin_state: Default::default(),
             selected_view: Default::default(),
             ssh_state: Default::default(),
+            conf_path: Default::default(),
             conf_state,
         }
     }
@@ -44,6 +42,13 @@ impl UsermgmtWindow {
 
     pub fn set_selected_view(&mut self, selected_view: CurrentSelectedView) {
         self.selected_view = selected_view;
+    }
+
+    pub fn conf_path_owned(&self) -> String {
+        self.conf_path.to_string_lossy().to_string()
+    }
+    pub fn set_conf_path(&mut self, new: impl Into<PathBuf>) {
+        self.conf_path = new.into();
     }
 }
 
@@ -65,19 +70,22 @@ fn query_pending_io_taks(window: &mut UsermgmtWindow) {
     if let Some(conf) = window.conf_state.io_conf.query_task() {
         let listing_state = &mut window.listin_state;
         let ssh_state = &mut window.ssh_state;
+        let path = &mut window.conf_path;
+        *path = conf.path.to_owned();
+        let config = &conf.config;
         if listing_state.rw_user_name.is_none() {
-            if let Some(rw_user) = conf.ldap_readonly_user.as_deref() {
+            if let Some(rw_user) = config.ldap_readonly_user.as_deref() {
                 listing_state.rw_user_name = Some(rw_user.to_owned());
             }
         }
         if listing_state.rw_pw.is_none() {
-            if let Some(rw_password) = conf.ldap_readonly_pw.as_deref() {
+            if let Some(rw_password) = config.ldap_readonly_pw.as_deref() {
                 listing_state.rw_pw = Some(rw_password.to_owned());
             }
         }
-        if ssh_state.username.is_none() && !conf.default_ssh_user.is_empty() {
+        if ssh_state.username.is_none() && !config.default_ssh_user.is_empty() {
             debug!("GUI: Ssh user name taken from default ssh user in loaded config");
-            ssh_state.username = Some(conf.default_ssh_user.to_owned());
+            ssh_state.username = Some(config.default_ssh_user.to_owned());
         }
     }
     let _ = window.listin_state.list_ldap_res.query_task();
@@ -104,4 +112,15 @@ fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             ui.close_menu();
         }
     }
+}
+
+pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathBuf>) {
+    conf_state.io_conf.spawn_task(
+        || {
+            std::thread::sleep(Duration::from_secs(2));
+            let loaded = config::load_config(path)?;
+            Ok(loaded)
+        },
+        "Loading configuration".to_string(),
+    );
 }

@@ -9,6 +9,8 @@ use crate::{
     io_resource_manager::IoTaskStatus, usermgmt_window::UsermgmtWindow,
 };
 
+use self::util::draw_box_group;
+
 mod draw_listing_of_users;
 mod util;
 
@@ -32,12 +34,14 @@ pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 }
 
 fn draw_configuration_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
+    let mut can_reload = true;
     match &window.conf_state.io_conf.status() {
         IoTaskStatus::NotStarted => {
             ui.label("No configuration loaded yet");
         }
         IoTaskStatus::Loading => {
             ui.label(RichText::new("Loading configuration").color(Color32::BLUE));
+            can_reload = false;
         }
         IoTaskStatus::Successful(_) => {
             ui.label(RichText::new("Configuration loaded").color(Color32::GREEN));
@@ -50,5 +54,28 @@ fn draw_configuration_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             );
             ui.label(RichText::new(format!("Error details. {}", error)).color(Color32::RED));
         }
+    }
+
+    draw_file_path(ui, window);
+    if ui
+        .add_enabled(can_reload, egui::Button::new("Reload"))
+        .clicked()
+    {
+        let path = window.conf_path.clone();
+        crate::usermgmt_window::start_load_config(&mut window.conf_state, Some(path));
+    }
+}
+
+fn draw_file_path(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
+    let conf_state = &window.conf_state;
+    let mut path = window.conf_path_owned();
+
+    if conf_state.io_conf.status().is_loading() {
+        draw_box_group(ui, "Path", |ui| ui.label(&path));
+    } else {
+        draw_box_group(ui, "Path", |ui| {
+            ui.text_edit_singleline(&mut path);
+            window.set_conf_path(path);
+        });
     }
 }

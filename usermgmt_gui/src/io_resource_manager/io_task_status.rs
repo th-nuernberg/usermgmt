@@ -9,7 +9,7 @@ pub enum IoTaskStatus<T> {
 }
 
 impl<T> IoTaskStatus<T> {
-    pub fn _is_loading(&self) -> bool {
+    pub fn is_loading(&self) -> bool {
         matches!(self, IoTaskStatus::Loading)
     }
     pub fn is_there(&self) -> bool {

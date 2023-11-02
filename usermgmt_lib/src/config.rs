@@ -128,17 +128,18 @@ impl Default for MgmtConfig {
 ///
 /// - Can not ensure if folder exits where conf.toml file exits
 /// - Can not read or create a configuration file
-pub fn load_config() -> AppResult<LoadedMgmtConfig> {
-    let path = config::get_path_to_conf()?;
+pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> {
+    let path = config::get_path_to_conf(manual_path)?;
 
     info!("Loding configuraion file from path at {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
     let config = confy::load_path(&path)
         .with_context(|| format!("Error in loading or creating config file at {:?}", path))?;
+    let path = path.parent().unwrap().to_path_buf();
     Ok(LoadedMgmtConfig { path, config })
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LoadedMgmtConfig {
     pub path: PathBuf,
     pub config: MgmtConfig,

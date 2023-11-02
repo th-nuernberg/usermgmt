@@ -22,7 +22,7 @@ where
     }
 
     pub fn _is_loading(&self) -> bool {
-        self.status._is_loading()
+        self.status.is_loading()
     }
     pub fn is_there(&self) -> bool {
         self.status.is_there()

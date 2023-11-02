@@ -25,11 +25,19 @@ pub fn user_password_box(
     on_change_username: impl FnOnce(&mut String),
     on_change_password: impl FnOnce(&mut String),
 ) {
-    ui.label(RichText::new(group_name).strong());
-    ui.group(|ui| {
+    draw_box_group(ui, group_name, |ui| {
         no_password_enty_field(ui, "Username: ", username_content, on_change_username);
         password_enty_field(ui, "Password: ", password_content, on_change_password);
     });
+}
+
+pub fn draw_box_group<R>(
+    ui: &mut egui::Ui,
+    group_name: &str,
+    on_draw: impl FnOnce(&mut egui::Ui) -> R,
+) {
+    ui.label(RichText::new(group_name).strong());
+    ui.group(on_draw);
 }
 
 pub fn no_password_enty_field(

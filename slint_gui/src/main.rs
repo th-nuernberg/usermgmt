@@ -26,7 +26,7 @@ fn main() {
     let jobs = Rc::new(PendingJobs::default());
     let io_resources = UnsyncSharedResources::default();
     jobs.load_config
-        .spawn_task(|| usermgmt_lib::config::load_config());
+        .spawn_task(|| usermgmt_lib::config::load_config(None));
     let app = AppWindow::new().expect("Could not initialize the gui front end of the app.");
 
     let rust_backend = app.global::<RustBackend>();
@@ -71,7 +71,7 @@ fn main() {
             if !conf_job.is_thread_running() {
                 app_state.set_configuration(LoadStatus::Loading);
                 app_state.set_configuration_status_msg("Configuration is being loaded.".into());
-                conf_job.spawn_task(|| usermgmt_lib::config::load_config());
+                conf_job.spawn_task(|| usermgmt_lib::config::load_config(None));
             }
         }
     });
