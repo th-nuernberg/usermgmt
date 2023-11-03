@@ -177,7 +177,7 @@ where
 }
 
 pub fn modify_user<T, C>(
-    mut data: Entity,
+    data: ChangesToUser,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
@@ -188,13 +188,6 @@ where
     T: LdapCredential,
 {
     debug!("Start modify_user for {}", data.username);
-
-    if let Some(ref s) = data.default_qos {
-        if !util::is_valid_qos(&[s.to_string()], &config.valid_qos) {
-            warn!("Specified default QOS {s} is invalid and will be removed!");
-            data.default_qos = None;
-        }
-    }
 
     let data = ChangesToUser::try_new(data.clone())?;
     if on_which_sys.ldap() {

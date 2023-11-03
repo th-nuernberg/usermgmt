@@ -7,9 +7,14 @@ use usermgmt_lib::{
     ldap::LdapSimpleCredential,
     prelude::{anyhow, AppResult},
     ssh::SshGivenCredential,
+    util::TrimmedNonEmptyText,
 };
 
 use crate::io_resource_manager::{IoResourceManager, IoTaskStatus};
+
+pub fn some_if_not_blank_str(input: &str) -> Option<TrimmedNonEmptyText> {
+    input.try_into().ok()
+}
 pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathBuf>) {
     conf_state.io_conf.spawn_task(
         || {

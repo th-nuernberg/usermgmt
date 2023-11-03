@@ -6,7 +6,7 @@ use log::error;
 use std::process::ExitCode;
 use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
 use usermgmt_lib::config::{self};
-use usermgmt_lib::{prelude::*, Entity};
+use usermgmt_lib::{prelude::*, ChangesToUser, Entity};
 
 mod cli_ssh_credential;
 mod cli_user_input;
@@ -56,6 +56,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let cli_ssh_credential = CliSshCredential::new(&config);
             let data = Entity::new_modifieble_conf(data, &config)?;
+            let data = ChangesToUser::try_new(data)?;
             usermgmt_lib::modify_user(
                 data,
                 &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys),

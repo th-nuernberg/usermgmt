@@ -29,10 +29,23 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
         on_which_sys,
     }) = general_utils::prep_conf_creds(window, |app| &mut app.adding_state.adding_res_io, true)
     {
-        window.modify_state.res_io.spawn_task(
-            move || usermgmt_lib::modify_user(todo!(), &on_which_sys, &config, ldap_cred, ssh_cred),
-            String::from("Modifing User"),
-        );
+        match window.modify_state.create_changes_to_user(&config) {
+            Ok(changes) => {
+                window.modify_state.res_io.spawn_task(
+                    move || {
+                        usermgmt_lib::modify_user(
+                            changes,
+                            &on_which_sys,
+                            &config,
+                            ldap_cred,
+                            ssh_cred,
+                        )
+                    },
+                    String::from("Modifing User"),
+                );
+            }
+            Err(error) => window.modify_state.res_io.set_error(error),
+        }
     }
 }
 
