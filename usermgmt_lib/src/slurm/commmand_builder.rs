@@ -54,10 +54,11 @@ fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
         }
         SlurmSubCommand::Delete => vec![SUB_COMMAND_DELETE.into(), USER.into(), username],
         SlurmSubCommand::Modify(map) => {
-            let to_set: Vec<String> = map
+            let mut to_set: Vec<String> = map
                 .into_iter()
                 .map(|(key, values)| format!("{}={}", key, values.join(",")))
                 .collect();
+            to_set.sort();
             vec![SUB_COMMAND_MODIFY.into(), USER.into(), username, SET.into()]
                 .into_iter()
                 .chain(to_set)
@@ -115,18 +116,20 @@ impl CommandBuilder {
         default_qos: String,
         qos: Vec<String>,
     ) -> Self {
+        let command = Self::create_modify_command(default_qos, qos);
+        Self::new_inner(username, vec![command])
+    }
+
+    fn create_modify_command(default_qos: String, qos: Vec<String>) -> SlurmSubCommand {
         let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
-        Self::new_inner(username, vec![SlurmSubCommand::Modify(map)])
+        SlurmSubCommand::Modify(map)
     }
 
     pub fn new_add(username: String, group: Group, default_qos: String, qos: Vec<String>) -> Self {
         // Note: The order of execution is important here!
         // Slurm expects the user to have QOS, before it can set the default QOS
-        let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
-        Self::new_inner(
-            username,
-            vec![SlurmSubCommand::Add { group }, SlurmSubCommand::Modify(map)],
-        )
+        let mod_command = Self::create_modify_command(default_qos, qos);
+        Self::new_inner(username, vec![SlurmSubCommand::Add { group }, mod_command])
     }
 
     pub fn immediate(mut self, immediate: bool) -> Self {
