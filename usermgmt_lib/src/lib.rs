@@ -5,6 +5,7 @@ pub use new_entity::NewEntity;
 pub mod app_error;
 pub mod cli;
 pub mod config;
+pub mod constants;
 pub mod dir;
 pub mod util;
 
@@ -26,6 +27,7 @@ use std::{collections::HashSet, fmt, str::FromStr};
 
 pub mod prelude {
     pub use crate::app_error;
+    pub use crate::constants;
     pub use anyhow::{anyhow, bail, Context};
     pub type AnyError = anyhow::Error;
     pub type AppError = AnyError;
@@ -192,13 +194,15 @@ where
         }
     }
 
-    if on_which_sys.ldap() {
-        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
-        modify_ldap_user(&data, config, ldap_config)?;
-    }
+    // slurm is more likely to fail because qos and default qos must be set !
+    // TODO: validate that constraint in cli and gui up front.
     if on_which_sys.slurm() {
         let session = SshConnection::from_head_node(config, credential);
         slurm::modify_slurm_user(&data, config, &session)?;
+    }
+    if on_which_sys.ldap() {
+        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
+        modify_ldap_user(&data, config, ldap_config)?;
     }
 
     debug!("Finished modify_user");

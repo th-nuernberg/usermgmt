@@ -5,6 +5,7 @@ use log::{debug, info};
 
 mod commmand_builder;
 mod listed_user;
+use crate::prelude::AppError;
 use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
 use self::commmand_builder::CommandBuilder;
@@ -71,28 +72,25 @@ pub fn modify_slurm_user<C>(
 where
     C: SshCredentials,
 {
-    if let Some(ref default_qos) = modifiable.default_qos {
-        debug!("Slurm: Start modifying user default qos");
-        let action = CommandBuilder::new_modify(
-            modifiable.username.to_string(),
-            commmand_builder::Modifier::DefaultQOS,
-            vec![default_qos.to_string()],
-        );
-        run_slurm_action(action, config, session)?;
-        info!("Slurm: Successfully modified the default qos of user");
-    }
-    if let Some(ref qos) = modifiable.qos {
-        debug!("Slurm: Start modifying user qos");
-        let action = CommandBuilder::new_modify(
-            modifiable.username.to_string(),
-            commmand_builder::Modifier::Qos,
-            qos.clone().into(),
-        );
-        run_slurm_action(action, config, session)?;
-        info!("Slurm: Successfully modified the qos of user");
-    }
+    return match (&modifiable.qos, &modifiable.default_qos) {
+        (Some(qos), Some(default_qos)) => {
+            let action = CommandBuilder::new_modify_qos_default_qows(
+                modifiable.username.to_string(),
+                default_qos.to_string(),
+                qos.clone().into(),
+            );
 
-    Ok(())
+            run_slurm_action(action, config, session)?;
+            return Ok(());
+        }
+        (None, None) => Ok(()),
+        (None, Some(_)) => Err(bail_for_only_qos_or_default_qos()),
+        (Some(_), None) => Err(bail_for_only_qos_or_default_qos()),
+    };
+
+    fn bail_for_only_qos_or_default_qos() -> AppError {
+        anyhow!("To modify qos or default qos in slurm, qos and default qos must be given")
+    }
 }
 
 /// Lists all users in slurm database on a remote machine

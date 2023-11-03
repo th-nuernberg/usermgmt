@@ -1,0 +1,1 @@
+pub const SSH_TIME_OUT_MILL_SECS: u32 = 3000;

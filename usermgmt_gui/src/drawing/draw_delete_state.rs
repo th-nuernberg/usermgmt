@@ -1,26 +1,22 @@
-use eframe::egui;
-
-use crate::{general_utils, usermgmt_window::UsermgmtWindow};
-
-use super::util;
+use crate::prelude::*;
 
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     let allow_deletion = {
         let remove_state = &mut window.remove_state;
-        util::draw_box_group(ui, "Required", |ui| {
-            util::no_password_enty_field(ui, "Username", &mut remove_state.username, |_| {});
+        draw_utils::draw_box_group(ui, "Required", |ui| {
+            draw_utils::no_password_enty_field(ui, "Username", &mut remove_state.username, |_| {});
         });
         !remove_state.username.trim().is_empty()
     };
-    util::draw_credentails(ui, window, false);
+    draw_utils::draw_credentails(ui, window, false);
     ui.add_enabled_ui(allow_deletion, |ui| {
-        if ui.button("Delete").clicked() {
+        if ui.button(text_design::button::ACTION_REMOVE).clicked() {
             delte_user(window)
         }
     });
     let remove_state = &mut window.remove_state;
     let last_username = &remove_state.last_username;
-    util::draw_status_msg(
+    draw_utils::draw_status_msg(
         ui,
         remove_state.remove_res_io.status(),
         || "No user remove yet".to_owned(),

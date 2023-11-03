@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::Group;
+use std::collections::HashMap;
 use std::iter;
 use std::process::Command;
 
@@ -35,17 +36,10 @@ impl Modifier {
 }
 
 enum SlurmSubCommand {
-    Add {
-        group: Group,
-    },
+    Add { group: Group },
     Delete,
-    Modify {
-        prefix: &'static str,
-        value: Vec<String>,
-    },
-    Show {
-        parseable: bool,
-    },
+    Modify(HashMap<&'static str, Vec<String>>),
+    Show { parseable: bool },
 }
 
 fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
@@ -59,14 +53,15 @@ fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
             ]
         }
         SlurmSubCommand::Delete => vec![SUB_COMMAND_DELETE.into(), USER.into(), username],
-        SlurmSubCommand::Modify { prefix, value } => {
-            vec![
-                SUB_COMMAND_MODIFY.into(),
-                USER.into(),
-                username,
-                SET.into(),
-                format!("{}={}", prefix, value.join(",")),
-            ]
+        SlurmSubCommand::Modify(map) => {
+            let to_set: Vec<String> = map
+                .into_iter()
+                .map(|(key, values)| format!("{}={}", key, values.join(",")))
+                .collect();
+            vec![SUB_COMMAND_MODIFY.into(), USER.into(), username, SET.into()]
+                .into_iter()
+                .chain(to_set)
+                .collect()
         }
         SlurmSubCommand::Show { parseable } => {
             let mut command = if parseable {
@@ -112,32 +107,25 @@ impl CommandBuilder {
         )
     }
 
-    pub fn new_modify(username: String, modifier: Modifier, value: Vec<String>) -> Self {
-        Self::new_inner(
-            username,
-            vec![SlurmSubCommand::Modify {
-                prefix: modifier.to_static_ref(),
-                value,
-            }],
-        )
+    pub fn new_modify(username: String, modifier: HashMap<&'static str, Vec<String>>) -> Self {
+        Self::new_inner(username, vec![SlurmSubCommand::Modify(modifier)])
+    }
+    pub fn new_modify_qos_default_qows(
+        username: String,
+        default_qos: String,
+        qos: Vec<String>,
+    ) -> Self {
+        let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
+        Self::new_inner(username, vec![SlurmSubCommand::Modify(map)])
     }
 
     pub fn new_add(username: String, group: Group, default_qos: String, qos: Vec<String>) -> Self {
         // Note: The order of execution is important here!
         // Slurm expects the user to have QOS, before it can set the default QOS
+        let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
         Self::new_inner(
             username,
-            vec![
-                SlurmSubCommand::Add { group },
-                SlurmSubCommand::Modify {
-                    prefix: QOS,
-                    value: qos,
-                },
-                SlurmSubCommand::Modify {
-                    prefix: DEFAULT_QOS,
-                    value: vec![default_qos],
-                },
-            ],
+            vec![SlurmSubCommand::Add { group }, SlurmSubCommand::Modify(map)],
         )
     }
 
@@ -250,11 +238,11 @@ mod testing {
     }
     #[test]
     fn modify_user() {
-        let input = CommandBuilder::new_modify(
-            "somebody".to_owned(),
-            Modifier::Qos,
-            vec!["student".into(), "staff".into()],
-        );
+        let map: HashMap<&'static str, _> = HashMap::from_iter([
+            (QOS, vec!["basic".to_string(), "interactive".to_string()]),
+            (DEFAULT_QOS, vec!["basic".to_string()]),
+        ]);
+        let input = CommandBuilder::new_modify("somebody".to_owned(), map);
         let actual = input.remote_command();
         insta::assert_debug_snapshot!(actual);
     }

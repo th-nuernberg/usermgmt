@@ -1,22 +1,26 @@
-use eframe::egui;
-mod current_selected_view;
-mod draw_selected_view;
-mod usermgmt_window;
-use usermgmt_window::UsermgmtWindow;
+mod prelude;
+use prelude::*;
+
+pub mod current_selected_view;
+pub mod drawing;
 mod which_systems;
 
-mod general_utils;
-mod gui_design;
+pub mod general_utils;
+pub mod gui_design;
 mod io_resource_manager;
+pub mod main_logic;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(320.0, 240.0)),
+        initial_window_size: Some(egui::vec2(
+            gui_design::WINDOW_START_WIDTH,
+            gui_design::WINDOW_START_HEIGHT,
+        )),
         ..Default::default()
     };
     eframe::run_native(
-        "Usermgmt",
+        text_design::WINDOW_TITLE,
         options,
         Box::new(|_| Box::<UsermgmtWindow>::default()),
     )

@@ -16,8 +16,8 @@ pub struct IoResourceManager<T = ()> {
 
 impl<T> IoResourceManager<T> {
     pub fn set_error(&mut self, error: AppError) {
-        if self._is_loading() {
-            warn!("Tried to set failure for loading io resource. Failure is not set.");
+        if self.is_loading() {
+            warn!("Tried to set failure for loading io resource. Failure is not set because the resource is still loading.");
             return;
         }
         self.status = IoTaskStatus::Failed(error);
@@ -26,7 +26,7 @@ impl<T> IoResourceManager<T> {
         &self.status
     }
 
-    pub fn _is_loading(&self) -> bool {
+    pub fn is_loading(&self) -> bool {
         self.status.is_loading()
     }
     pub fn is_there(&self) -> bool {

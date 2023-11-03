@@ -1,7 +1,7 @@
-use eframe::egui;
+use crate::prelude::*;
 use usermgmt_lib::cli::OnWhichSystem;
 
-use crate::draw_selected_view::util;
+use crate::drawing::draw_utils;
 
 #[derive(Debug)]
 pub struct WhichSystem {
@@ -25,11 +25,11 @@ impl WhichSystem {
 }
 
 pub fn draw_which_system(ui: &mut egui::Ui, state: &mut WhichSystem, supports_dir: bool) {
-    util::draw_box_group(ui, "On which system", |ui| {
-        ui.checkbox(&mut state.ldap, "LDAP");
-        ui.checkbox(&mut state.slurm, "Slurm");
+    draw_utils::draw_box_group(ui, text_design::MODE_MAINT_TITLE, |ui| {
+        ui.checkbox(&mut state.ldap, text_design::MODE_LDAP);
+        ui.checkbox(&mut state.slurm, text_design::MODE_SLURM);
         if supports_dir {
-            ui.checkbox(&mut state.dir, "Directory");
+            ui.checkbox(&mut state.dir, text_design::MODE_DIRECTORY);
         }
     });
 }

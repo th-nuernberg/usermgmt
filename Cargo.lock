@@ -4992,6 +4992,7 @@ dependencies = [
  "egui_extras",
  "env_logger",
  "log",
+ "strum",
  "usermgmt_lib",
 ]
 

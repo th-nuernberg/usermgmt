@@ -1,15 +1,24 @@
+use std::path::PathBuf;
+
+use crate::{current_selected_view::ConfigurationState, prelude::*};
 use usermgmt_lib::{
     cli::OnWhichSystem,
-    config::{LoadedMgmtConfig, MgmtConfig},
+    config::{self, LoadedMgmtConfig, MgmtConfig},
     ldap::LdapSimpleCredential,
     prelude::{anyhow, AppResult},
     ssh::SshGivenCredential,
 };
 
-use crate::{
-    io_resource_manager::{IoResourceManager, IoTaskStatus},
-    usermgmt_window::UsermgmtWindow,
-};
+use crate::io_resource_manager::{IoResourceManager, IoTaskStatus};
+pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathBuf>) {
+    conf_state.io_conf.spawn_task(
+        || {
+            let loaded = config::load_config(path)?;
+            Ok(loaded)
+        },
+        "Loading configuration".to_string(),
+    );
+}
 
 pub struct PreparationBeforIoTask {
     pub ldap_cred: LdapSimpleCredential,
@@ -42,14 +51,14 @@ Details of error are embeded within respective io resource state.",
         let ldap_cred = if which_sys.is_ldap_needed() {
             window
                 .create_ldap_credentials()
-                .ok_or_else(|| anyhow!("LDAP credentials are missing."))?
+                .ok_or_else(|| anyhow!(text_design::error_messages::LDAP_CRED_MISSING))?
         } else {
             Default::default()
         };
         let ssh_cred = if which_sys.is_ssh_cred_needed(supports_dir) {
             window
                 .create_ssh_credentials()
-                .ok_or_else(|| anyhow!("Ssh credentials are missing."))?
+                .ok_or_else(|| anyhow!(text_design::error_messages::SSH_CRED_MISSING))?
         } else {
             Default::default()
         };
@@ -65,6 +74,6 @@ Details of error are embeded within respective io resource state.",
                 ssh_cred,
             });
         }
-        unreachable!();
+        unreachable!("At this point, there should be a successfully loaded configuration");
     }
 }

@@ -174,12 +174,16 @@ where
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Prepare replace operation
-    let old_qos = find_qos_by_uid(
-        modifiable.username.as_ref(),
-        config,
-        ldap_config.username(),
-        password,
-    )?;
+
+    let old_qos = match &modifiable.qos {
+        Some(_) => find_qos_by_uid(
+            modifiable.username.as_ref(),
+            config,
+            ldap_config.username(),
+            password,
+        ),
+        None => Ok(Vec::default()),
+    }?;
     let mod_vec = make_modification_vec(modifiable, &old_qos);
 
     // Replace userPassword at given dn
@@ -246,56 +250,41 @@ fn make_modification_vec<'a>(
     modifiable: &'a Entity,
     old_qos: &'a Vec<String>,
 ) -> Vec<Mod<&'a str>> {
+    macro_rules! may_push_simple_modification {
+        ($name:expr, $modifable:ident, $modification:ident, $field:ident) => {
+            if let Some(val) = &$modifable.$field {
+                info_log($name);
+                ($modification).push(Mod::Replace($name, HashSet::from([val.as_ref().as_str()])))
+            }
+        };
+    }
     let mut modifications: Vec<Mod<&str>> = Vec::new();
 
-    if let Some(firstname) = &modifiable.firstname {
-        modifications.push(Mod::Replace(
-            "givenName",
-            HashSet::from([firstname.as_ref().as_str()]),
-        ))
-    }
+    may_push_simple_modification!("givenName", modifiable, modifications, firstname);
+    may_push_simple_modification!("sn", modifiable, modifications, lastname);
+    may_push_simple_modification!("mail", modifiable, modifications, mail);
+    may_push_simple_modification!("slurmDefaultQos", modifiable, modifications, default_qos);
+    may_push_simple_modification!("publickey", modifiable, modifications, publickey);
 
-    if let Some(lastname) = &modifiable.lastname {
-        modifications.push(Mod::Replace(
-            "sn",
-            HashSet::from([lastname.as_ref().as_str()]),
-        ))
-    }
-
-    if let Some(mail) = &modifiable.mail {
-        modifications.push(Mod::Replace(
-            "mail",
-            HashSet::from([mail.as_ref().as_str()]),
-        ))
-    }
-
-    if let Some(default_qos) = &modifiable.default_qos {
-        modifications.push(Mod::Replace(
-            "slurmDefaultQos",
-            HashSet::from([default_qos.as_ref().as_str()]),
-        ))
-    }
-
-    if let Some(publickey) = &modifiable.publickey {
-        debug!("Pushing modifiable publickey {}", publickey);
-        modifications.push(Mod::Replace(
-            "sshPublicKey",
-            HashSet::from([publickey.as_ref().as_str()]),
-        ))
-    }
-
-    if !old_qos.is_empty() {
+    let replace_old_with_new_qos = !old_qos.is_empty();
+    if replace_old_with_new_qos {
         // first we delete all old qos
+        const SLURM_QOS: &str = "slurmQos";
+        info_log(SLURM_QOS);
         for q in old_qos {
-            modifications.push(Mod::Delete("slurmQos", HashSet::from([q.as_str()])))
+            modifications.push(Mod::Delete(SLURM_QOS, HashSet::from([q.as_str()])))
         }
         // then we add all new qos
         for q in modifiable.qos.iter() {
             let q: HashSet<&str> = q.into_iter().map(|qos| qos.as_ref().as_str()).collect();
-            modifications.push(Mod::Add("slurmQos", q))
+            modifications.push(Mod::Add(SLURM_QOS, q))
         }
     }
-    modifications
+    return modifications;
+
+    fn info_log(field: &str) {
+        info!("Changing the field: {}", field)
+    }
 }
 
 /// Do a LDAP search to determine the next available uid

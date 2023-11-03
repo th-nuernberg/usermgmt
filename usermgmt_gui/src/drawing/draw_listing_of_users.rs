@@ -1,24 +1,22 @@
+use crate::prelude::*;
+
 use crate::current_selected_view::ConnectionState;
-use eframe::egui;
 use egui_extras::{Size, StripBuilder};
 use usermgmt_lib::{
     ldap::{list_ldap_users, LDAPConfig, LdapSearchResult, LdapSimpleCredential},
-    prelude::anyhow,
     slurm::{self, ListedUser},
     ssh::SshGivenCredential,
 };
 
-use crate::{
-    current_selected_view::ListingState, draw_selected_view::util, gui_design,
-    io_resource_manager::IoTaskStatus, usermgmt_window::UsermgmtWindow,
-};
+use crate::{current_selected_view::ListingState, io_resource_manager::IoTaskStatus};
 
-pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
+pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     draw_readonly_ldap_cred(window, ui);
     ui.separator();
-    util::draw_ssh_credentials(ui, &mut window.ssh_state);
+    draw_utils::draw_ssh_credentials(ui, &mut window.ssh_state);
     ldap_list_btn(window, ui);
     slurm_list_btn(window, ui);
+    ui.separator();
     let listing_state = &window.listin_state;
 
     StripBuilder::new(ui)
@@ -41,34 +39,42 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 
     fn draw_listed_slurm_users(ui: &mut egui::Ui, listing_state: &ListingState) {
         ui.separator();
-        match listing_state.list_slurm_user_res.status() {
-            IoTaskStatus::NotStarted => _ = ui.label("No slurm user listed yet."),
-            IoTaskStatus::Loading => _ = ui.label("Fetching slurm users"),
-            IoTaskStatus::Successful(slurm_users) => draw_slurm_table(ui, slurm_users),
-            IoTaskStatus::Failed(error) => {
-                _ = ui.label(format!("Failed to fetch slurm users:\n{}", error))
-            }
-        };
+        draw_utils::draw_status_msg_w_label(
+            ui,
+            text_design::group::STATUS_LIST_SLURM,
+            listing_state.list_slurm_user_res.status(),
+            text_design::create_msg::listing_slurm_init,
+            text_design::create_msg::listing_slurm_loading,
+            text_design::create_msg::listing_slurm_success,
+            text_design::create_msg::listing_slurm_failure,
+        );
+
+        if let IoTaskStatus::Successful(slurm_users) = listing_state.list_slurm_user_res.status() {
+            ui.separator();
+            draw_slurm_table(ui, slurm_users)
+        }
     }
 
     fn draw_listed_ldap_users(ui: &mut egui::Ui, listing_state: &ListingState) {
-        ui.separator();
-        match listing_state.list_ldap_res.status() {
-            IoTaskStatus::NotStarted => _ = ui.label("No ldap user listed yet."),
-            IoTaskStatus::Loading => _ = ui.label("Fetching ldap users"),
-            IoTaskStatus::Successful(listed_ldap_user) => draw_tables(ui, listed_ldap_user),
-            IoTaskStatus::Failed(error) => {
-                _ = ui.label(format!("Failed to fetch ldpa users:\n{}", error))
-            }
-        };
+        let status = listing_state.list_ldap_res.status();
+        draw_utils::draw_status_msg_w_label(
+            ui,
+            text_design::group::STATUS_LIST_LDAP,
+            status,
+            text_design::create_msg::listing_ldap_init,
+            text_design::create_msg::listing_ldap_loading,
+            text_design::create_msg::listing_ldap_success,
+            text_design::create_msg::listing_ldap_failure,
+        );
+        if let IoTaskStatus::Successful(ldap_users) = status {
+            ui.separator();
+            draw_ldap_tables(ui, ldap_users)
+        }
     }
 
     fn draw_slurm_table(ui: &mut egui::Ui, slurm_users: &ListedUser) {
         use egui_extras::{Column, TableBuilder};
-        ui.label("Ldap users were Successfully fetched.");
         draw_table(ui, slurm_users);
-
-        return;
 
         fn draw_table(ui: &mut egui::Ui, raw: &ListedUser) {
             let mut table = TableBuilder::new(ui)
@@ -108,14 +114,14 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             let listing_state = &window.listin_state;
             let conf_state = &window.conf_state;
             ssh_state.are_fields_filled()
-                && !listing_state.list_slurm_user_res._is_loading()
+                && !listing_state.list_slurm_user_res.is_loading()
                 && conf_state.io_conf.is_there()
         };
 
         if ui
             .add_enabled(
                 slurm_list_btn_enabled,
-                egui::Button::new("List slurm users"),
+                egui::Button::new(text_design::button::LIST_SLURM_USERS),
             )
             .clicked()
         {
@@ -127,7 +133,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                     move || {
                         let slurm_users_raw = slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
                         ListedUser::new(&slurm_users_raw)
-                            .ok_or(anyhow!("Could parse slurm users to a table"))
+                            .ok_or(anyhow!(text_design::error_messages::FAILED_PARSING_SLURM))
                     },
                     String::from("Getting slurm user"),
                 );
@@ -140,7 +146,7 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     fn ldap_list_btn(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let list_ldap_btn_enabled = {
             let list_state = &window.listin_state;
-            let no_ldpa_loading = !list_state.list_ldap_res._is_loading();
+            let no_ldpa_loading = !list_state.list_ldap_res.is_loading();
             let configuration_is_loaded = window.conf_state.io_conf.is_there();
             list_state.rw_user_name.is_some()
                 && list_state.rw_pw.is_some()
@@ -149,7 +155,10 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         };
 
         if ui
-            .add_enabled(list_ldap_btn_enabled, egui::Button::new("List ldap users"))
+            .add_enabled(
+                list_ldap_btn_enabled,
+                egui::Button::new(text_design::button::LIST_LDAP_USERS),
+            )
             .clicked()
         {
             if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
@@ -190,9 +199,9 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let mut rw_user =
             field_conf_or_state(window.listin_state.rw_user_name.as_deref(), conf_user_name);
         let mut rw_password = field_conf_or_state(window.listin_state.rw_pw.as_deref(), conf_pw);
-        util::user_password_box(
+        draw_utils::user_password_box(
             ui,
-            "Ldap readonly credentials",
+            text_design::group::READONLY_LDAP_CRED,
             &mut rw_user,
             &mut rw_password,
             |rw_user| window.listin_state.rw_user_name = Some(rw_user.clone()),
@@ -208,14 +217,11 @@ pub fn draw_listing_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             .to_owned()
     }
 
-    fn draw_tables(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+    fn draw_ldap_tables(ui: &mut egui::Ui, raw: &LdapSearchResult) {
         use egui_extras::{Column, TableBuilder};
-        ui.label("Ldap users were Successfully fetched.");
-        draw_ldap_table(ui, raw);
+        draw_table(ui, raw);
 
-        return;
-
-        fn draw_ldap_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+        fn draw_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
             // Need to give manual id otherwise the next table causes a clash
             // on the scroll aread id.
             // Reference: https://docs.rs/egui_extras/latest/egui_extras/struct.TableBuilder.html

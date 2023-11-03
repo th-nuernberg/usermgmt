@@ -1,6 +1,9 @@
+use crate::prelude::*;
+
 use anyhow::{anyhow, bail, Context};
 use std::io::Read;
-use std::net::TcpStream;
+use std::net::{SocketAddr, TcpStream};
+use std::time::Duration;
 
 use once_cell::unsync::OnceCell;
 
@@ -83,16 +86,22 @@ where
         info!("Connecting to host {}", self.endpoint);
 
         let mut sess = Session::new().context("Could not build up ssh session")?;
+        let timeout = constants::SSH_TIME_OUT_MILL_SECS;
+        let socket_addr: String = format!("{}:{}", self.endpoint, self.port);
+        let socket_addr: SocketAddr = socket_addr
+            .parse()
+            .unwrap_or_else(|_| panic!("Socket address is not valid: {}", socket_addr));
+        sess.set_timeout(timeout);
 
         {
-            let tcp = TcpStream::connect(format!("{}:{}", self.endpoint, self.port)).with_context(
-                || {
-                    format!(
-                        "Could not connect over tcp to endpoint: {} over port: {}",
-                        self.endpoint, self.endpoint
-                    )
-                },
-            )?;
+            let tcp =
+                TcpStream::connect_timeout(&socket_addr, Duration::from_millis(timeout as u64))
+                    .with_context(|| {
+                        format!(
+                            "Could not connect over tcp to endpoint: {} over port: {}",
+                            self.endpoint, self.endpoint
+                        )
+                    })?;
             sess.set_tcp_stream(tcp);
         }
 
