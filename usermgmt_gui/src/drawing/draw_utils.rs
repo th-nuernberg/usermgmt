@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 use eframe::egui::{self, RichText};
-use usermgmt_lib::util::TrimmedNonEmptyText;
 
 use crate::{
     current_selected_view::{LdapConnectionState, SshConnectionState},
@@ -131,10 +130,29 @@ pub fn no_password_enty_field(
 ) {
     draw_enty_field(ui, label, content, false, on_change)
 }
+pub fn number_field(ui: &mut egui::Ui, label: &str, content: &mut u32) {
+    ui.horizontal(|ui| {
+        ui.label(label);
+
+        let mut float = *content as f32;
+        ui.add(egui::DragValue::new(&mut float).speed(0.1));
+        *content = float.round() as u32;
+    });
+}
+pub fn neg_number_field(ui: &mut egui::Ui, label: &str, content: &mut i32) {
+    ui.horizontal(|ui| {
+        ui.label(label);
+
+        let mut float = *content as f32;
+        ui.add(egui::DragValue::new(&mut float).speed(0.1));
+        *content = float.round() as i32;
+    });
+}
+
 pub fn no_password_opt_enty_field(ui: &mut egui::Ui, label: &str, content: &mut Option<String>) {
     let mut text = content.to_owned().unwrap_or_default();
     draw_enty_field(ui, label, &mut text, false, |text| {
-        *content = general_utils::some_if_not_blank_str(&text).map(|trimmed| trimmed.into())
+        *content = general_utils::some_if_not_blank_str(text).map(|trimmed| trimmed.into())
     })
 }
 pub fn password_enty_field(

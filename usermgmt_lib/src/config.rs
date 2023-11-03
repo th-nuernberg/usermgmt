@@ -61,7 +61,8 @@ impl MgmtConfig {
     pub fn save(&self, path: &Path) -> AppResult {
         let file_path = path.join(constants::NAME_CONFIG_FILE);
         let text = toml::to_string_pretty(&self)?;
-        std::fs::write(file_path, text)?;
+        std::fs::write(&file_path, text)
+            .with_context(|| format!("Could not save to path: {:?}", file_path))?;
         Ok(())
     }
 }
