@@ -3,7 +3,7 @@ use crate::{
     prelude::AppError,
     util::{ResolvedGid, ValidGroupOfQos, ValidQos},
 };
-use anyhow::Context;
+use anyhow::{ensure, Context};
 use log::debug;
 use std::{fs, path::Path, str::FromStr};
 
@@ -12,7 +12,7 @@ use crate::{config::MgmtConfig, prelude::AppResult, util::TrimmedNonEmptyText, G
 /// Representation of a user entity.
 /// It contains all information necessary to add/modify/delete the user.
 /// TODO: Add proper encapsulation via getter and setters
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Entity {
     pub username: TrimmedNonEmptyText,
     pub firstname: Option<TrimmedNonEmptyText>,
@@ -74,6 +74,14 @@ impl Entity {
             .default_qos
             .map(|to_validate| ValidQos::new(to_validate.into(), &config.valid_qos))
             .transpose()?;
+        if let (Some(qos), Some(default_qos)) = (&qos, &default_qos) {
+            ensure!(
+                qos.contains_other_qos(default_qos),
+                "Qos ({:?}) do not contain the default qos ({})",
+                qos,
+                default_qos
+            );
+        }
 
         let publickey = to_add
             .publickey

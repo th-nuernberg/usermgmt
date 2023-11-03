@@ -3,7 +3,7 @@ use derive_more::{AsRef, Display, Into, IntoIterator};
 use crate::{config::MgmtConfig, prelude::AppResult, Group};
 
 use super::TrimmedNonEmptyText;
-#[derive(Debug, Display, Into, Clone, AsRef)]
+#[derive(Debug, Display, Into, Clone, AsRef, PartialEq, Eq)]
 pub struct ValidQos(String);
 
 impl ValidQos {
@@ -56,6 +56,10 @@ impl ValidGroupOfQos {
         .collect::<AppResult<_>>()?;
 
         Ok(Self(from_config))
+    }
+
+    pub fn contains_other_qos(&self, other: &ValidQos) -> bool {
+        self.0.iter().any(|next| other == next)
     }
 }
 

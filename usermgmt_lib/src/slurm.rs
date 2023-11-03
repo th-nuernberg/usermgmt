@@ -5,13 +5,12 @@ use log::{debug, info};
 
 mod commmand_builder;
 mod listed_user;
-use crate::prelude::AppError;
 use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
 use self::commmand_builder::CommandBuilder;
 
 use crate::ssh::{SshConnection, SshCredentials};
-use crate::{Entity, NewEntity};
+use crate::{ChangesToUser, NewEntity};
 
 pub use listed_user::ListedUser;
 
@@ -65,32 +64,23 @@ where
 /// Modifies a user in a slurm database via SSH session on a remote machine
 /// It currently only modifies the quality of services of a user !
 pub fn modify_slurm_user<C>(
-    modifiable: &Entity,
+    modifiable: &ChangesToUser,
     config: &MgmtConfig,
     session: &SshConnection<C>,
 ) -> AppResult
 where
     C: SshCredentials,
 {
-    return match (&modifiable.qos, &modifiable.default_qos) {
-        (Some(qos), Some(default_qos)) => {
-            let action = CommandBuilder::new_modify_qos_default_qows(
-                modifiable.username.to_string(),
-                default_qos.to_string(),
-                qos.clone().into(),
-            );
+    if let Some((qos, default_qos)) = modifiable.may_qos_and_default_qos() {
+        let action = CommandBuilder::new_modify_qos_default_qows(
+            modifiable.username.to_string(),
+            default_qos,
+            qos,
+        );
 
-            run_slurm_action(action, config, session)?;
-            return Ok(());
-        }
-        (None, None) => Ok(()),
-        (None, Some(_)) => Err(bail_for_only_qos_or_default_qos()),
-        (Some(_), None) => Err(bail_for_only_qos_or_default_qos()),
-    };
-
-    fn bail_for_only_qos_or_default_qos() -> AppError {
-        anyhow!("To modify qos or default qos in slurm, qos and default qos must be given")
+        run_slurm_action(action, config, session)?;
     }
+    Ok(())
 }
 
 /// Lists all users in slurm database on a remote machine

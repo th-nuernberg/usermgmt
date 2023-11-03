@@ -29,6 +29,7 @@ derive_more = { version = "0.99.17", default-features = false, features = [
   "as_ref",
   "display",
   "into_iterator",
+  "deref",
 ] }
 
 [dev-dependencies]

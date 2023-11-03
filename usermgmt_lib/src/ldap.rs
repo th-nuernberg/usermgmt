@@ -16,9 +16,8 @@ pub use ldap_simple_credential::LdapSimpleCredential;
 pub mod testing;
 use crate::prelude::AppResult;
 use crate::util::{get_new_uid, hashset_from_vec_str};
-use crate::MgmtConfig;
-use crate::{prelude::*, Entity, NewEntity};
-/// LDAP operations using the ldap3 lib
+use crate::{prelude::*, NewEntity};
+use crate::{ChangesToUser, MgmtConfig};
 use ldap3::controls::{MakeCritical, RelaxRules};
 use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
 use log::{debug, info, warn};
@@ -152,7 +151,7 @@ where
 }
 
 pub fn modify_ldap_user<T>(
-    modifiable: &Entity,
+    modifiable: &ChangesToUser,
     config: &MgmtConfig,
     ldap_config: LDAPConfig<T>,
 ) -> AppResult
@@ -247,7 +246,7 @@ where
 }
 
 fn make_modification_vec<'a>(
-    modifiable: &'a Entity,
+    modifiable: &'a ChangesToUser,
     old_qos: &'a Vec<String>,
 ) -> Vec<Mod<&'a str>> {
     macro_rules! may_push_simple_modification {
@@ -260,6 +259,7 @@ fn make_modification_vec<'a>(
     }
     let mut modifications: Vec<Mod<&str>> = Vec::new();
 
+    let modifiable = modifiable.as_ref();
     may_push_simple_modification!("givenName", modifiable, modifications, firstname);
     may_push_simple_modification!("sn", modifiable, modifications, lastname);
     may_push_simple_modification!("mail", modifiable, modifications, mail);

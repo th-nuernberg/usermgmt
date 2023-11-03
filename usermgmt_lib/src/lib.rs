@@ -3,6 +3,7 @@ use ldap::LdapCredential;
 pub use new_entity::NewEntity;
 
 pub mod app_error;
+pub mod changes_to_user;
 pub mod cli;
 pub mod config;
 pub mod constants;
@@ -15,6 +16,7 @@ pub mod new_entity;
 pub mod slurm;
 pub mod ssh;
 
+pub use changes_to_user::ChangesToUser;
 use ssh::SshCredentials;
 pub use util::user_input;
 
@@ -194,15 +196,14 @@ where
         }
     }
 
-    // slurm is more likely to fail because qos and default qos must be set !
-    // TODO: validate that constraint in cli and gui up front.
-    if on_which_sys.slurm() {
-        let session = SshConnection::from_head_node(config, credential);
-        slurm::modify_slurm_user(&data, config, &session)?;
-    }
+    let data = ChangesToUser::try_new(data.clone())?;
     if on_which_sys.ldap() {
         let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
         modify_ldap_user(&data, config, ldap_config)?;
+    }
+    if on_which_sys.slurm() {
+        let session = SshConnection::from_head_node(config, credential);
+        slurm::modify_slurm_user(&data, config, &session)?;
     }
 
     debug!("Finished modify_user");
