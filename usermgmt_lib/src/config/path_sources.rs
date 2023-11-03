@@ -7,10 +7,7 @@ use anyhow::Context;
 use log::{debug, info};
 use once_cell::sync::Lazy;
 
-use crate::prelude::AppResult;
-/// Name of the file in which all values for configuration of this app are located
-/// besides the CLI arguments.
-const NAME_CONFIG_FILE: &str = "conf.toml";
+use crate::prelude::*;
 
 static HOME_LOCATIONS: Lazy<Vec<PathBuf>> = Lazy::new(|| {
     let os_config = dirs::config_dir();
@@ -136,7 +133,7 @@ fn may_return_path_to_conf(
     try_exists: impl Fn(&Path) -> io::Result<bool>,
     path: &Path,
 ) -> Option<PathBuf> {
-    let to_check = path.join(NAME_CONFIG_FILE);
+    let to_check = path.join(constants::NAME_CONFIG_FILE);
     match try_exists(&to_check) {
         Ok(exits) => {
             if exits {
@@ -203,7 +200,7 @@ mod testing {
     }
     #[test]
     fn return_some_if_path_exits() {
-        let expected = Some(PathBuf::from("/home").join(NAME_CONFIG_FILE));
+        let expected = Some(PathBuf::from("/home").join(constants::NAME_CONFIG_FILE));
         let actual = may_return_path_to_conf(|_| Ok(true), &PathBuf::from("/home"));
 
         assert_eq!(expected, actual);

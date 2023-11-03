@@ -22,8 +22,8 @@ impl<T> IoResourceManager<T> {
         }
         self.status = IoTaskStatus::Failed(error);
     }
-    pub fn status(&self) -> &IoTaskStatus<T> {
-        &self.status
+    pub fn status_mut(&mut self) -> &mut IoTaskStatus<T> {
+        &mut self.status
     }
 
     pub fn is_loading(&self) -> bool {
@@ -37,6 +37,9 @@ impl<T> IoResourceManager<T>
 where
     T: Send + 'static,
 {
+    pub fn status(&self) -> &IoTaskStatus<T> {
+        &self.status
+    }
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
     where
         F: FnOnce() -> AppResult<T> + Send + 'static,

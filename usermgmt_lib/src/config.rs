@@ -1,5 +1,5 @@
 mod path_sources;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use log::info;
@@ -7,7 +7,7 @@ pub use path_sources::get_path_to_conf;
 /// Definition of configuration options
 use serde::{Deserialize, Serialize};
 
-use crate::{config, prelude::AppResult};
+use crate::{config, prelude::*};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 /// TODO: consider implementing encapsulation with getters and setters
@@ -56,6 +56,14 @@ pub struct MgmtConfig {
     pub run_slurm_remote: bool,
     pub ssh_port: u32,
     pub ssh_agent: bool,
+}
+impl MgmtConfig {
+    pub fn save(&self, path: &Path) -> AppResult {
+        let file_path = path.join(constants::NAME_CONFIG_FILE);
+        let text = toml::to_string_pretty(&self)?;
+        std::fs::write(file_path, text)?;
+        Ok(())
+    }
 }
 
 impl Default for MgmtConfig {
@@ -144,6 +152,8 @@ pub struct LoadedMgmtConfig {
     pub path: PathBuf,
     pub config: MgmtConfig,
 }
+
+impl LoadedMgmtConfig {}
 
 pub fn config_for_save() -> String {
     toml::to_string_pretty(&MgmtConfig::default())

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use eframe::egui::{self, RichText};
+use usermgmt_lib::util::TrimmedNonEmptyText;
 
 use crate::{
     current_selected_view::{LdapConnectionState, SshConnectionState},
@@ -129,6 +130,12 @@ pub fn no_password_enty_field(
     on_change: impl FnOnce(&mut String),
 ) {
     draw_enty_field(ui, label, content, false, on_change)
+}
+pub fn no_password_opt_enty_field(ui: &mut egui::Ui, label: &str, content: &mut Option<String>) {
+    let mut text = content.to_owned().unwrap_or_default();
+    draw_enty_field(ui, label, &mut text, false, |text| {
+        *content = general_utils::some_if_not_blank_str(&text).map(|trimmed| trimmed.into())
+    })
 }
 pub fn password_enty_field(
     ui: &mut egui::Ui,

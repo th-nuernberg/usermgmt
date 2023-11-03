@@ -22,6 +22,7 @@ pub fn query(window: &mut UsermgmtWindow) {
             ssh_state.username = Some(config.default_ssh_user.to_owned());
         }
     }
+    let _ = window.conf_state.io_save_conf.query_task();
     let _ = window.listin_state.list_ldap_res.query_task();
     let _ = window.listin_state.list_slurm_user_res.query_task();
     let _ = window.adding_state.adding_res_io.query_task();
