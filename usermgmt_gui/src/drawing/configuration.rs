@@ -189,6 +189,9 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
     fields
 }
 
+/// Encapsulate a value from the app configuration.
+/// Every variant is mapped to a draw function which lets the user edit the respective value.
+/// The drawing of the values is alphabetically ordered by the field called label in every variant.
 #[derive(Debug)]
 enum ConfiField<'a> {
     SingleOpt {
@@ -247,33 +250,27 @@ impl PartialOrd for ConfiField<'_> {
     }
 }
 
-impl<'a> From<(&'a mut u32, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut u32, LabelTyp)) -> Self {
-        Self::Number { val, label }
-    }
+/// Generates conversion from a rust value into ConfiField which
+/// is used to render a value in egui.
+/// # Usage
+/// ```text
+/// // 1. Type to convert from
+/// // 2. Variant as a result after conversion
+/// impl_from_conf_field!(bool, Checkbox);
+/// ```
+macro_rules! impl_from_conf_field {
+    ($type:ty, $variant:ident) => {
+        impl<'a> From<(&'a mut $type, LabelTyp)> for ConfiField<'a> {
+            fn from((val, label): (&'a mut $type, LabelTyp)) -> Self {
+                Self::$variant { val, label }
+            }
+        }
+    };
 }
-impl<'a> From<(&'a mut i32, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut i32, LabelTyp)) -> Self {
-        Self::NegNumber { val, label }
-    }
-}
-impl<'a> From<(&'a mut bool, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut bool, LabelTyp)) -> Self {
-        Self::Checkbox { val, label }
-    }
-}
-impl<'a> From<(&'a mut String, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut String, LabelTyp)) -> Self {
-        Self::Single { val, label }
-    }
-}
-impl<'a> From<(&'a mut Option<String>, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut Option<String>, LabelTyp)) -> Self {
-        Self::SingleOpt { val, label }
-    }
-}
-impl<'a> From<(&'a mut Vec<String>, LabelTyp)> for ConfiField<'a> {
-    fn from((val, label): (&'a mut Vec<String>, LabelTyp)) -> Self {
-        Self::List { val, label }
-    }
-}
+
+impl_from_conf_field!(u32, Number);
+impl_from_conf_field!(i32, NegNumber);
+impl_from_conf_field!(String, Single);
+impl_from_conf_field!(Vec<String>, List);
+impl_from_conf_field!(Option<String>, SingleOpt);
+impl_from_conf_field!(bool, Checkbox);

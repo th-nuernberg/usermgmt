@@ -11,7 +11,7 @@ mod io_resource_manager;
 pub mod main_logic;
 
 fn main() -> Result<(), eframe::Error> {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    env_logger::init();
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(
             gui_design::WINDOW_START_WIDTH,

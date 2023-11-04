@@ -1,8 +1,10 @@
-use super::query_io_tasks;
+#[cfg(debug_assertions)]
+use super::settings::DebugSettingWatcher;
+use super::{query_io_tasks, Settings};
 use crate::{current_selected_view::ModifyState, prelude::*};
 
+use std::convert::AsRef;
 use std::path::PathBuf;
-
 use usermgmt_lib::{ldap::LdapSimpleCredential, ssh::SshGivenCredential};
 
 use crate::current_selected_view::{ListingState, RemoveState, SshConnectionState};
@@ -27,12 +29,17 @@ pub struct UsermgmtWindow {
     pub adding_state: AddState,
     pub remove_state: RemoveState,
     pub modify_state: ModifyState,
+    pub settings: Settings,
+    #[cfg(debug_assertions)]
+    pub settings_watcher: DebugSettingWatcher,
 }
 
 impl Default for UsermgmtWindow {
     fn default() -> Self {
         let mut conf_state: ConfigurationState = Default::default();
         general_utils::start_load_config(&mut conf_state, None);
+
+        let settings = toml::from_str(include_str!("../../assets/Settings.toml")).unwrap();
 
         Self {
             listin_state: Default::default(),
@@ -44,7 +51,10 @@ impl Default for UsermgmtWindow {
             adding_state: Default::default(),
             remove_state: Default::default(),
             modify_state: Default::default(),
+            settings,
             conf_state,
+            #[cfg(debug_assertions)]
+            settings_watcher: Default::default(),
         }
     }
 }
@@ -102,7 +112,7 @@ impl eframe::App for UsermgmtWindow {
 
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     for next in CurrentSelectedView::iter() {
-        if ui.button(next.create_str()).clicked() {
+        if ui.button(next.as_ref()).clicked() {
             let previous_view = window.selected_view();
             info!("Changed from ({:?}) to ({:?}) view", previous_view, next);
             window.set_selected_view(next);

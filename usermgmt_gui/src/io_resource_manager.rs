@@ -1,4 +1,4 @@
-use log::warn;
+use log::{error, warn};
 use usermgmt_lib::prelude::{AppError, AppResult};
 
 use self::io_background_worker::IoBackgroundWorker;
@@ -68,6 +68,31 @@ where
                     unreachable!()
                 }
                 Err(error) => {
+                    self.status = IoTaskStatus::Failed(error);
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+    pub fn query_task_and_take(&mut self) -> Option<T> {
+        if let Some(result) = self.task.get_task_result() {
+            match result {
+                Ok(to_return) => {
+                    self.status = IoTaskStatus::Successful(to_return);
+                    let taken = std::mem::take(&mut self.status);
+                    if let IoTaskStatus::Successful(to_return) = taken {
+                        return Some(to_return);
+                    }
+                    unreachable!()
+                }
+                Err(error) => {
+                    error!(
+                        "Task ({}) failed with error: {:?}",
+                        self.task.get_thread_name(),
+                        &error
+                    );
                     self.status = IoTaskStatus::Failed(error);
                     None
                 }

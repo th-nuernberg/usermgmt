@@ -6,6 +6,7 @@ use usermgmt_lib::prelude::{anyhow, AppResult};
 #[derive(Debug, Default)]
 pub struct IoBackgroundWorker<T = ()> {
     thread: Option<JoinHandle<AppResult<T>>>,
+    thread_name: String,
 }
 
 impl<T> Drop for IoBackgroundWorker<T> {
@@ -24,6 +25,9 @@ impl<T> IoBackgroundWorker<T>
 where
     T: Send + 'static,
 {
+    pub fn get_thread_name(&self) -> &str {
+        &self.thread_name
+    }
     pub fn spawn<F>(&mut self, task: F, thread_name: String) -> AppResult<bool>
     where
         F: FnOnce() -> AppResult<T> + Send + 'static,
@@ -33,11 +37,12 @@ where
                 .name(thread_name.clone())
                 .spawn(task)
                 .map_err(|error| {
-                    error!("Failed to spawn thread named {}", thread_name);
+                    error!("Failed to spawn thread with name: {}", thread_name);
                     anyhow!("{:?}", error)
                 })?;
             self.thread = Some(new_thread);
             info!("Started background task in thread ({})", thread_name);
+            self.thread_name = thread_name;
             Ok(true)
         } else {
             warn!("Start of thread ({}) was rejected because a thread for this responsility is still running", thread_name);

@@ -51,11 +51,16 @@ pub fn draw_file_path(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         });
     }
 }
-pub fn draw_ssh_credentials(ui: &mut egui::Ui, ssh_state: &mut SshConnectionState) {
+pub fn draw_ssh_credentials(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    ssh_state: &mut SshConnectionState,
+) {
     let mut username = ssh_state.username.as_deref().unwrap_or_default().to_owned();
     let mut password = ssh_state.password.as_deref().unwrap_or_default().to_owned();
     user_password_box(
         ui,
+        settings,
         text_design::group::SSH_CRED,
         &mut username,
         &mut password,
@@ -66,7 +71,11 @@ pub fn draw_ssh_credentials(ui: &mut egui::Ui, ssh_state: &mut SshConnectionStat
     );
 }
 
-pub fn draw_ldap_credentials(ui: &mut egui::Ui, ldap_state: &mut LdapConnectionState) {
+pub fn draw_ldap_credentials(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    ldap_state: &mut LdapConnectionState,
+) {
     let mut username = ldap_state
         .username
         .as_deref()
@@ -79,6 +88,7 @@ pub fn draw_ldap_credentials(ui: &mut egui::Ui, ldap_state: &mut LdapConnectionS
         .to_owned();
     user_password_box(
         ui,
+        settings,
         text_design::group::LDAP_CRED,
         &mut username,
         &mut password,
@@ -91,6 +101,7 @@ pub fn draw_ldap_credentials(ui: &mut egui::Ui, ldap_state: &mut LdapConnectionS
 
 pub fn user_password_box(
     ui: &mut egui::Ui,
+    settings: &Settings,
     group_name: &str,
     username_content: &mut String,
     password_content: &mut String,
@@ -100,7 +111,7 @@ pub fn user_password_box(
     draw_box_group(ui, group_name, |ui| {
         no_password_enty_field(
             ui,
-            text_design::label::USERNAME,
+            &settings.username_label,
             username_content,
             on_change_username,
         );
@@ -205,10 +216,10 @@ pub fn draw_status_msg<T>(
 pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports_dir: bool) {
     which_systems::draw_which_system(ui, &mut window.which_sys, supports_dir);
     if window.is_ssh_cred_needed(supports_dir) {
-        draw_ssh_credentials(ui, &mut window.ssh_state);
+        draw_ssh_credentials(ui, &window.settings, &mut window.ssh_state);
     }
     if window.is_ldap_needed() {
-        draw_ldap_credentials(ui, &mut window.ldap_state)
+        draw_ldap_credentials(ui, &window.settings, &mut window.ldap_state)
     }
 }
 

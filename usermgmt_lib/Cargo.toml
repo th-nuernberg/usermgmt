@@ -11,8 +11,8 @@ rust-version = "1.70.0"
 log = { workspace = true }
 clap = { workspace = true }
 once_cell = { workspace = true }
-toml = "0.8.1"
-serde = { version = "1.0.188", features = ["derive"] }
+toml = { workspace = true }
+serde = { workspace = true }
 confy = "0.5.1"
 tempfile = "3.8.0"
 ldap3 = "0.11.3"

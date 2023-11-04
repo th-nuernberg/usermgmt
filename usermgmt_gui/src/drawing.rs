@@ -9,5 +9,5 @@ pub mod configuration;
 pub mod draw_utils;
 
 pub fn draw_ssh_connection(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
-    draw_utils::draw_ssh_credentials(ui, &mut window.ssh_state);
+    draw_utils::draw_ssh_credentials(ui, &window.settings, &mut window.ssh_state);
 }

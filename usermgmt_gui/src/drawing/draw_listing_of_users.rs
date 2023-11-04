@@ -13,7 +13,7 @@ use crate::{current_selected_view::ListingState, io_resource_manager::IoTaskStat
 pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     draw_readonly_ldap_cred(window, ui);
     ui.separator();
-    draw_utils::draw_ssh_credentials(ui, &mut window.ssh_state);
+    draw_utils::draw_ssh_credentials(ui, &window.settings, &mut window.ssh_state);
     ldap_list_btn(window, ui);
     slurm_list_btn(window, ui);
     ui.separator();
@@ -30,7 +30,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         ) // top cell
         .vertical(|mut strip| {
             strip.cell(|ui| {
-                draw_listed_ldap_users(ui, listing_state);
+                draw_listed_ldap_users(ui, listing_state, &window.settings);
             });
             strip.cell(|ui| {
                 draw_listed_slurm_users(ui, listing_state);
@@ -55,7 +55,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         }
     }
 
-    fn draw_listed_ldap_users(ui: &mut egui::Ui, listing_state: &ListingState) {
+    fn draw_listed_ldap_users(
+        ui: &mut egui::Ui,
+        listing_state: &ListingState,
+        settings: &Settings,
+    ) {
         let status = listing_state.list_ldap_res.status();
         draw_utils::draw_status_msg_w_label(
             ui,
@@ -68,7 +72,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         );
         if let IoTaskStatus::Successful(ldap_users) = status {
             ui.separator();
-            draw_ldap_tables(ui, ldap_users)
+            draw_ldap_tables(ui, ldap_users, settings)
         }
     }
 
@@ -201,6 +205,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let mut rw_password = field_conf_or_state(window.listin_state.rw_pw.as_deref(), conf_pw);
         draw_utils::user_password_box(
             ui,
+            &window.settings,
             text_design::group::READONLY_LDAP_CRED,
             &mut rw_user,
             &mut rw_password,
@@ -217,11 +222,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             .to_owned()
     }
 
-    fn draw_ldap_tables(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+    fn draw_ldap_tables(ui: &mut egui::Ui, raw: &LdapSearchResult, settings: &Settings) {
         use egui_extras::{Column, TableBuilder};
-        draw_table(ui, raw);
+        draw_table(ui, raw, settings);
 
-        fn draw_table(ui: &mut egui::Ui, raw: &LdapSearchResult) {
+        fn draw_table(ui: &mut egui::Ui, raw: &LdapSearchResult, settings: &Settings) {
             // Need to give manual id otherwise the next table causes a clash
             // on the scroll aread id.
             // Reference: https://docs.rs/egui_extras/latest/egui_extras/struct.TableBuilder.html
@@ -250,7 +255,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                             body.row(10., |mut row| {
                                 for column in single_row {
                                     row.col(|ui| {
-                                        _ = ui.label(column.join(gui_design::LDAP_MULTI_FIELD_SEP))
+                                        _ = ui.label(column.join(&settings.ldap_multi_field_sep))
                                     });
                                 }
                             });

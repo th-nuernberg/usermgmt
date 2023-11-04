@@ -11,5 +11,5 @@ pub use crate::{
     general_utils,
     gui_design::{self, text_design},
     io_resource_manager::{IoResourceManager, IoTaskStatus},
-    main_logic::{CurrentSelectedView, UsermgmtWindow},
+    main_logic::{CurrentSelectedView, Settings, UsermgmtWindow},
 };

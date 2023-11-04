@@ -34,16 +34,7 @@ pub mod button {
     pub const ACTION_MODIFY: &str = "Modify User";
     pub const LIST_LDAP_USERS: &str = "List LDAP users";
     pub const LIST_SLURM_USERS: &str = "List Slurm users";
-
     pub const LIST_REMOVE: &str = "Remove";
-
-    pub const SSH_CONNECTION: &str = "Ssh connection";
-    pub const LDAP_CONNECTION: &str = "Ldap connection";
-    pub const CONFIGURATION: &str = "Configuration";
-    pub const LISTING: &str = "Listing";
-    pub const ADDING: &str = "Adding";
-    pub const REMOVING: &str = "Removing";
-    pub const MODIFING: &str = "Modify";
     pub const NEW_ITEM: &str = "Add new item";
 }
 pub mod error_messages {

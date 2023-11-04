@@ -28,4 +28,12 @@ pub fn query(window: &mut UsermgmtWindow) {
     let _ = window.adding_state.adding_res_io.query_task();
     let _ = window.remove_state.remove_res_io.query_task();
     let _ = window.modify_state.res_io.query_task();
+
+    #[cfg(debug_assertions)]
+    {
+        if let Some(new_settings) = window.settings_watcher.tick() {
+            info!("Applied new settings from changed settings file.");
+            window.settings = new_settings;
+        }
+    }
 }
