@@ -1,9 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc, sync::Mutex};
 
-type LabelTyp = Rc<str>;
-pub type CacheForConfFiels = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
 use crate::{current_selected_view::ConfigurationState, prelude::*};
 use eframe::{egui::RichText, epaint::Color32};
+use once_cell::sync::Lazy;
 use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
 
 pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
@@ -80,8 +79,8 @@ fn draw_fields(window: &mut ConfigurationState, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical()
             .min_scrolled_height(400.0)
             .show(ui, |ui| {
-                let map = window.gui_field_cache.clone();
-                let fields = construct_fields(config, map);
+                let map: Mutex<HashMap<&'static str, LabelTyp>> = Default::default();
+                let fields = construct_fields(config, &map);
                 for next in fields {
                     let mut draw_sep = true;
                     match next {
@@ -112,83 +111,91 @@ fn draw_fields(window: &mut ConfigurationState, ui: &mut egui::Ui) {
     }
 }
 
-fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
-    const SPLIT_BY: char = '_';
-    const JOIN_BY: &str = " ";
-    let mut repos = repos.borrow_mut();
+fn snake_to_label(input: &'static str, repos: &Mutex<HashMap<&'static str, Rc<str>>>) -> Rc<str> {
+    let mut repos = repos.lock().unwrap();
     Rc::clone(repos.entry(input).or_insert_with(|| {
         Rc::from(
             input
-                .split(SPLIT_BY)
+                .split("_")
                 .map(|word| {
                     let first = word.chars().next().unwrap().to_uppercase();
                     let list: String = first.chain(word.chars().skip(1)).collect();
                     list
                 })
                 .collect::<Vec<String>>()
-                .join(JOIN_BY),
+                .join(" "),
         )
     }))
 }
-
-fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField> {
+type CacheForConfFiels = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
+fn construct_fields<'a>(config: &'a mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField<'a>> {
     macro_rules! create_conf_field {
-        ($field:ident) => {
-            (
-                &mut config.$field,
-                snake_to_label(stringify!($field), map.clone()),
-            )
-                .into()
+        ($field:ident, $map:ident) => {
+            (&mut config.$field, snake_to_label(stringify!($field), $map)).into()
         };
     }
     let mut fields: Vec<ConfiField> = vec![
-        create_conf_field!(student_default_qos),
-        create_conf_field!(staff_default_qos),
-        create_conf_field!(default_ssh_user),
-        create_conf_field!(head_node),
-        create_conf_field!(nfs_host),
-        create_conf_field!(nfs_root_dir),
-        create_conf_field!(valid_qos),
-        create_conf_field!(student_qos),
-        create_conf_field!(staff_qos),
-        create_conf_field!(valid_slurm_groups),
-        create_conf_field!(compute_nodes),
-        create_conf_field!(ldap_domain_components),
-        create_conf_field!(ldap_org_unit),
-        create_conf_field!(ldap_bind_org_unit),
-        create_conf_field!(ldap_bind_prefix),
-        create_conf_field!(ldap_readonly_user_prefix),
-        create_conf_field!(ldap_readonly_bind),
-        create_conf_field!(ldap_server),
-        create_conf_field!(ldap_readonly_user),
-        create_conf_field!(ldap_readonly_pw),
-        create_conf_field!(include_ldap),
-        create_conf_field!(include_slurm),
-        create_conf_field!(include_dir_mgmt),
-        create_conf_field!(use_homedir_helper),
-        create_conf_field!(run_slurm_remote),
-        create_conf_field!(ssh_agent),
-        create_conf_field!(ssh_port),
-        create_conf_field!(compute_node_root_dir),
-        create_conf_field!(filesystem),
-        create_conf_field!(home_filesystem),
-        create_conf_field!(nfs_filesystem),
-        create_conf_field!(quota_softlimit),
-        create_conf_field!(quota_hardlimit),
-        create_conf_field!(quota_nfs_softlimit),
-        create_conf_field!(quota_nfs_hardlimit),
-        create_conf_field!(quota_home_softlimit),
-        create_conf_field!(quota_home_hardlimit),
-        create_conf_field!(login_shell),
-        create_conf_field!(student_gid),
-        create_conf_field!(staff_gid),
-        create_conf_field!(faculty_gid),
-        create_conf_field!(sacctmgr_path),
+        create_conf_field!(student_default_qos, map),
+        // (&mut config.student_default_qos, "Student Default Qos").into(),
+        create_conf_field!(staff_default_qos, map),
+        create_conf_field!(default_ssh_user, map),
+        // (&mut config.head_node, "Head/Slurm node address").into(),
+        // (&mut config.nfs_host, "NFS Host").into(),
+        // (&mut config.nfs_root_dir, "NFS Root Directory").into(),
+        // (&mut config.valid_qos, "Valid Qos").into(),
+        // (&mut config.student_qos, "Student Qos").into(),
+        // (&mut config.staff_qos, "Staff Qos").into(),
+        // (&mut config.valid_slurm_groups, "Valid slurm Groups").into(),
+        // (&mut config.compute_nodes, "Computer nodes").into(),
+        // (&mut config.ldap_domain_components, "LDAP Domain Components").into(),
+        // (&mut config.ldap_org_unit, "LDAP Org Unit").into(),
+        // (&mut config.ldap_bind_org_unit, "LDAP Binding Org Unit").into(),
+        // (&mut config.ldap_bind_prefix, "LDAP Binding Prefix").into(),
+        // (
+        //     &mut config.ldap_readonly_user_prefix,
+        //     "LDAP Readonly User Prefix",
+        // )
+        //     .into(),
+        // (&mut config.ldap_readonly_bind, "LDAP Readonly Binding").into(),
+        // (&mut config.ldap_server, "LDAP Server").into(),
+        // (&mut config.ldap_readonly_user, "LDAP Readonly User").into(),
+        // (&mut config.ldap_readonly_pw, "LDAP Readonly Password").into(),
+        // (&mut config.include_ldap, "Include LDAP").into(),
+        // (&mut config.include_slurm, "Incldue Slurm Readonly Password").into(),
+        // (&mut config.include_dir_mgmt, "Include Directory Management").into(),
+        // (&mut config.use_homedir_helper, "Use homedir Helper").into(),
+        // (
+        //     &mut config.run_slurm_remote,
+        //     "Runs slurm commands on remote machines",
+        // )
+        //     .into(),
+        // (&mut config.ssh_agent, "Use ssh agent").into(),
+        // (&mut config.ssh_port, "Ssh port").into(),
+        // (
+        //     &mut config.compute_node_root_dir,
+        //     "Computer Node Root Directory",
+        // )
+        //     .into(),
+        // (&mut config.filesystem, "File System").into(),
+        // (&mut config.home_filesystem, "Home Filesystem").into(),
+        // (&mut config.nfs_filesystem, "NFS Filesystem").into(),
+        // (&mut config.quota_softlimit, "Quota Softlimit").into(),
+        // (&mut config.quota_hardlimit, "Quota Hardlimit").into(),
+        // (&mut config.quota_nfs_softlimit, "Quota Nfs Softlimit").into(),
+        // (&mut config.quota_nfs_hardlimit, "Quota Nfs Hardlimit").into(),
+        // (&mut config.quota_home_softlimit, "Quota Home Softlimit").into(),
+        // (&mut config.quota_home_hardlimit, "Quota Home Hardlimit").into(),
+        // (&mut config.login_shell, "Login Shell").into(),
+        // (&mut config.student_gid, "Sudent GID").into(),
+        // (&mut config.staff_gid, "Staff GID").into(),
+        // (&mut config.faculty_gid, "Faculty GID").into(),
+        // (&mut config.sacctmgr_path, "Sacctmgr Path").into(),
     ];
     fields.sort();
     fields
 }
 
+type LabelTyp = Rc<str>;
 #[derive(Debug)]
 enum ConfiField<'a> {
     SingleOpt {
