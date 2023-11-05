@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    fmt::{Debug, Display},
+    path::PathBuf,
+};
 
 use crate::{current_selected_view::ConfigurationState, prelude::*};
 use usermgmt_lib::{
@@ -12,15 +15,19 @@ use usermgmt_lib::{
 
 use crate::io_resource_manager::{IoResourceManager, IoTaskStatus};
 
+pub fn error_status<T>(msg: &str, error_details: T) -> String
+where
+    T: Display + Debug,
+{
+    format!("{}. Details: \n{:?}", msg, error_details)
+}
+
 pub fn some_if_not_blank_str(input: &str) -> Option<TrimmedNonEmptyText> {
     input.try_into().ok()
 }
 pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathBuf>) {
     conf_state.io_conf.spawn_task(
-        || {
-            let loaded = config::load_config(path)?;
-            Ok(loaded)
-        },
+        || config::load_config(path),
         "Loading configuration".to_string(),
     );
 }
@@ -32,7 +39,7 @@ pub struct PreparationBeforIoTask {
     pub on_which_sys: OnWhichSystem,
 }
 
-pub fn prep_conf_creds<T>(
+pub fn prep_conf_creds<T: Send + 'static>(
     app: &mut UsermgmtWindow,
     on_error: impl FnOnce(&mut UsermgmtWindow) -> &mut IoResourceManager<T>,
     supports_dir: bool,
@@ -53,17 +60,22 @@ Details of error are embeded within respective io resource state.",
         supports_dir: bool,
     ) -> AppResult<PreparationBeforIoTask> {
         let which_sys = &window.which_sys;
+        let text = window.settings.texts();
+        let (ldap_cred_missing, ssh_cred_missing) = (
+            text.ldap_cred_missing().clone(),
+            text.ssh_cred_missing().clone(),
+        );
         let ldap_cred = if which_sys.is_ldap_needed() {
             window
                 .create_ldap_credentials()
-                .ok_or_else(|| anyhow!(text_design::error_messages::LDAP_CRED_MISSING))?
+                .ok_or_else(|| anyhow!(ssh_cred_missing))?
         } else {
             Default::default()
         };
         let ssh_cred = if which_sys.is_ssh_cred_needed(supports_dir) {
             window
                 .create_ssh_credentials()
-                .ok_or_else(|| anyhow!(text_design::error_messages::SSH_CRED_MISSING))?
+                .ok_or_else(|| anyhow!(ldap_cred_missing))?
         } else {
             Default::default()
         };

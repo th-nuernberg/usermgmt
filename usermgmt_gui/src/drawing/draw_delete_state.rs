@@ -10,7 +10,8 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     };
     draw_utils::draw_credentails(ui, window, false);
     ui.add_enabled_ui(allow_deletion, |ui| {
-        if ui.button(text_design::button::ACTION_REMOVE).clicked() {
+        let text = window.settings.texts();
+        if ui.button(text.btn_action_remove()).clicked() {
             delte_user(window)
         }
     });
@@ -18,6 +19,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     let last_username = &remove_state.last_username;
     draw_utils::draw_status_msg(
         ui,
+        &window.settings,
         remove_state.remove_res_io.status(),
         || "No user remove yet".to_owned(),
         || format!("In the process of removing user ({}).", last_username),

@@ -13,6 +13,8 @@ clap = { workspace = true }
 once_cell = { workspace = true }
 toml = { workspace = true }
 serde = { workspace = true }
+const_format = { workspace = true }
+getset = { workspace = true }
 confy = "0.5.1"
 tempfile = "3.8.0"
 ldap3 = "0.11.3"
@@ -21,7 +23,6 @@ ssh2 = "0.9.4"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 rpassword = "7.2.0"
 prettytable = "0.10.0"
-getset = "0.1.2"
 dirs = "5.0.1"
 derive_more = { version = "0.99.17", default-features = false, features = [
   "from",

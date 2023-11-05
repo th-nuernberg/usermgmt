@@ -2,7 +2,7 @@ use crate::{
     current_selected_view::ModifyState, general_utils::PreparationBeforIoTask, prelude::*,
 };
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
-    draw_typing_fields(ui, &mut window.modify_state);
+    draw_typing_fields(ui, &window.settings, &mut window.modify_state);
     draw_utils::draw_credentails(ui, window, false);
     ui.separator();
     if ui.button("Modify User").clicked() {
@@ -10,13 +10,15 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     }
     ui.separator();
     let last_username = &window.modify_state.last_added_username;
+    let text = window.settings.texts();
     draw_utils::draw_status_msg(
         ui,
+        &window.settings,
         window.modify_state.res_io.status(),
-        text_design::create_msg::modify_init,
-        || text_design::create_msg::modify_loading(last_username),
-        || text_design::create_msg::modify_success(last_username),
-        || text_design::create_msg::modify_failure(last_username),
+        || text.modify_init().to_string(),
+        || format!("{} {}", text.modify_loading(), &last_username),
+        || format!("{} {}", text.modify_success(), &last_username),
+        || format!("{} {}", text.modify_failure(), &last_username),
     );
 }
 
@@ -49,47 +51,38 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
     }
 }
 
-fn draw_typing_fields(ui: &mut egui::Ui, modify_state: &mut ModifyState) {
-    draw_utils::draw_box_group(ui, text_design::group::REQUIRED, |ui| {
+fn draw_typing_fields(ui: &mut egui::Ui, settings: &Settings, modify_state: &mut ModifyState) {
+    let texts = settings.texts();
+    draw_utils::draw_box_group(ui, texts.required(), |ui| {
         draw_utils::no_password_enty_field(
             ui,
-            text_design::label::USERNAME,
+            texts.username(),
             &mut modify_state.username,
             |_| {},
         );
     });
     ui.separator();
-    draw_utils::draw_box_group(ui, text_design::group::OPTIONAL, |ui| {
+    draw_utils::draw_box_group(ui, texts.optional(), |ui| {
         draw_utils::no_password_enty_field(
             ui,
-            text_design::label::FIRSTNAME,
+            texts.firstname(),
             &mut modify_state.firstname,
             |_| {},
         );
         draw_utils::no_password_enty_field(
             ui,
-            text_design::label::LASTNAME,
+            texts.lastname(),
             &mut modify_state.lastname,
             |_| {},
         );
+        draw_utils::no_password_enty_field(ui, texts.mail(), &mut modify_state.mail, |_| {});
+        draw_utils::no_password_enty_field(ui, texts.group(), &mut modify_state.group, |_| {});
         draw_utils::no_password_enty_field(
             ui,
-            text_design::label::MAIL,
-            &mut modify_state.mail,
-            |_| {},
-        );
-        draw_utils::no_password_enty_field(
-            ui,
-            text_design::label::GROUP,
-            &mut modify_state.group,
-            |_| {},
-        );
-        draw_utils::no_password_enty_field(
-            ui,
-            text_design::label::DEFAULT_QOS,
+            texts.default_qos(),
             &mut modify_state.default_qos,
             |_| {},
         );
-        draw_utils::list_view(ui, &mut modify_state.qos, text_design::label::QOS);
+        draw_utils::list_view(ui, settings, &mut modify_state.qos, texts.qos());
     });
 }

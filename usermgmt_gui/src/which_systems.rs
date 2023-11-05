@@ -24,12 +24,18 @@ impl WhichSystem {
     }
 }
 
-pub fn draw_which_system(ui: &mut egui::Ui, state: &mut WhichSystem, supports_dir: bool) {
-    draw_utils::draw_box_group(ui, text_design::MODE_MAINT_TITLE, |ui| {
-        ui.checkbox(&mut state.ldap, text_design::MODE_LDAP);
-        ui.checkbox(&mut state.slurm, text_design::MODE_SLURM);
+pub fn draw_which_system(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    state: &mut WhichSystem,
+    supports_dir: bool,
+) {
+    let text = settings.texts();
+    draw_utils::draw_box_group(ui, text.mode_main_title(), |ui| {
+        ui.checkbox(&mut state.ldap, text.mode_ldap());
+        ui.checkbox(&mut state.slurm, text.mode_slurm());
         if supports_dir {
-            ui.checkbox(&mut state.dir, text_design::MODE_DIRECTORY);
+            ui.checkbox(&mut state.dir, text.mode_directory());
         }
     });
 }

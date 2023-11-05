@@ -5,6 +5,7 @@ pub mod draw_delete_state;
 pub mod draw_listing_of_users;
 pub mod modify_state;
 
+pub mod about;
 pub mod configuration;
 pub mod draw_utils;
 

@@ -1,15 +1,17 @@
-#[cfg(debug_assertions)]
-use super::settings::DebugSettingWatcher;
-use super::{query_io_tasks, Settings};
-use crate::{current_selected_view::ModifyState, prelude::*};
+use crate::prelude::*;
+
+use super::query_io_tasks;
+use super::top_level_drawing;
 
 use std::convert::AsRef;
 use std::path::PathBuf;
 use usermgmt_lib::{ldap::LdapSimpleCredential, ssh::SshGivenCredential};
 
+use crate::current_selected_view::ModifyState;
 use crate::current_selected_view::{ListingState, RemoveState, SshConnectionState};
 
-use super::top_level_drawing;
+#[cfg(debug_assertions)]
+use super::settings::DebugSettingWatcher;
 
 use crate::{
     current_selected_view::{AddState, ConfigurationState, LdapConnectionState},
@@ -30,6 +32,7 @@ pub struct UsermgmtWindow {
     pub remove_state: RemoveState,
     pub modify_state: ModifyState,
     pub settings: Settings,
+    pub init: Init,
     #[cfg(debug_assertions)]
     pub settings_watcher: DebugSettingWatcher,
 }
@@ -37,9 +40,16 @@ pub struct UsermgmtWindow {
 impl Default for UsermgmtWindow {
     fn default() -> Self {
         let mut conf_state: ConfigurationState = Default::default();
-        general_utils::start_load_config(&mut conf_state, None);
 
-        let settings = toml::from_str(include_str!("../../assets/Settings.toml")).unwrap();
+        info!("Loading init data for gui.");
+        let init = toml::from_str(include_str!("../../assets/Init.toml"))
+            .expect("Failed to init file (Init.toml).\nThis file is needed for knowing how to draw the GUI.");
+
+        info!("Loading settings for gui.");
+        let settings = toml::from_str(include_str!("../../assets/Settings.toml"))
+            .expect("Failed to parse file (Settings.toml).\nThis file is needed for knowing how to draw the GUI.");
+
+        general_utils::start_load_config(&mut conf_state, None);
 
         Self {
             listin_state: Default::default(),
@@ -51,6 +61,7 @@ impl Default for UsermgmtWindow {
             adding_state: Default::default(),
             remove_state: Default::default(),
             modify_state: Default::default(),
+            init,
             settings,
             conf_state,
             #[cfg(debug_assertions)]

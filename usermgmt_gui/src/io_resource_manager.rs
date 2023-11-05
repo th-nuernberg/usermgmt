@@ -9,12 +9,18 @@ mod io_task_status;
 pub use io_task_status::IoTaskStatus;
 
 #[derive(Default, Debug)]
-pub struct IoResourceManager<T = ()> {
+pub struct IoResourceManager<T = ()>
+where
+    T: Send + 'static,
+{
     status: IoTaskStatus<T>,
     task: IoBackgroundWorker<T>,
 }
 
-impl<T> IoResourceManager<T> {
+impl<T> IoResourceManager<T>
+where
+    T: Send + 'static,
+{
     pub fn set_error(&mut self, error: AppError) {
         if self.is_loading() {
             warn!("Tried to set failure for loading io resource. Failure is not set because the resource is still loading.");

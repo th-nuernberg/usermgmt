@@ -1,13 +1,34 @@
+use crate::prelude::*;
 use clap::{Args, Parser, Subcommand};
 mod on_which_system;
 
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli};
 
-use crate::{prelude::AppResult, util::TrimmedNonEmptyText};
-/// Add, delete, or modify users in LDAP and Slurm simultaneously
+use crate::util::TrimmedNonEmptyText;
+use const_format::concatcp;
+
+pub const fn short_about() -> &'static str {
+    "Simultaneous user management for Slurm and LDAP"
+}
+
+#[rustfmt::skip]
+pub const fn links() -> &'static str {
+    concatcp!(
+        "Wheret to report bugs: ", constants::ISSUE_LINK, ".\n",
+        "Source code: ", constants::REPOSITORY_LINK, " .\n",
+        "License: MIT => ", constants::MIT_LINK, ".\n",
+        "Readme: ", constants::README_LINK, ".\n"
+    )
+}
+
+pub const fn long_about() -> &'static str {
+    concatcp!(short_about(), ". \n\n", links())
+}
+
 #[derive(Parser, Debug)]
 #[clap(author = "Authors: dwgnr and BoolPurist", version = env!("CARGO_PKG_VERSION"),
-            about = "Simultaneous user management for Slurm and LDAP", long_about = None)]
+            about = long_about(), long_about = Some(long_about()))]
+/// Add, delete, or modify users in LDAP and Slurm simultaneously
 pub struct GeneralArgs {
     /// Operation to conduct on the user. Either add, delete or modify.
     #[clap(subcommand)]

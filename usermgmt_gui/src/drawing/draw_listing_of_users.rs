@@ -19,39 +19,46 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     ui.separator();
     let listing_state = &window.listin_state;
 
+    let settings = &window.settings;
     StripBuilder::new(ui)
         .size(
-            Size::initial(gui_design::MAX_HEIGHT_LDAP_TABLE)
-                .at_most(gui_design::MAX_HEIGHT_LDAP_TABLE),
+            Size::initial(settings.max_height_listing_table)
+                .at_most(settings.max_height_listing_table),
         ) // top cell
         .size(
-            Size::initial(gui_design::MAX_HEIGHT_LDAP_TABLE)
-                .at_most(gui_design::MAX_HEIGHT_LDAP_TABLE),
+            Size::initial(settings.max_height_listing_table)
+                .at_most(settings.max_height_listing_table),
         ) // top cell
         .vertical(|mut strip| {
             strip.cell(|ui| {
                 draw_listed_ldap_users(ui, listing_state, &window.settings);
             });
             strip.cell(|ui| {
-                draw_listed_slurm_users(ui, listing_state);
+                draw_listed_slurm_users(ui, &window.settings, listing_state);
             });
         });
 
-    fn draw_listed_slurm_users(ui: &mut egui::Ui, listing_state: &ListingState) {
+    fn draw_listed_slurm_users(
+        ui: &mut egui::Ui,
+        setting: &Settings,
+        listing_state: &ListingState,
+    ) {
         ui.separator();
+        let texts = setting.texts();
         draw_utils::draw_status_msg_w_label(
             ui,
-            text_design::group::STATUS_LIST_SLURM,
+            setting,
+            texts.status_list_slurm(),
             listing_state.list_slurm_user_res.status(),
-            text_design::create_msg::listing_slurm_init,
-            text_design::create_msg::listing_slurm_loading,
-            text_design::create_msg::listing_slurm_success,
-            text_design::create_msg::listing_slurm_failure,
+            || texts.listing_slurm_init().to_string(),
+            || texts.listing_slurm_loading().to_string(),
+            || texts.listing_slurm_success().to_string(),
+            || texts.listing_slurm_failure().to_string(),
         );
 
         if let IoTaskStatus::Successful(slurm_users) = listing_state.list_slurm_user_res.status() {
             ui.separator();
-            draw_slurm_table(ui, slurm_users)
+            draw_slurm_table(ui, setting, slurm_users)
         }
     }
 
@@ -60,15 +67,17 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         listing_state: &ListingState,
         settings: &Settings,
     ) {
+        let texts = settings.texts();
         let status = listing_state.list_ldap_res.status();
         draw_utils::draw_status_msg_w_label(
             ui,
-            text_design::group::STATUS_LIST_LDAP,
+            settings,
+            texts.status_list_ldap(),
             status,
-            text_design::create_msg::listing_ldap_init,
-            text_design::create_msg::listing_ldap_loading,
-            text_design::create_msg::listing_ldap_success,
-            text_design::create_msg::listing_ldap_failure,
+            || texts.listing_ldap_init().to_string(),
+            || texts.listing_ldap_loading().to_string(),
+            || texts.listing_ldap_success().to_string(),
+            || texts.listing_ldap_failure().to_string(),
         );
         if let IoTaskStatus::Successful(ldap_users) = status {
             ui.separator();
@@ -76,11 +85,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         }
     }
 
-    fn draw_slurm_table(ui: &mut egui::Ui, slurm_users: &ListedUser) {
+    fn draw_slurm_table(ui: &mut egui::Ui, settings: &Settings, slurm_users: &ListedUser) {
         use egui_extras::{Column, TableBuilder};
-        draw_table(ui, slurm_users);
+        draw_table(ui, settings, slurm_users);
 
-        fn draw_table(ui: &mut egui::Ui, raw: &ListedUser) {
+        fn draw_table(ui: &mut egui::Ui, settings: &Settings, raw: &ListedUser) {
             let mut table = TableBuilder::new(ui)
                 .striped(true)
                 .resizable(true)
@@ -93,7 +102,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 .columns(Column::auto(), headers.len().saturating_sub(1))
                 .column(Column::remainder());
             table
-                .header(gui_design::HEADER_HEIGHT_LDAP_TABLE, |mut header| {
+                .header(settings.header_table_height, |mut header| {
                     for next_title in headers {
                         header.col(|ui| {
                             ui.strong(next_title);
@@ -122,10 +131,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 && conf_state.io_conf.is_there()
         };
 
+        let text = window.settings.texts();
         if ui
             .add_enabled(
                 slurm_list_btn_enabled,
-                egui::Button::new(text_design::button::LIST_SLURM_USERS),
+                egui::Button::new(text.btn_list_slurm_users()),
             )
             .clicked()
         {
@@ -133,11 +143,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 let (username, password) = window.ssh_state.all_fields_filled().unwrap();
                 let ssh_credentials = SshGivenCredential::new(username, password);
                 let mgmt_conf = mgmt_conf.config.clone();
+                let failed_parsing_slurm = text.failed_parsing_slurm().clone();
                 _ = window.listin_state.list_slurm_user_res.spawn_task(
                     move || {
                         let slurm_users_raw = slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
-                        ListedUser::new(&slurm_users_raw)
-                            .ok_or(anyhow!(text_design::error_messages::FAILED_PARSING_SLURM))
+                        ListedUser::new(&slurm_users_raw).ok_or(anyhow!(failed_parsing_slurm))
                     },
                     String::from("Getting slurm user"),
                 );
@@ -158,10 +168,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 && configuration_is_loaded
         };
 
+        let text = window.settings.texts();
         if ui
             .add_enabled(
                 list_ldap_btn_enabled,
-                egui::Button::new(text_design::button::LIST_LDAP_USERS),
+                egui::Button::new(text.btn_list_ldap_users()),
             )
             .clicked()
         {
@@ -203,10 +214,11 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let mut rw_user =
             field_conf_or_state(window.listin_state.rw_user_name.as_deref(), conf_user_name);
         let mut rw_password = field_conf_or_state(window.listin_state.rw_pw.as_deref(), conf_pw);
+        let settings = &window.settings;
         draw_utils::user_password_box(
             ui,
-            &window.settings,
-            text_design::group::READONLY_LDAP_CRED,
+            settings,
+            settings.texts().readonly_ldap_cred(),
             &mut rw_user,
             &mut rw_password,
             |rw_user| window.listin_state.rw_user_name = Some(rw_user.clone()),
@@ -243,7 +255,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                     .columns(Column::auto(), headers.len().saturating_sub(1))
                     .column(Column::remainder());
                 table
-                    .header(gui_design::HEADER_HEIGHT_LDAP_TABLE, |mut header| {
+                    .header(settings.header_table_height, |mut header| {
                         for &next_title in headers.iter() {
                             header.col(|ui| {
                                 ui.strong(next_title);

@@ -12,6 +12,7 @@ mod cli_ssh_credential;
 mod cli_user_input;
 mod ldap_cli_credential;
 fn main() -> ExitCode {
+    usermgmt_lib::app_panic_hook::set_app_panic_hook();
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .format_timestamp(None)
         .init();

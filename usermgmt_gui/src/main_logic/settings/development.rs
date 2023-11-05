@@ -59,7 +59,8 @@ impl Default for DebugSettingWatcher {
     }
 }
 fn path_to_settings() -> PathBuf {
-    path_to_assets_folder().join("Settings.toml")
+    use crate::constants::SETTINGS_FILE_NAME;
+    path_to_assets_folder().join(SETTINGS_FILE_NAME)
 }
 fn path_to_assets_folder() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets")

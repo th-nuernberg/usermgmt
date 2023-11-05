@@ -35,6 +35,7 @@ pub mod prelude {
     pub type AppError = AnyError;
     pub type AppResult<T = ()> = Result<T, AnyError>;
 }
+pub mod app_panic_hook;
 
 use crate::{
     dir::add_user_directories,

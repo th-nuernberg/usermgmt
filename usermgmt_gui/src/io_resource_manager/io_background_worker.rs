@@ -1,21 +1,37 @@
 use std::thread::{self, JoinHandle};
 
+use crate::prelude::*;
 use log::{error, info, warn};
 use usermgmt_lib::prelude::{anyhow, AppResult};
 
 #[derive(Debug, Default)]
-pub struct IoBackgroundWorker<T = ()> {
+pub struct IoBackgroundWorker<T = ()>
+where
+    T: Send + 'static,
+{
     thread: Option<JoinHandle<AppResult<T>>>,
     thread_name: String,
 }
 
-impl<T> Drop for IoBackgroundWorker<T> {
+impl<T> Drop for IoBackgroundWorker<T>
+where
+    T: Send + 'static,
+{
     fn drop(&mut self) {
         if let Some(task) = self.thread.take() {
+            let thread_name = &self.thread_name;
             match task.join() {
-                Ok(Err(error)) => error!("Left over thread returned with error {:?}", error),
-                Err(error_data) => error!("Thread paniced with error {:?}", error_data),
-                _ => info!("Left over thread joined."),
+                Ok(Err(error)) => error!(
+                    "Left over thread ({}) returned with error {:?}",
+                    thread_name, error
+                ),
+                Err(error_data) => error!(
+                    "Left over Thread ({}) paniced with error {:?}",
+                    thread_name, error_data
+                ),
+                _ => {
+                    warn!("Left over thread ({}) joined.", thread_name)
+                }
             }
         }
     }

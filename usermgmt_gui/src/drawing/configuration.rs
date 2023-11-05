@@ -3,47 +3,45 @@ use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc};
 type LabelTyp = Rc<str>;
 pub type CacheForConfFiels = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
 use crate::{current_selected_view::ConfigurationState, prelude::*};
-use eframe::{egui::RichText, epaint::Color32};
 use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
 
 pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let mut can_reload = true;
     // TODO: use "draw_utils::draw_status_msg()" instead
-    match &window.conf_state.io_conf.status() {
-        IoTaskStatus::NotStarted => {
-            ui.label("No configuration loaded yet");
-        }
-        IoTaskStatus::Loading => {
-            ui.label(RichText::new("Loading configuration").color(Color32::BLUE));
+    let settings = &window.settings;
+    let texts = settings.texts();
+    draw_utils::draw_status_msg_w_label(
+        ui,
+        settings,
+        texts.conf_load_group(),
+        window.conf_state.io_conf.status(),
+        || texts.conf_load_init_msg().to_owned(),
+        || {
             can_reload = false;
-        }
-        IoTaskStatus::Successful(_) => {
-            ui.label(RichText::new("Configuration loaded").color(Color32::GREEN));
-        }
-        IoTaskStatus::Failed(error) => {
-            ui.label(
-                RichText::new("Error in loadiding configuration.")
-                    .strong()
-                    .color(Color32::RED),
-            );
-            ui.label(RichText::new(format!("Error details. {}", error)).color(Color32::RED));
-        }
-    }
+            texts.conf_load_loading_msg().to_owned()
+        },
+        || texts.conf_load_success_msg().to_owned(),
+        || texts.conf_load_err_msg().to_owned(),
+    );
 
     draw_utils::draw_status_msg_w_label(
         ui,
-        "Save Progress",
+        settings,
+        texts.conf_save_group(),
         window.conf_state.io_save_conf.status(),
         // TODO: Supply meaningful messages
-        || String::from("a"),
-        || String::from("a"),
-        || String::from("a"),
-        || String::from("a"),
+        || texts.conf_save_init_msg().to_owned(),
+        || texts.conf_save_loading_msg().to_owned(),
+        || texts.conf_save_success_msg().to_owned(),
+        || texts.conf_save_err_msg().to_owned(),
     );
 
     draw_utils::draw_file_path(ui, window);
+    ui.separator();
     draw_buttons(window, ui, can_reload);
-    draw_fields(&mut window.conf_state, ui);
+    ui.separator();
+    ui.add_space(20.0);
+    draw_fields(&mut window.conf_state, &window.settings, ui);
 }
 
 fn draw_buttons(window: &mut UsermgmtWindow, ui: &mut egui::Ui, can_reload: bool) {
@@ -65,17 +63,17 @@ fn draw_buttons(window: &mut UsermgmtWindow, ui: &mut egui::Ui, can_reload: bool
     });
 }
 
-fn save_config(window: &mut ConfigurationState, conf_path: PathBuf) {
-    if let IoTaskStatus::Successful(loaded) = window.io_conf.status() {
+fn save_config(config_state: &mut ConfigurationState, conf_path: PathBuf) {
+    if let IoTaskStatus::Successful(loaded) = config_state.io_conf.status() {
         let config = loaded.config.clone();
-        window.io_save_conf.spawn_task(
+        config_state.io_save_conf.spawn_task(
             move || config.save(&conf_path),
             String::from("Saving configuration"),
         );
     }
 }
 
-fn draw_fields(window: &mut ConfigurationState, ui: &mut egui::Ui) {
+fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut egui::Ui) {
     if let IoTaskStatus::Successful(LoadedMgmtConfig { config, .. }) = window.io_conf.status_mut() {
         egui::ScrollArea::vertical()
             .min_scrolled_height(400.0)
@@ -92,15 +90,15 @@ fn draw_fields(window: &mut ConfigurationState, ui: &mut egui::Ui) {
                             draw_utils::no_password_enty_field(ui, &label, val, |_| {});
                         }
                         ConfiField::List { val, label } => {
-                            draw_utils::list_view(ui, val, &label);
+                            draw_utils::list_view(ui, settings, val, &label);
                             draw_sep = false;
                         }
                         ConfiField::Checkbox { val, label } => _ = ui.checkbox(val, &*label),
                         ConfiField::Number { val, label } => {
-                            draw_utils::number_field(ui, &label, val)
+                            draw_utils::whole_pos_number_fields(ui, &label, val);
                         }
                         ConfiField::NegNumber { val, label } => {
-                            draw_utils::neg_number_field(ui, &label, val)
+                            draw_utils::whole_neg_number_fields(ui, &label, val);
                         }
                     }
 
