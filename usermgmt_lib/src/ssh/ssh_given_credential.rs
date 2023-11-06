@@ -30,8 +30,4 @@ impl SshCredentials for SshGivenCredential {
     fn password(&self) -> crate::prelude::AppResult<&str> {
         Ok(&self.password)
     }
-
-    fn auth_resolve(&self) -> bool {
-        false
-    }
 }

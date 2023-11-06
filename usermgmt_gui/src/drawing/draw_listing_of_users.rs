@@ -123,12 +123,15 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 
     fn slurm_list_btn(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         let slurm_list_btn_enabled = {
-            let ssh_state = &window.ssh_state;
             let listing_state = &window.listin_state;
             let conf_state = &window.conf_state;
-            ssh_state.are_fields_filled()
-                && !listing_state.list_slurm_user_res.is_loading()
-                && conf_state.io_conf.is_there()
+            if let IoTaskStatus::Successful(config) = conf_state.io_conf.status() {
+                let which_sys = &window.which_sys;
+                which_sys.is_ssh_cred_provided(window, &config.config, false)
+                    && !listing_state.list_slurm_user_res.is_loading()
+            } else {
+                false
+            }
         };
 
         let text = window.settings.texts();
@@ -140,8 +143,9 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             .clicked()
         {
             if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
-                let (username, password) = window.ssh_state.all_fields_filled().unwrap();
-                let ssh_credentials = SshGivenCredential::new(username, password);
+                let (username, password) = window.ssh_state.username_maybe_password().unwrap();
+                let ssh_credentials =
+                    SshGivenCredential::new(username, password.unwrap_or_default());
                 let mgmt_conf = mgmt_conf.config.clone();
                 let failed_parsing_slurm = text.failed_parsing_slurm().clone();
                 _ = window.listin_state.list_slurm_user_res.spawn_task(

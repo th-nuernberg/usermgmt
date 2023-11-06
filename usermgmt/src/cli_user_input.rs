@@ -1,7 +1,6 @@
-use usermgmt_lib::{
-    prelude::{anyhow, AppResult, Context},
-    user_input,
-};
+use usermgmt_lib::prelude::{anyhow, AppResult, Context};
+
+use crate::user_input;
 
 pub fn ask_cli_username() -> AppResult<String> {
     println!("Enter your LDAP username (defaults to admin):");

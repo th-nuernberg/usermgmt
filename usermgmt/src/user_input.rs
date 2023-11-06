@@ -2,11 +2,10 @@
 
 use std::io;
 
-use anyhow::{anyhow, Context};
-
-use crate::prelude::AppResult;
-
-use super::TrimmedNonEmptyText;
+use usermgmt_lib::{
+    prelude::{anyhow, AppResult, Context},
+    util::TrimmedNonEmptyText,
+};
 
 fn ask_for_line_from_user(
     on_input: impl Fn() -> AppResult<Option<String>>,

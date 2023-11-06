@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use usermgmt_lib::cli::OnWhichSystem;
+use crate::{current_selected_view::SshConnectionState, prelude::*};
+use usermgmt_lib::{cli::OnWhichSystem, config::MgmtConfig};
 
 use crate::drawing::draw_utils;
 
@@ -21,6 +21,25 @@ impl WhichSystem {
     }
     pub fn is_ldap_needed(&self) -> bool {
         self.ldap
+    }
+
+    pub fn is_ssh_cred_provided(
+        &self,
+        app_state: &UsermgmtWindow,
+        config: &MgmtConfig,
+        supports_dir: bool,
+    ) -> bool {
+        let ssh_state = &app_state.ssh_state;
+        return !self.is_ssh_cred_needed(supports_dir)
+            || creds_ssh_agent(config, ssh_state)
+            || simple_creds(ssh_state);
+
+        fn creds_ssh_agent(config: &MgmtConfig, cred: &SshConnectionState) -> bool {
+            config.ssh_agent && cred.username().is_some()
+        }
+        fn simple_creds(cred: &SshConnectionState) -> bool {
+            cred.username().is_some() && cred.password().is_some()
+        }
     }
 }
 

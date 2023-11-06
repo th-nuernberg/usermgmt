@@ -95,8 +95,8 @@ impl UsermgmtWindow {
 
     pub fn create_ssh_credentials(&self) -> Option<SshGivenCredential> {
         let ssh_state = &self.ssh_state;
-        let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_ref());
-        let cred = SshGivenCredential::new(username?, password?);
+        let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_deref());
+        let cred = SshGivenCredential::new(username?, password.unwrap_or(""));
         Some(cred)
     }
     pub fn create_ldap_credentials(&self) -> Option<LdapSimpleCredential> {

@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-use anyhow::{anyhow, bail, Context};
 use std::io::Read;
 use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
@@ -12,7 +11,7 @@ use ssh2::Session;
 
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
-use crate::ssh::{self, EntitiesAndSshAgent};
+use crate::ssh::{self, EntitiesAndSshAgent, SshPublicKeySuggestion};
 
 use super::SshCredentials;
 
@@ -148,7 +147,7 @@ where
             T: SshCredentials,
         {
             if connection.ssh_agent {
-                match try_authenticate_via_ssh_agent(session, username) {
+                match try_authenticate_via_ssh_agent(session, &connection.credentials, username) {
                     Ok(_) => {
                         info!(
                             "Authentication via ssh agent successeded with username {}",
@@ -183,34 +182,24 @@ where
 /// - If no key is registered withing ssh agent
 /// - If the selection from user is not within the available range of ssh keys registered withing
 /// ssh agent .
-fn try_authenticate_via_ssh_agent(session: &mut Session, username: &str) -> AppResult<()> {
+fn try_authenticate_via_ssh_agent(
+    session: &mut Session,
+    credentails: &impl SshCredentials,
+    username: &str,
+) -> AppResult<()> {
     let keys = ssh::get_agent_with_all_entities(session)?;
 
     let (agent, chosen_key) = match keys {
         EntitiesAndSshAgent::None => bail!("No keys could be found on the ssh agent."),
         EntitiesAndSshAgent::One(agent, only_key) => (agent, only_key),
         EntitiesAndSshAgent::Many(agent, to_choose_from) => {
-            let length = to_choose_from.len();
-            let last_index = length.saturating_sub(1);
-            println!("Found more than one key in ssh agent !");
-            println!("Chooose one between {} and {} ssh key", 0, last_index);
-            println!("===========================================");
+            let choice: Vec<SshPublicKeySuggestion> = to_choose_from
+                .iter()
+                .map(SshPublicKeySuggestion::from)
+                .collect();
 
-            for (index, next) in to_choose_from.iter().enumerate() {
-                let comment = next.comment();
-                println!("{} => comment: {}", index, comment);
-            }
-
-            let user_choice: usize = crate::util::user_input::line_input_from_user()?
-                .ok_or_else(|| anyhow!("No number supplied"))?
-                .parse()?;
-
-            if last_index < user_choice {
-                bail!("Choice should between {} and {}", 0, last_index);
-            } else {
-                info!("{}. ssh key is chosen", user_choice);
-                (agent, to_choose_from.into_iter().nth(user_choice).unwrap())
-            }
+            let user_choice = credentails.auth_agent_resolve(choice)?;
+            (agent, to_choose_from.into_iter().nth(user_choice).unwrap())
         }
     };
 

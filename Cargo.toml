@@ -1,5 +1,5 @@
 [workspace]
-members = ["usermgmt", "usermgmt_lib", "usermgmt_gui", "slint_gui"]
+members = ["usermgmt", "usermgmt_lib", "usermgmt_gui"]
 default-members = ["usermgmt"]
 resolver = "2"
 

@@ -1,10 +1,14 @@
+use log::info;
 use once_cell::sync::OnceCell;
+use usermgmt_lib::prelude::*;
+
 use usermgmt_lib::{
     config::MgmtConfig,
     prelude::{anyhow, AppResult},
     ssh::SshCredentials,
-    user_input,
 };
+
+use crate::user_input;
 
 #[derive(Debug, Clone)]
 pub struct CliSshCredential {
@@ -44,7 +48,30 @@ impl SshCredentials for CliSshCredential {
         Ok(password)
     }
 
-    fn auth_resolve(&self) -> bool {
-        true
+    fn auth_agent_resolve(
+        &self,
+        many_keys: Vec<usermgmt_lib::ssh::SshPublicKeySuggestion>,
+    ) -> AppResult<usize> {
+        let length = many_keys.len();
+        let last_index = length.saturating_sub(1);
+        println!("Found more than one key in ssh agent !");
+        println!("Chooose one between {} and {} ssh key", 0, last_index);
+        println!("===========================================");
+
+        for (index, next) in many_keys.iter().enumerate() {
+            let comment = next.comment();
+            println!("{} => comment: {}", index, comment);
+        }
+
+        let user_choice: usize = user_input::line_input_from_user()?
+            .ok_or_else(|| anyhow!("No number supplied"))?
+            .parse()?;
+
+        if last_index < user_choice {
+            bail!("Choice should between {} and {}", 0, last_index);
+        } else {
+            info!("{}. ssh key is chosen", user_choice);
+            Ok(last_index)
+        }
     }
 }

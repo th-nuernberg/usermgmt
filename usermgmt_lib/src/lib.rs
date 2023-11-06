@@ -18,7 +18,6 @@ pub mod ssh;
 
 pub use changes_to_user::ChangesToUser;
 use ssh::SshCredentials;
-pub use util::user_input;
 
 use cli::{OnWhichSystem, UserToAdd};
 

@@ -13,6 +13,7 @@ log = { workspace = true }
 env_logger = { workspace = true }
 once_cell = { workspace = true }
 usermgmt_lib = { path = "../usermgmt_lib" }
+rpassword = "7.2.0"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"

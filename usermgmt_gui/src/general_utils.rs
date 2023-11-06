@@ -25,6 +25,11 @@ where
 pub fn some_if_not_blank_str(input: &str) -> Option<TrimmedNonEmptyText> {
     input.try_into().ok()
 }
+pub fn is_some_and_not_empty(input: Option<&str>) -> bool {
+    input
+        .map(|input| some_if_not_blank_str(input).is_some())
+        .unwrap_or(false)
+}
 pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathBuf>) {
     conf_state.io_conf.spawn_task(
         || config::load_config(path),
@@ -68,13 +73,6 @@ Details of error are embeded within respective io resource state.",
         let ldap_cred = if which_sys.is_ldap_needed() {
             window
                 .create_ldap_credentials()
-                .ok_or_else(|| anyhow!(ssh_cred_missing))?
-        } else {
-            Default::default()
-        };
-        let ssh_cred = if which_sys.is_ssh_cred_needed(supports_dir) {
-            window
-                .create_ssh_credentials()
                 .ok_or_else(|| anyhow!(ldap_cred_missing))?
         } else {
             Default::default()
@@ -84,6 +82,13 @@ Details of error are embeded within respective io resource state.",
             &window.conf_state.io_conf.status()
         {
             let config = config.clone();
+            let ssh_cred = if which_sys.is_ssh_cred_provided(window, &config, supports_dir) {
+                window
+                    .create_ssh_credentials()
+                    .ok_or_else(|| anyhow!(ssh_cred_missing))?
+            } else {
+                Default::default()
+            };
             return Ok(PreparationBeforIoTask {
                 config,
                 on_which_sys,
