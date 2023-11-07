@@ -1,9 +1,9 @@
 [package]
 name = "usermgmt_gui"
-version = "0.5.1"
+version = "0.1.0"
 edition = "2021"
 license-file = "LICENSE"
-description = "Simultaneous Slurm and LDAP user management GUI Tool"
+description = "GUI for simultaneous Slurm and LDAP user management."
 readme = "README.md"
 rust-version = "1.70.0"
 
@@ -26,3 +26,6 @@ egui_extras = "0.23.0"
 # TODO: replace this by crates.io once the PR which is pointed to, is merged.
 hotwatch = { git = "https://github.com/BoolPurist/hotwatch", branch = "toggleable_log", default-features = false }
  
+[package.metadata.deb]
+maintainer = "Florian Naumann <naumannfl79974@th-nuernberg.de>"
+copyright = "2023, Technische Hochschule Nürnberg Georg Simon Ohm"

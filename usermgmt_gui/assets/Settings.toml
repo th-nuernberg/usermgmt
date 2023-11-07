@@ -1,3 +1,6 @@
+# This file contains all settings which are set at the start of the GUI application 
+# and reloaded if content changes during development.
+
 box_label_font_size = 28.0
 max_height_listing_table = 200.0
 header_table_height =  20.0
@@ -33,6 +36,9 @@ qos = "Quality of Services"
 default_qos = "Default Quality of Services"
 public_key = "Public Key"
 group = "User group"
+btn_action_conf_load = "Load"
+btn_action_conf_save = "Save"
+btn_action_conf_default = "Default"
 btn_action_add = "Add User"
 btn_action_remove = "Remove User"
 btn_action_modify = "Modify User"

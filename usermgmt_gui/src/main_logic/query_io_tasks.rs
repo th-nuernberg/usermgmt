@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+/// Checks every frame if some background IO Task as a Os thread is finished and applies its result
+/// to the global state of this application.
 pub fn query(window: &mut UsermgmtWindow) {
     if let Some(conf) = window.conf_state.io_conf.query_task() {
         let listing_state = &mut window.listin_state;
@@ -22,7 +24,9 @@ pub fn query(window: &mut UsermgmtWindow) {
             ssh_state.username = Some(config.default_ssh_user.to_owned());
         }
     }
-    let _ = window.conf_state.io_save_conf.query_task();
+    if let Some(path) = window.conf_state.io_save_conf.query_task() {
+        window.conf_path = path.to_path_buf();
+    }
     let _ = window.listin_state.list_ldap_res.query_task();
     let _ = window.listin_state.list_slurm_user_res.query_task();
     let _ = window.adding_state.adding_res_io.query_task();

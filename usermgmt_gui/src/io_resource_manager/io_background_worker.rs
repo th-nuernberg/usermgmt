@@ -1,6 +1,5 @@
 use std::thread::{self, JoinHandle};
 
-use crate::prelude::*;
 use log::{error, info, warn};
 use usermgmt_lib::prelude::{anyhow, AppResult};
 

@@ -13,7 +13,8 @@ static HOME_LOCATIONS: Lazy<Vec<PathBuf>> = Lazy::new(|| {
     let os_config = dirs::config_dir();
     let mut paths: Vec<PathBuf> = Vec::with_capacity(2);
     if let Some(config) = os_config {
-        paths.push(config);
+        let with_app_name = config.join("usermgmt");
+        paths.push(with_app_name);
     }
     if cfg!(unix) {
         paths.push(PathBuf::from("~/.usermgmt"));

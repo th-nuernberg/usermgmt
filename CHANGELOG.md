@@ -1,5 +1,5 @@
 # Changelog
-All changes to this project.
+All changes to the CLI tool and library of the usermgmt project.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This prevents the problem where sacctmgr CLI, slurm CLI, did not update default Qos or colletion of Qos.
 - The prompt showing allowed number for selection for several keys under ssh agent is now correctly displayed. 
   Before the maximum index selection was too big by one.
+- Fixed faulty determining inside os config folder space. 
+  Example: before It searched under ~/.config instead of ~/.config/usermgmt
 
 ## [0.1.0] - 2022-06-20
 

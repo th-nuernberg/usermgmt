@@ -3,6 +3,8 @@ use crate::prelude::*;
 use super::query_io_tasks;
 use super::top_level_drawing;
 
+use eframe::egui::RichText;
+use eframe::epaint::Color32;
 use std::convert::AsRef;
 use std::path::PathBuf;
 use usermgmt_lib::{ldap::LdapSimpleCredential, ssh::SshGivenCredential};
@@ -20,6 +22,10 @@ use crate::{
 };
 
 #[derive(Debug)]
+/// The global state of the GUI.
+/// The default `impl` of this struct initializes the global state of the GUI.
+/// The update function executes every frame and draws the GUI from its global state hence the
+/// word `Window` in the name.
 pub struct UsermgmtWindow {
     pub selected_view: CurrentSelectedView,
     pub conf_path: PathBuf,
@@ -64,6 +70,7 @@ impl Default for UsermgmtWindow {
             init,
             settings,
             conf_state,
+            // Activate reload feature to see changes of GUI settings during development
             #[cfg(debug_assertions)]
             settings_watcher: Default::default(),
         }
@@ -121,9 +128,22 @@ impl eframe::App for UsermgmtWindow {
     }
 }
 
+/// Draw menu to the left of the current view.
+/// Menu consists of buttons. Every button represents a view.
+/// Clicking on one button changes to its respective view.
 fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     for next in CurrentSelectedView::iter() {
-        if ui.button(next.as_ref()).clicked() {
+        let button_color = if next == CurrentSelectedView::Configuration
+            && !window.conf_state.io_conf.is_there()
+        {
+            window.settings.colors().err_msg()
+        } else {
+            Color32::WHITE
+        };
+        if ui
+            .button(RichText::new(next.as_ref()).color(button_color))
+            .clicked()
+        {
             let previous_view = window.selected_view();
             info!("Changed from ({:?}) to ({:?}) view", previous_view, next);
             window.set_selected_view(next);

@@ -2,7 +2,6 @@ pub use eframe::egui;
 pub use log::*;
 pub use strum::IntoEnumIterator;
 
-pub use usermgmt_lib;
 pub use usermgmt_lib::prelude::*;
 
 pub use crate::{

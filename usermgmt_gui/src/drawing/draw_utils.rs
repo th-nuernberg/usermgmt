@@ -255,7 +255,7 @@ pub fn draw_status_msg_w_label<T>(
     status: &IoTaskStatus<T>,
     msg_init: impl FnOnce() -> String,
     msg_loading: impl FnOnce() -> String,
-    msg_success: impl FnOnce() -> String,
+    msg_success: impl FnOnce(&T) -> String,
     error_msg: impl FnOnce() -> String,
 ) {
     status_msg(
@@ -276,7 +276,7 @@ pub fn draw_status_msg<T>(
     status: &IoTaskStatus<T>,
     msg_init: impl FnOnce() -> String,
     msg_loading: impl FnOnce() -> String,
-    msg_success: impl FnOnce() -> String,
+    msg_success: impl FnOnce(&T) -> String,
     error_msg: impl FnOnce() -> String,
 ) {
     status_msg(
@@ -328,7 +328,7 @@ fn status_msg<T>(
     status: &IoTaskStatus<T>,
     msg_init: impl FnOnce() -> String,
     msg_loading: impl FnOnce() -> String,
-    msg_success: impl FnOnce() -> String,
+    msg_success: impl FnOnce(&T) -> String,
     error_msg: impl FnOnce() -> String,
 ) {
     draw_box_group(ui, label, |ui| {
@@ -336,7 +336,7 @@ fn status_msg<T>(
         let (color, raw_text) = match status {
             IoTaskStatus::NotStarted => (colors.init_msg(), msg_init()),
             IoTaskStatus::Loading => (colors.loading_msg(), msg_loading()),
-            IoTaskStatus::Successful(_) => (colors.success_msg(), msg_success()),
+            IoTaskStatus::Successful(val) => (colors.success_msg(), msg_success(val)),
             IoTaskStatus::Failed(error) => (
                 colors.err_msg(),
                 general_utils::error_status(&error_msg(), error),

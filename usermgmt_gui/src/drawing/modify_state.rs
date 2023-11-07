@@ -17,7 +17,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         window.modify_state.res_io.status(),
         || text.modify_init().to_string(),
         || format!("{} {}", text.modify_loading(), &last_username),
-        || format!("{} {}", text.modify_success(), &last_username),
+        |username| format!("{} {}", text.modify_success(), username),
         || format!("{} {}", text.modify_failure(), &last_username),
     );
 }
@@ -35,13 +35,15 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
             Ok(changes) => {
                 window.modify_state.res_io.spawn_task(
                     move || {
+                        let username = changes.username.to_string();
                         usermgmt_lib::modify_user(
                             changes,
                             &on_which_sys,
                             &config,
                             ldap_cred,
                             ssh_cred,
-                        )
+                        )?;
+                        Ok(username)
                     },
                     String::from("Modifing User"),
                 );

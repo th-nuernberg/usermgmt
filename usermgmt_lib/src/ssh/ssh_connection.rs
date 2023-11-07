@@ -89,7 +89,7 @@ where
         let socket_addr: String = format!("{}:{}", self.endpoint, self.port);
         let socket_addr: SocketAddr = socket_addr
             .parse()
-            .unwrap_or_else(|_| panic!("Socket address is not valid: {}", socket_addr));
+            .with_context(|| format!("Socket address is not valid: {}", socket_addr))?;
         sess.set_timeout(timeout);
 
         {

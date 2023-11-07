@@ -5,6 +5,7 @@ use drawing::{
 use eframe::egui::RichText;
 use std::convert::AsRef;
 
+/// Draw the currently selected view of this GUI.
 pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let current_view = window.selected_view();
 

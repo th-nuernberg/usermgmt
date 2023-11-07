@@ -34,7 +34,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         adding_fields.adding_res_io.status(),
         || "No user added yet".to_string(),
         || format!("User ({}) is being added", last_username),
-        || format!("User ({}) was added", last_username),
+        |username| format!("User ({}) was added", username),
         || format!("Failed to add user ({})", last_username),
     );
     let allow_adding_user = adding_fields.all_needed_fields_filled();
@@ -55,6 +55,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         {
             let adding_state = &mut window.adding_state;
             let to_add = adding_state.create_user_to_add()?;
+            let username = to_add.common_user_fields.username.to_string();
             let _ = adding_state.adding_res_io.spawn_task(
                 move || {
                     usermgmt_lib::add_user(
@@ -63,7 +64,8 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
                         &prep.config,
                         prep.ldap_cred,
                         prep.ssh_cred,
-                    )
+                    )?;
+                    Ok(username)
                 },
                 String::from("Adding user"),
             );

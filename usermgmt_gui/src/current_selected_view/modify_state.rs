@@ -14,7 +14,7 @@ pub struct ModifyState {
     pub default_qos: String,
     pub publickey: String,
     pub qos: Vec<String>,
-    pub res_io: IoResourceManager,
+    pub res_io: IoResourceManager<String>,
     pub last_added_username: String,
 }
 

@@ -52,7 +52,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             listing_state.list_slurm_user_res.status(),
             || texts.listing_slurm_init().to_string(),
             || texts.listing_slurm_loading().to_string(),
-            || texts.listing_slurm_success().to_string(),
+            |_| texts.listing_slurm_success().to_string(),
             || texts.listing_slurm_failure().to_string(),
         );
 
@@ -76,7 +76,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             status,
             || texts.listing_ldap_init().to_string(),
             || texts.listing_ldap_loading().to_string(),
-            || texts.listing_ldap_success().to_string(),
+            |_| texts.listing_ldap_success().to_string(),
             || texts.listing_ldap_failure().to_string(),
         );
         if let IoTaskStatus::Successful(ldap_users) = status {

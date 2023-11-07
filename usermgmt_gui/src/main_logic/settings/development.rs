@@ -1,3 +1,5 @@
+//! Implements the reload of GUI settings while running in development mode.
+
 use std::{
     path::PathBuf,
     sync::mpsc::{channel, Receiver},

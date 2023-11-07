@@ -1,3 +1,4 @@
+# This file contains all settings which are set only once at the start of the GUI application.
 window_title = "Usermgmt"
 window_start_height =  640.0
 window_start_width =  480.0 

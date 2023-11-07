@@ -23,7 +23,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         remove_state.remove_res_io.status(),
         || "No user remove yet".to_owned(),
         || format!("In the process of removing user ({}).", last_username),
-        || format!("Removed user ({}) !", last_username),
+        |username| format!("Removed user ({}) !", username),
         || format!("Failed to remove user ({}).", last_username),
     );
 }
@@ -42,7 +42,8 @@ fn delte_user(window: &mut UsermgmtWindow) {
                     &prep.config,
                     prep.ldap_cred,
                     prep.ssh_cred,
-                )
+                )?;
+                Ok(username)
             },
             String::from("Deleting user"),
         );

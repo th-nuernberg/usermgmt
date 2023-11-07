@@ -11,6 +11,9 @@ use getset::{CopyGetters, Getters};
 type ReadonlyText = String;
 
 #[derive(Debug, Deserialize, Default, Getters, CopyGetters)]
+/// Values which influence the look of the GUI.
+/// These values are updated if the content of the Settings.toml changes
+/// during Development.
 pub struct Settings {
     #[getset(get_copy = "pub")]
     pub title_font_size: f32,
@@ -41,6 +44,8 @@ pub struct Init {
 
 #[derive(Debug, Deserialize, Default, Getters)]
 #[getset(get = "pub")]
+/// Contains text which is shown in the GUI.
+/// For example labels for entry fields or headings.
 pub struct Texts {
     conf_load_init_msg: ReadonlyText,
     conf_load_success_msg: ReadonlyText,
@@ -70,6 +75,9 @@ pub struct Texts {
     default_qos: ReadonlyText,
     public_key: ReadonlyText,
     group: ReadonlyText,
+    btn_action_conf_load: ReadonlyText,
+    btn_action_conf_save: ReadonlyText,
+    btn_action_conf_default: ReadonlyText,
     btn_action_add: ReadonlyText,
     btn_action_remove: ReadonlyText,
     btn_action_modify: ReadonlyText,
@@ -101,6 +109,7 @@ pub struct Texts {
 
 #[derive(Debug, Deserialize, Default, CopyGetters)]
 #[getset(get_copy = "pub")]
+/// Colors of certain elements in the GUI.
 pub struct Colors {
     err_msg: Color32,
     init_msg: Color32,

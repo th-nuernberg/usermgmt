@@ -9,6 +9,10 @@ mod io_task_status;
 pub use io_task_status::IoTaskStatus;
 
 #[derive(Default, Debug)]
+/// This contains concept of an IO background task.
+/// Via methods [`status`] and [`status_mut`] one can query if a task is running, has failed of
+/// succeeded.
+/// The method [`spawn_task`] allows to initiate an IO background task.
 pub struct IoResourceManager<T = ()>
 where
     T: Send + 'static,
@@ -21,6 +25,19 @@ impl<T> IoResourceManager<T>
 where
     T: Send + 'static,
 {
+    /// Returns if an IO task is running, has failed or succeeded.
+    pub fn status(&self) -> &IoTaskStatus<T> {
+        &self.status
+    }
+    pub fn is_loading(&self) -> bool {
+        self.status.is_loading()
+    }
+    pub fn is_there(&self) -> bool {
+        self.status.is_there()
+    }
+    pub fn status_mut(&mut self) -> &mut IoTaskStatus<T> {
+        &mut self.status
+    }
     pub fn set_error(&mut self, error: AppError) {
         if self.is_loading() {
             warn!("Tried to set failure for loading io resource. Failure is not set because the resource is still loading.");
@@ -28,24 +45,25 @@ where
         }
         self.status = IoTaskStatus::Failed(error);
     }
-    pub fn status_mut(&mut self) -> &mut IoTaskStatus<T> {
-        &mut self.status
+    /// Allows to set a successful io task in the GUI rendering without spawning an actual OS
+    /// Thread. There are cases where we can set the result immediately.
+    pub fn set_success(&mut self, success: T) {
+        if self.is_loading() {
+            warn!("Tried to set success for loading io resource. Failure is not set because the resource is still loading.");
+            return;
+        }
+        self.status = IoTaskStatus::Successful(success);
     }
 
-    pub fn is_loading(&self) -> bool {
-        self.status.is_loading()
-    }
-    pub fn is_there(&self) -> bool {
-        self.status.is_there()
-    }
-}
-impl<T> IoResourceManager<T>
-where
-    T: Send + 'static,
-{
-    pub fn status(&self) -> &IoTaskStatus<T> {
-        &self.status
-    }
+    /// # Parameters
+    /// - [`task`]: Closure which will be completed once the IO task finished.
+    /// - [`thread_name`]: Name of thread used for IO background task. Useful for logging and
+    /// debugging.
+    ///
+    /// ## Returns
+    /// - True: if a new task has spawned.
+    /// - False: if a task is already running or spawning a new task has failed for other
+    /// reasons.
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
     where
         F: FnOnce() -> AppResult<T> + Send + 'static,
@@ -63,6 +81,9 @@ where
         }
     }
 
+    /// # Returns
+    /// - Some if an IO task finished this frame. Next call will then return None.
+    /// - None if there is no IO task which finished during this frame.
     pub fn query_task(&mut self) -> Option<&T> {
         if let Some(result) = self.task.get_task_result() {
             match result {
@@ -82,6 +103,12 @@ where
             None
         }
     }
+    /// Same as method [`query_task`] expect it takes the result out of the
+    /// manager for this task. If a resource is taken out of a manager then
+    /// the task counts as uninitialized after.
+    ///
+    /// # Returns
+    /// Same as method [`query_task`]
     pub fn query_task_and_take(&mut self) -> Option<T> {
         if let Some(result) = self.task.get_task_result() {
             match result {

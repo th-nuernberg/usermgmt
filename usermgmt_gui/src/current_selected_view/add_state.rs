@@ -16,7 +16,7 @@ pub struct AddState {
     pub default_qos: String,
     pub publickey: String,
     pub qos: Vec<String>,
-    pub adding_res_io: IoResourceManager,
+    pub adding_res_io: IoResourceManager<String>,
     pub last_added_username: String,
 }
 

@@ -20,7 +20,13 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             can_reload = false;
             texts.conf_load_loading_msg().to_owned()
         },
-        || texts.conf_load_success_msg().to_owned(),
+        |loaded| {
+            format!(
+                "{}:\n{:?}",
+                texts.conf_load_success_msg().to_owned(),
+                &loaded.path
+            )
+        },
         || texts.conf_load_err_msg().to_owned(),
     );
 
@@ -29,10 +35,9 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         settings,
         texts.conf_save_group(),
         window.conf_state.io_save_conf.status(),
-        // TODO: Supply meaningful messages
         || texts.conf_save_init_msg().to_owned(),
         || texts.conf_save_loading_msg().to_owned(),
-        || texts.conf_save_success_msg().to_owned(),
+        |path| format!("{}:\n{:?}", texts.conf_save_success_msg().to_owned(), path),
         || texts.conf_save_err_msg().to_owned(),
     );
 
@@ -45,20 +50,34 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
 }
 
 fn draw_buttons(window: &mut UsermgmtWindow, ui: &mut egui::Ui, can_reload: bool) {
+    let text = &window.settings.texts();
     ui.horizontal(|ui| {
         if ui
-            .add_enabled(can_reload, egui::Button::new("Reload"))
+            .add_enabled(can_reload, egui::Button::new(text.btn_action_conf_load()))
             .clicked()
         {
             let path = window.conf_path.clone();
             general_utils::start_load_config(&mut window.conf_state, Some(path));
         }
+
+        let can_save = can_reload && !window.conf_state.io_save_conf.is_loading();
         if ui
-            .add_enabled(can_reload, egui::Button::new("Save"))
+            .add_enabled(can_save, egui::Button::new(text.btn_action_conf_save()))
             .clicked()
         {
             let path = window.conf_path.clone();
             save_config(&mut window.conf_state, path);
+        }
+        if ui
+            .add_enabled(can_save, egui::Button::new(text.btn_action_conf_default()))
+            .clicked()
+        {
+            let default = MgmtConfig::default();
+            let loaded_conf = LoadedMgmtConfig {
+                path: Default::default(),
+                config: default,
+            };
+            window.conf_state.io_conf.set_success(loaded_conf);
         }
     });
 }
@@ -70,6 +89,10 @@ fn save_config(config_state: &mut ConfigurationState, conf_path: PathBuf) {
             move || config.save(&conf_path),
             String::from("Saving configuration"),
         );
+    } else {
+        config_state
+            .io_save_conf
+            .set_error(anyhow!("There is no loaded configuration to be saved"));
     }
 }
 
