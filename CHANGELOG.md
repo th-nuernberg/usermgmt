@@ -175,3 +175,5 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
   Before the maximum index selection was too big by one.
 - Fixed faulty determining inside os config folder space. 
   Example: before It searched under ~/.config instead of ~/.config/usermgmt
+
+[0.6.0]: https://github.com/th-nuernberg/usermgmt/releases/tag/v0.6.0 
