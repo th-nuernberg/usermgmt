@@ -1,0 +1,10 @@
+---
+source: usermgmt_lib/src/config/path_sources.rs
+expression: actual
+---
+- /home/foo
+- /home/bar
+- /home/.tool
+- /home/
+- /home/hello_~
+

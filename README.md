@@ -65,9 +65,20 @@ Replace `username` by the user you want to execute the commands with and make su
 
 **Note:** Use `sudo visudo` to change the sudoers file!
 
+## GUI 
+
+There is also a GUI frontend version of this tool.
+More information can be found under the following [README](./usermgmt_gui/README.md).
+
+You can start the GUI version via the following command:
+
+```bash
+cargo gui
+```
+
 ## Build and Install 🦀 
 
-You can build the `usermgmt` tool using Cargo:
+You can build the `usermgmt` CLI tool using Cargo:
 
 ```bash
 cargo build
@@ -77,28 +88,47 @@ The following examples show how you can run the program with Cargo:
 
 ```bash
 # Show available arguments
-cargo run -- --help
+cargo cli -- --help
 
 # Add a user
-cargo run -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
+cargo cli -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
 
 # Modify user
-cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
+cargo cli  -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 
 # Delete user
-cargo run -- delete teststaff123
+cargo cli -- delete teststaff123
 
 # List users in LDAP
-cargo run -- list --ldap-users
+cargo cli -- list --ldap-users
 
 # Run with different log-level
 # Available are: error, warn, info, debug, and trace. 
 # Error represents the highest-priority log messages and trace the lowest. 
 # The default is info
-RUST_LOG=warn cargo run -- delete teststaff123
+RUST_LOG=warn cargo cli -- delete teststaff123
 
 # Add user in LDAP only
-cargo run -- --ldap-only add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+cargo cli -- --ldap-only add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+```
+
+### Install directly from source
+
+To directly install from source, you must install the rust toolchain locally.
+It is recommended to install it via rustup.
+
+Install the CLI version
+
+```bash
+cd usermgmt
+cargo install --path '.' --force
+```
+
+Install the GUI version
+
+```bash
+cd usermgmt_gui
+cargo install --path '.' --force
 ```
 
 ### Create Debian Package
@@ -110,6 +140,8 @@ The package creation and installation steps are listed below:
 ```bash
 # Install cargo-deb
 cargo install cargo-deb
+# Go into project for the CLI tool.
+cd usermgmt
 # Create Debian package in Debian package target/debian/<project_name>_<version>_<arch>.deb
 cargo deb
 # Install package
@@ -130,7 +162,9 @@ The first found configuration file is loaded.
 The search is conducted in the following order: 
 
 - Under user specific configuration places according to the OS.
-  - Which folder on which OS is used, can be looked up [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html)
+  - Config location depending on the OS, can be looked up [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html)
+    The searched name of the folder is "usermgmt" 
+    within the config location.
   - In Addition under Linux: "~/.usermgmt" 
 - Under the system wide paths in respect to the OS
   - Under Linux: "/usr/usermgmt"
@@ -346,6 +380,14 @@ A list of modifiable values can be obtained via `usermgmt modify --help`.
 
 User can be deleted via `usermgmt delete <username>`.  
 
+## Project layout
+
+This project currently consists of 3 crates:
+
+- usermgmt: The CLI tool for simultaneous user management for LDAP and Slurm. (Location)[./usermgmt]
+- usermgmt_gui: The GUI frontend for simultaneous user management for LDAP and Slurm. (Location)[./usermgmt_gui]
+- usermgmt_lib: Shared code between the binaries, usermgmt and usermgmt_gui. (Location)[./usermgmt_lib]
+
 ## Tips and advanced usage
 
 ### Use SSH agent for ssh authentication 
@@ -452,4 +494,14 @@ tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 Development of this app can be done locally via a docker container set up. As moment of writing 
 the functionallity for LDAP and Slurm can be used via docker. Directory management does not work in
 docker. Read this [Readme](./docker/README.md) for how to set up local development via docker.
+
+## Changelogs
+
+The [changelog](CHANGELOG.md) 
+at the project root lists all changes for the usermgmt_lib and usermgmt crate.
+Changes to the GUI version are documented in its own [changelog](./usermgmt_gui/CHANGELOG.md)
+
+## License
+
+The whole project is licensed under [MIT](./LICENSE)
 

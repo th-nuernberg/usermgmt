@@ -37,8 +37,8 @@ jobs:
         run: cargo fmt --check --all
           
       - name: "Building project to see if it compiles and does not produce any warnings" 
-        run: cargo clippy -- -Dwarnings
+        run: cargo clippy --all -- -Dwarnings
         
       - name: "Checking if all unit tests pass" 
-        run: cargo test --verbose
+        run: cargo test --workspace --verbose
           

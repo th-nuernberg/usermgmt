@@ -1,0 +1,7 @@
+---
+source: usermgmt_lib/src/slurm/commmand_builder.rs
+expression: actual
+---
+- sacctmgr add User somebody Account=staff
+- "sacctmgr modify User somebody set DefaultQOS=student QOS=student,worker"
+

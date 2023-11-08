@@ -1,0 +1,78 @@
+# This file contains all settings which are set at the start of the GUI application 
+# and reloaded if content changes during development.
+
+box_label_font_size = 28.0
+max_height_listing_table = 200.0
+header_table_height =  20.0
+ldap_multi_field_sep = "| "
+title_font_size = 20.0
+
+[texts]
+conf_load_init_msg = "No configuration loaded yet"
+conf_load_success_msg = "Configuration successfully loaded"
+conf_load_err_msg = "Failed to load configuration."
+conf_load_loading_msg = "Loading configuration"
+conf_save_init_msg = "No configuration saved yet"
+conf_save_success_msg = "Configuration successfully saved"
+conf_save_err_msg = "Failed to save configuration"
+conf_save_loading_msg = "Saving configuration"
+conf_load_group = "Load Progress"
+conf_save_group = "Save Progress"
+ssh_cred = "SSH credentials"
+ldap_cred = "LDAP credentials"
+dir_conf_path = "Path to directory with the file called conf.toml"
+general_status = "Status"
+required = "Required"
+optional = "Optional"
+readonly_ldap_cred = "Ldap readonly credentials"
+status_list_slurm = "Status of listing Slurm users"
+status_list_ldap = "Status of listing LDAP users"
+username = "Username"
+password = "Password"
+firstname = "Firstname"
+lastname = "Lastname"
+mail = "Email"
+qos = "Quality of Services"
+default_qos = "Default Quality of Services"
+public_key = "Public Key"
+group = "User group"
+btn_action_conf_load = "Load"
+btn_action_conf_save = "Save"
+btn_action_conf_default = "Default"
+btn_action_add = "Add User"
+btn_action_remove = "Remove User"
+btn_action_modify = "Modify User"
+btn_list_ldap_users = "List LDAP Users"
+btn_list_slurm_users = "List Slurm Users"
+btn_list_remove = "Remove"
+btn_new_item = "Add new Item"
+listing_slurm_init = "No slurm user listed yet"
+listing_slurm_loading = "Fetching slurm users"
+listing_slurm_success = "Fetched Slurm users successfully"
+listing_slurm_failure = "Failed to fetch Slurm users"
+listing_ldap_init = "No LDAP user listed yet"
+listing_ldap_loading = "Fetching LDAP users"
+listing_ldap_success = "Fetched LDAP users successfully"
+listing_ldap_failure = "Failed to fetch LDAP users"
+modify_init = "No user modified yet:"
+modify_loading = "Modifying user :"
+modify_success = "Modified user successfully:"
+modify_failure = "Failed to modify user :"
+mode_main_title = "On which System"
+mode_ldap = "LDAP"
+mode_slurm = "Slurm"
+mode_directory = "Directory"
+failed_parsing_slurm = "Could not parse slurm users to a table"
+ldap_cred_missing = "LDAP credentials are missing"
+ssh_cred_missing = "Ssh credentials are missing"
+
+[colors]
+# [<red>, <green>, <blue>, <alpha>] all values 0-255.
+# Red
+err_msg = [255, 0, 0, 0]
+# Blue
+loading_msg = [0, 0, 255, 0]
+# Green
+success_msg = [0, 255, 0, 0]
+# Gray
+init_msg = [160, 160, 160, 0]

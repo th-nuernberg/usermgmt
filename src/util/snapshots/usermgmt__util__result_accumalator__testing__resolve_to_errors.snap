@@ -1,8 +1,0 @@
----
-source: src/util/result_accumalator.rs
-expression: result.err().unwrap()
----
-Error {
-    context: "false\nadded",
-    source: "Should not resolve to an error.",
-}

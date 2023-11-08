@@ -1,7 +1,0 @@
----
-source: src/slurm/commmand_builder.rs
-expression: actual
----
-[
-    "sacctmgr modify User somebody set QOS=student,staff",
-]

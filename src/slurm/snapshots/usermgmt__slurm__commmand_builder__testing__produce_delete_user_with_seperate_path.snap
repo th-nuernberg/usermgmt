@@ -1,6 +1,0 @@
----
-source: src/slurm/commmand_builder.rs
-expression: actual
----
-- some_path/sacctmgr delete User somebody
-

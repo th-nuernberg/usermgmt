@@ -1,0 +1,7 @@
+---
+source: usermgmt_lib/src/entity.rs
+expression: actual
+---
+Err(
+    "Given qos not_valid is none of the valid qoses",
+)

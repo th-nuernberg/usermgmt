@@ -1,0 +1,7 @@
+---
+source: usermgmt_lib/src/ldap/testing.rs
+expression: actual
+---
+qos=basic|default,name=Mr. X
+qos=,name=example
+qos=default,name=example_man

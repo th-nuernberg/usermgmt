@@ -1,0 +1,7 @@
+---
+source: usermgmt_lib/src/slurm/commmand_builder.rs
+expression: actual
+---
+[
+    "sacctmgr modify User somebody set DefaultQOS=basic QOS=basic,interactive",
+]

@@ -1,0 +1,12 @@
+---
+source: usermgmt_lib/src/ldap/testing.rs
+expression: actual
+---
++-----------------+---------+
+| qos             | name    |
++=================+=========+
+| basic | default | Mr. X   |
++-----------------+---------+
+|                 | example |
++-----------------+---------+
+

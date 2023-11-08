@@ -1,0 +1,39 @@
+[package]
+name = "usermgmt"
+version = "0.6.0"
+edition = "2021"
+license-file = "LICENSE"
+description = "Simultaneous Slurm and LDAP user management CLI Tool"
+readme = "README.md"
+rust-version = "1.70.0"
+
+[dependencies]
+clap = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+once_cell = { workspace = true }
+usermgmt_lib = { path = "../usermgmt_lib" }
+rpassword = "7.2.0"
+
+[package.metadata.deb]
+maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"
+copyright = "2023, Technische Hochschule Nürnberg Georg Simon Ohm"
+license-file = ["LICENSE", "4"]
+extended-description = """\
+A simple commandline tool for \
+managing Slurm and LDAP users simultaneously."""
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+  [
+    "target/release/usermgmt",
+    "usr/bin/",
+    "755",
+  ],
+  [
+    "README.md",
+    "usr/share/doc/usermgmt/README",
+    "644",
+  ],
+]
