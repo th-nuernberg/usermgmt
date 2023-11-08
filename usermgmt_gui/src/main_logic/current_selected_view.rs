@@ -12,7 +12,7 @@ pub enum CurrentSelectedView {
     Listing,
     Adding,
     Removing,
-    Modifing,
+    Modifying,
     About,
 }
 

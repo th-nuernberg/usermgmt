@@ -1,6 +1,6 @@
 [workspace]
 members = ["usermgmt", "usermgmt_lib", "usermgmt_gui"]
-default-members = ["usermgmt"]
+default-members = ["usermgmt", "usermgmt_gui"]
 resolver = "2"
 
 [workspace.dependencies]

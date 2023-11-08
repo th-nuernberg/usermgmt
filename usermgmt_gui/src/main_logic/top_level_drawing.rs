@@ -16,7 +16,7 @@ pub fn draw_selected_view(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         CurrentSelectedView::Listing => draw_listing_of_users::draw(window, ui),
         CurrentSelectedView::Adding => draw_add_state::draw(ui, window),
         CurrentSelectedView::Removing => draw_delete_state::draw(ui, window),
-        CurrentSelectedView::Modifing => modify_state::draw(ui, window),
+        CurrentSelectedView::Modifying => modify_state::draw(ui, window),
         CurrentSelectedView::About => about::draw(window, ui),
     }
 }

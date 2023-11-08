@@ -88,28 +88,28 @@ The following examples show how you can run the program with Cargo:
 
 ```bash
 # Show available arguments
-cargo run -- --help
+cargo cli -- --help
 
 # Add a user
-cargo run -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
+cargo cli -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
 
 # Modify user
-cargo run -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
+cargo cli  -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 
 # Delete user
-cargo run -- delete teststaff123
+cargo cli -- delete teststaff123
 
 # List users in LDAP
-cargo run -- list --ldap-users
+cargo cli -- list --ldap-users
 
 # Run with different log-level
 # Available are: error, warn, info, debug, and trace. 
 # Error represents the highest-priority log messages and trace the lowest. 
 # The default is info
-RUST_LOG=warn cargo run -- delete teststaff123
+RUST_LOG=warn cargo cli -- delete teststaff123
 
 # Add user in LDAP only
-cargo run -- --ldap-only add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+cargo cli -- --ldap-only add teststaff123 --group staff --firstname Martina --lastname Musterfrau
 ```
 
 ### Install directly from source

@@ -3321,7 +3321,7 @@ dependencies = [
 
 [[package]]
 name = "usermgmt"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "clap",
  "env_logger",
@@ -3352,7 +3352,7 @@ dependencies = [
 
 [[package]]
 name = "usermgmt_lib"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "clap",

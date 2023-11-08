@@ -98,7 +98,7 @@ where
                     .with_context(|| {
                         format!(
                             "Could not connect over tcp to endpoint: {} over port: {}",
-                            self.endpoint, self.endpoint
+                            self.endpoint, self.port
                         )
                     })?;
             sess.set_tcp_stream(tcp);
