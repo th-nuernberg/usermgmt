@@ -25,10 +25,16 @@ pub struct Settings {
     pub ldap_multi_field_sep: ReadonlyText,
     #[getset(get_copy = "pub")]
     pub box_label_font_size: f32,
+    #[getset(get_copy = "pub")]
+    pub tooltip_size: f32,
+    #[getset(get = "pub")]
+    pub tooltip_symbol: String,
     #[getset(get = "pub")]
     colors: Colors,
     #[getset(get = "pub")]
     texts: Texts,
+    #[getset(get = "pub")]
+    tooltiptexts: TextTooltip,
 }
 
 #[derive(Debug, Deserialize, Default, Getters, CopyGetters)]
@@ -106,11 +112,21 @@ pub struct Texts {
     ldap_cred_missing: ReadonlyText,
     ssh_cred_missing: ReadonlyText,
 }
+#[derive(Debug, Deserialize, Default, Getters)]
+#[getset(get = "pub")]
+pub struct TextTooltip {
+    ldap_creds: String,
+    ldap_readonly_creds: String,
+    ssh_creds: String,
+    list_ldap_btn: String,
+    list_ssh_btn: String,
+}
 
 #[derive(Debug, Deserialize, Default, CopyGetters)]
 #[getset(get_copy = "pub")]
 /// Colors of certain elements in the GUI.
 pub struct Colors {
+    tool_tip: Color32,
     err_msg: Color32,
     init_msg: Color32,
     success_msg: Color32,

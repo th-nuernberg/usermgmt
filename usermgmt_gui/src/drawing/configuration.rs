@@ -5,9 +5,10 @@ pub type CacheForConfFiels = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
 use crate::{current_selected_view::ConfigurationState, prelude::*};
 use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
 
+use super::draw_utils::{GroupDrawing, TextFieldEntry};
+
 pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let mut can_reload = true;
-    // TODO: use "draw_utils::draw_status_msg()" instead
     let settings = &window.settings;
     let texts = settings.texts();
     draw_utils::draw_status_msg_w_label(
@@ -106,22 +107,70 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                 for next in fields {
                     let mut draw_sep = true;
                     match next {
-                        ConfiField::SingleOpt { val, label } => {
-                            draw_utils::no_password_opt_enty_field(ui, &label, val);
+                        ConfiField::SingleOpt {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            draw_utils::entry_field(
+                                ui,
+                                settings,
+                                &mut TextFieldEntry::new_opt(&label, val).tool_tip(tool_tip),
+                            );
                         }
-                        ConfiField::Single { val, label } => {
-                            draw_utils::no_password_enty_field(ui, &label, val, |_| {});
+                        ConfiField::Single {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            draw_utils::entry_field(
+                                ui,
+                                settings,
+                                &mut TextFieldEntry::new(&label, val).tool_tip(tool_tip),
+                            );
                         }
-                        ConfiField::List { val, label } => {
-                            draw_utils::list_view(ui, settings, val, &label);
+                        ConfiField::List {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            draw_utils::list_view(
+                                ui,
+                                settings,
+                                val,
+                                &GroupDrawing::new(&label).tooltip(tool_tip),
+                            );
                             draw_sep = false;
                         }
-                        ConfiField::Checkbox { val, label } => _ = ui.checkbox(val, &*label),
-                        ConfiField::Number { val, label } => {
-                            draw_utils::whole_pos_number_fields(ui, &label, val);
+                        ConfiField::Checkbox {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            ui.horizontal(|ui| {
+                                _ = ui.checkbox(val, &*label);
+                                if let Some(tool_tip) = tool_tip {
+                                    draw_utils::tooltip_widget(ui, settings, tool_tip);
+                                }
+                            });
                         }
-                        ConfiField::NegNumber { val, label } => {
-                            draw_utils::whole_neg_number_fields(ui, &label, val);
+                        ConfiField::Number {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            draw_utils::whole_pos_number_fields(
+                                ui, settings, &label, val, tool_tip,
+                            );
+                        }
+                        ConfiField::NegNumber {
+                            val,
+                            label,
+                            tool_tip,
+                        } => {
+                            draw_utils::whole_neg_number_fields(
+                                ui, settings, &label, val, tool_tip,
+                            );
                         }
                     }
 
@@ -154,23 +203,38 @@ fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
 
 fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField> {
     macro_rules! create_conf_field {
+        ($field:ident, $too_tip:literal) => {
+            (
+                &mut config.$field,
+                snake_to_label(stringify!($field), map.clone()),
+                Some($too_tip),
+            )
+                .into()
+        };
         ($field:ident) => {
             (
                 &mut config.$field,
                 snake_to_label(stringify!($field), map.clone()),
+                None,
             )
                 .into()
         };
     }
     let mut fields: Vec<ConfiField> = vec![
-        create_conf_field!(student_default_qos),
+        create_conf_field!(
+            student_default_qos,
+            "Which default Quality of service are used for a student"
+        ),
         create_conf_field!(staff_default_qos),
         create_conf_field!(default_ssh_user),
         create_conf_field!(head_node),
         create_conf_field!(nfs_host),
         create_conf_field!(nfs_root_dir),
         create_conf_field!(valid_qos),
-        create_conf_field!(student_qos),
+        create_conf_field!(
+            student_qos,
+            "Which quality of services are applied for a student by default."
+        ),
         create_conf_field!(staff_qos),
         create_conf_field!(valid_slurm_groups),
         create_conf_field!(compute_nodes),
@@ -187,9 +251,12 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
         create_conf_field!(include_slurm),
         create_conf_field!(include_dir_mgmt),
         create_conf_field!(use_homedir_helper),
-        create_conf_field!(run_slurm_remote),
+        create_conf_field!(
+            run_slurm_remote,
+            "Run slurm command on remote nodes instead on your own local computer."
+        ),
         create_conf_field!(ssh_agent),
-        create_conf_field!(ssh_port),
+        create_conf_field!(ssh_port, "Port used for ssh connection"),
         create_conf_field!(compute_node_root_dir),
         create_conf_field!(filesystem),
         create_conf_field!(home_filesystem),
@@ -202,7 +269,10 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
         create_conf_field!(quota_home_hardlimit),
         create_conf_field!(login_shell),
         create_conf_field!(student_gid),
-        create_conf_field!(staff_gid),
+        create_conf_field!(
+            staff_gid,
+            "Group ID of all users which belong to the staff."
+        ),
         create_conf_field!(faculty_gid),
         create_conf_field!(sacctmgr_path),
     ];
@@ -218,26 +288,32 @@ enum ConfiField<'a> {
     SingleOpt {
         val: &'a mut Option<String>,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
     Single {
         val: &'a mut String,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
     List {
         val: &'a mut Vec<String>,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
     Checkbox {
         val: &'a mut bool,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
     Number {
         val: &'a mut u32,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
     NegNumber {
         val: &'a mut i32,
         label: LabelTyp,
+        tool_tip: Option<&'a str>,
     },
 }
 
@@ -271,6 +347,8 @@ impl PartialOrd for ConfiField<'_> {
     }
 }
 
+type ToolTippLabel<'a> = Option<&'a str>;
+
 /// Generates conversion from a rust value into ConfiField which
 /// is used to render a value in egui.
 /// # Usage
@@ -281,9 +359,13 @@ impl PartialOrd for ConfiField<'_> {
 /// ```
 macro_rules! impl_from_conf_field {
     ($type:ty, $variant:ident) => {
-        impl<'a> From<(&'a mut $type, LabelTyp)> for ConfiField<'a> {
-            fn from((val, label): (&'a mut $type, LabelTyp)) -> Self {
-                Self::$variant { val, label }
+        impl<'a> From<(&'a mut $type, LabelTyp, ToolTippLabel<'a>)> for ConfiField<'a> {
+            fn from((val, label, tool_tip): (&'a mut $type, LabelTyp, ToolTippLabel<'a>)) -> Self {
+                Self::$variant {
+                    val,
+                    label,
+                    tool_tip,
+                }
             }
         }
     };

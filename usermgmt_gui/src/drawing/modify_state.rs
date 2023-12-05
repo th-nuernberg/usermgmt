@@ -1,6 +1,8 @@
 use crate::{
     current_selected_view::ModifyState, general_utils::PreparationBeforIoTask, prelude::*,
 };
+
+use super::draw_utils::{GroupDrawing, TextFieldEntry};
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     draw_typing_fields(ui, &window.settings, &mut window.modify_state);
     draw_utils::draw_credentails(ui, window, false);
@@ -55,36 +57,45 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
 
 fn draw_typing_fields(ui: &mut egui::Ui, settings: &Settings, modify_state: &mut ModifyState) {
     let texts = settings.texts();
-    draw_utils::draw_box_group(ui, texts.required(), |ui| {
-        draw_utils::no_password_enty_field(
+    draw_utils::draw_box_group(ui, settings, &GroupDrawing::new(texts.required()), |ui| {
+        draw_utils::entry_field(
             ui,
-            texts.username(),
-            &mut modify_state.username,
-            |_| {},
+            settings,
+            &mut TextFieldEntry::new(texts.username(), &mut modify_state.username),
         );
     });
     ui.separator();
-    draw_utils::draw_box_group(ui, texts.optional(), |ui| {
-        draw_utils::no_password_enty_field(
+    draw_utils::draw_box_group(ui, settings, &GroupDrawing::new(texts.optional()), |ui| {
+        draw_utils::entry_field(
             ui,
-            texts.firstname(),
-            &mut modify_state.firstname,
-            |_| {},
+            settings,
+            &mut TextFieldEntry::new(texts.firstname(), &mut modify_state.firstname),
         );
-        draw_utils::no_password_enty_field(
+        draw_utils::entry_field(
             ui,
-            texts.lastname(),
-            &mut modify_state.lastname,
-            |_| {},
+            settings,
+            &mut TextFieldEntry::new(texts.lastname(), &mut modify_state.lastname),
         );
-        draw_utils::no_password_enty_field(ui, texts.mail(), &mut modify_state.mail, |_| {});
-        draw_utils::no_password_enty_field(ui, texts.group(), &mut modify_state.group, |_| {});
-        draw_utils::no_password_enty_field(
+        draw_utils::entry_field(
             ui,
-            texts.default_qos(),
-            &mut modify_state.default_qos,
-            |_| {},
+            settings,
+            &mut TextFieldEntry::new(texts.mail(), &mut modify_state.mail),
         );
-        draw_utils::list_view(ui, settings, &mut modify_state.qos, texts.qos());
+        draw_utils::entry_field(
+            ui,
+            settings,
+            &mut TextFieldEntry::new(texts.group(), &mut modify_state.group),
+        );
+        draw_utils::entry_field(
+            ui,
+            settings,
+            &mut TextFieldEntry::new(texts.default_qos(), &mut modify_state.default_qos),
+        );
+        draw_utils::list_view(
+            ui,
+            settings,
+            &mut modify_state.qos,
+            &GroupDrawing::new(texts.qos()),
+        );
     });
 }

@@ -6,6 +6,15 @@ max_height_listing_table = 200.0
 header_table_height =  20.0
 ldap_multi_field_sep = "| "
 title_font_size = 20.0
+tooltip_size = 20.0
+tooltip_symbol = "?"
+
+[tooltiptexts]
+ldap_creds = "Credentials for logging in to manage of LDAP users"
+ldap_readonly_creds = "Credentials for logging in to perform readonly operation on LDAP users"
+ssh_creds = "Credentials for logging in to manage SLURM users"
+list_ldap_btn = "List users saved within LDAP database"
+list_ssh_btn = "List users saved within Slurm database"
 
 [texts]
 conf_load_init_msg = "No configuration loaded yet"
@@ -76,3 +85,5 @@ loading_msg = [0, 0, 255, 0]
 success_msg = [0, 255, 0, 0]
 # Gray
 init_msg = [160, 160, 160, 0]
+# Light Blue
+tool_tip = [44, 194, 200, 255]

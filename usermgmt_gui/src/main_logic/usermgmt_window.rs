@@ -3,6 +3,7 @@ use crate::prelude::*;
 use super::query_io_tasks;
 use super::top_level_drawing;
 
+use drawing::draw_utils::GroupDrawing;
 use eframe::egui::RichText;
 use eframe::epaint::Color32;
 use std::convert::AsRef;
@@ -120,7 +121,19 @@ impl eframe::App for UsermgmtWindow {
             query_io_tasks::query(self);
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    draw_utils::draw_box_group(ui, "Actions", |ui| ui_action_menu(self, ui))
+                    draw_utils::draw_box_group(
+                        ui,
+                        &self.settings,
+                        &GroupDrawing::new("Actions"),
+                        |ui| {
+                            ui_action_menu(
+                                &self.settings,
+                                &mut self.conf_state,
+                                &mut self.selected_view,
+                                ui,
+                            )
+                        },
+                    )
                 });
                 ui.vertical(|ui| top_level_drawing::draw_selected_view(self, ui));
             });
@@ -131,22 +144,26 @@ impl eframe::App for UsermgmtWindow {
 /// Draw menu to the left of the current view.
 /// Menu consists of buttons. Every button represents a view.
 /// Clicking on one button changes to its respective view.
-fn ui_action_menu(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
+fn ui_action_menu(
+    settings: &Settings,
+    conf_state: &mut ConfigurationState,
+    selected_view: &mut CurrentSelectedView,
+    ui: &mut egui::Ui,
+) {
     for next in CurrentSelectedView::iter() {
-        let button_color = if next == CurrentSelectedView::Configuration
-            && !window.conf_state.io_conf.is_there()
-        {
-            window.settings.colors().err_msg()
-        } else {
-            Color32::WHITE
-        };
+        let button_color =
+            if next == CurrentSelectedView::Configuration && !conf_state.io_conf.is_there() {
+                settings.colors().err_msg()
+            } else {
+                Color32::WHITE
+            };
         if ui
             .button(RichText::new(next.as_ref()).color(button_color))
             .clicked()
         {
-            let previous_view = window.selected_view();
+            let previous_view = *selected_view;
             info!("Changed from ({:?}) to ({:?}) view", previous_view, next);
-            window.set_selected_view(next);
+            *selected_view = next;
         }
     }
 }
