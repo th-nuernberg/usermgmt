@@ -103,7 +103,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
             .min_scrolled_height(400.0)
             .show(ui, |ui| {
                 let map = window.gui_field_cache.clone();
-                let fields = construct_fields(config, map);
+                let fields = construct_fields(settings, config, map);
                 for next in fields {
                     let mut draw_sep = true;
                     match next {
@@ -201,13 +201,17 @@ fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
     }))
 }
 
-fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField> {
+fn construct_fields<'a>(
+    settings: &'a Settings,
+    config: &'a mut MgmtConfig,
+    map: CacheForConfFiels,
+) -> Vec<ConfiField<'a>> {
     macro_rules! create_conf_field {
-        ($field:ident, $too_tip:literal) => {
+        ($field:ident, $too_tip:expr) => {
             (
                 &mut config.$field,
                 snake_to_label(stringify!($field), map.clone()),
-                Some($too_tip),
+                Some($too_tip.as_ref()),
             )
                 .into()
         };
@@ -220,61 +224,72 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
                 .into()
         };
     }
+    let tool_tip_text = settings.tooltiptexts();
+
     let mut fields: Vec<ConfiField> = vec![
+        create_conf_field!(student_default_qos, tool_tip_text.conf_student_qos()),
+        create_conf_field!(staff_default_qos, tool_tip_text.conf_staff_default_qos()),
+        create_conf_field!(default_ssh_user, tool_tip_text.conf_default_ssh_user()),
+        create_conf_field!(head_node, tool_tip_text.conf_head_node()),
+        create_conf_field!(nfs_host, tool_tip_text.conf_nfs_host()),
+        create_conf_field!(nfs_root_dir, tool_tip_text.conf_nfs_root_dir()),
+        create_conf_field!(valid_qos, tool_tip_text.conf_valid_qos()),
+        create_conf_field!(student_qos, tool_tip_text.conf_student_qos()),
+        create_conf_field!(staff_qos, tool_tip_text.conf_staff_qos()),
+        create_conf_field!(valid_slurm_groups, tool_tip_text.conf_valid_slurm_groups()),
+        create_conf_field!(compute_nodes, tool_tip_text.conf_compute_nodes()),
         create_conf_field!(
-            student_default_qos,
-            "Which default Quality of service are used for a student"
+            ldap_domain_components,
+            tool_tip_text.conf_ldap_domain_components()
         ),
-        create_conf_field!(staff_default_qos),
-        create_conf_field!(default_ssh_user),
-        create_conf_field!(head_node),
-        create_conf_field!(nfs_host),
-        create_conf_field!(nfs_root_dir),
-        create_conf_field!(valid_qos),
+        create_conf_field!(ldap_org_unit, tool_tip_text.conf_ldap_org_unit()),
+        create_conf_field!(ldap_bind_org_unit, tool_tip_text.conf_ldap_bind_org_unit()),
+        create_conf_field!(ldap_bind_prefix, tool_tip_text.conf_ldap_bind_prefix()),
         create_conf_field!(
-            student_qos,
-            "Which quality of services are applied for a student by default."
+            ldap_readonly_user_prefix,
+            tool_tip_text.conf_ldap_readonly_user_prefix()
         ),
-        create_conf_field!(staff_qos),
-        create_conf_field!(valid_slurm_groups),
-        create_conf_field!(compute_nodes),
-        create_conf_field!(ldap_domain_components),
-        create_conf_field!(ldap_org_unit),
-        create_conf_field!(ldap_bind_org_unit),
-        create_conf_field!(ldap_bind_prefix),
-        create_conf_field!(ldap_readonly_user_prefix),
-        create_conf_field!(ldap_readonly_bind),
-        create_conf_field!(ldap_server),
-        create_conf_field!(ldap_readonly_user),
-        create_conf_field!(ldap_readonly_pw),
-        create_conf_field!(include_ldap),
-        create_conf_field!(include_slurm),
-        create_conf_field!(include_dir_mgmt),
-        create_conf_field!(use_homedir_helper),
+        create_conf_field!(ldap_readonly_bind, tool_tip_text.conf_ldap_readonly_bind()),
+        create_conf_field!(ldap_server, tool_tip_text.conf_ldap_server()),
+        create_conf_field!(ldap_readonly_user, tool_tip_text.conf_ldap_readonly_user()),
+        create_conf_field!(ldap_readonly_pw, tool_tip_text.conf_ldap_readonly_pw()),
+        create_conf_field!(include_ldap, tool_tip_text.conf_include_ldap()),
+        create_conf_field!(include_slurm, tool_tip_text.conf_include_slurm()),
+        create_conf_field!(include_dir_mgmt, tool_tip_text.conf_include_dir_mgmt()),
+        create_conf_field!(use_homedir_helper, tool_tip_text.conf_use_homedir_helper()),
+        create_conf_field!(run_slurm_remote, tool_tip_text.conf_run_slurm_remote()),
+        create_conf_field!(ssh_agent, tool_tip_text.conf_ssh_agent()),
+        create_conf_field!(ssh_port, tool_tip_text.conf_ssh_port()),
         create_conf_field!(
-            run_slurm_remote,
-            "Run slurm command on remote nodes instead on your own local computer."
+            compute_node_root_dir,
+            tool_tip_text.conf_compute_node_root_dir()
         ),
-        create_conf_field!(ssh_agent),
-        create_conf_field!(ssh_port, "Port used for ssh connection"),
-        create_conf_field!(compute_node_root_dir),
-        create_conf_field!(filesystem),
-        create_conf_field!(home_filesystem),
-        create_conf_field!(nfs_filesystem),
-        create_conf_field!(quota_softlimit),
-        create_conf_field!(quota_hardlimit),
-        create_conf_field!(quota_nfs_softlimit),
-        create_conf_field!(quota_nfs_hardlimit),
-        create_conf_field!(quota_home_softlimit),
-        create_conf_field!(quota_home_hardlimit),
-        create_conf_field!(login_shell),
-        create_conf_field!(student_gid),
+        create_conf_field!(filesystem, tool_tip_text.conf_filesystem()),
+        create_conf_field!(home_filesystem, tool_tip_text.conf_home_filesystem()),
+        create_conf_field!(nfs_filesystem, tool_tip_text.conf_nfs_filesystem()),
+        create_conf_field!(quota_softlimit, tool_tip_text.conf_quota_softlimit()),
+        create_conf_field!(quota_hardlimit, tool_tip_text.conf_quota_nfs_hardlimit()),
         create_conf_field!(
-            staff_gid,
-            "Group ID of all users which belong to the staff."
+            quota_nfs_softlimit,
+            tool_tip_text.conf_quota_nfs_softlimit()
         ),
-        create_conf_field!(faculty_gid),
-        create_conf_field!(sacctmgr_path),
+        create_conf_field!(
+            quota_nfs_hardlimit,
+            tool_tip_text.conf_quota_nfs_hardlimit()
+        ),
+        create_conf_field!(
+            quota_home_softlimit,
+            tool_tip_text.conf_quota_home_softlimit()
+        ),
+        create_conf_field!(
+            quota_home_hardlimit,
+            tool_tip_text.conf_quota_home_hardlimit()
+        ),
+        create_conf_field!(login_shell, tool_tip_text.conf_login_shell()),
+        create_conf_field!(student_gid, tool_tip_text.conf_student_gid()),
+        create_conf_field!(staff_gid, tool_tip_text.conf_staff_gid()),
+        create_conf_field!(faculty_gid, tool_tip_text.conf_faculty_gid()),
+        create_conf_field!(sacctmgr_path, tool_tip_text.conf_sacctmgr_path()),
     ];
     fields.sort();
     fields

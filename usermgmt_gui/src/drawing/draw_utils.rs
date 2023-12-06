@@ -77,7 +77,7 @@ impl<'a, 'b> TextFieldEntry<'a, 'b> {
             tool_tip: too_tip,
         }
     }
-    pub fn with_tool_tip(self, tooltip: &'b str) -> Self {
+    pub fn with_tooltip(self, tooltip: &'b str) -> Self {
         Self {
             label: self.label,
             content: self.content,

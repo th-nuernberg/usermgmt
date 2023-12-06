@@ -57,11 +57,13 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
 
 fn draw_typing_fields(ui: &mut egui::Ui, settings: &Settings, modify_state: &mut ModifyState) {
     let texts = settings.texts();
+    let tooltips = settings.tooltiptexts();
     draw_utils::draw_box_group(ui, settings, &GroupDrawing::new(texts.required()), |ui| {
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.username(), &mut modify_state.username),
+            &mut TextFieldEntry::new(texts.username(), &mut modify_state.username)
+                .with_tooltip(tooltips.username()),
         );
     });
     ui.separator();
@@ -69,33 +71,38 @@ fn draw_typing_fields(ui: &mut egui::Ui, settings: &Settings, modify_state: &mut
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.firstname(), &mut modify_state.firstname),
+            &mut TextFieldEntry::new(texts.firstname(), &mut modify_state.firstname)
+                .with_tooltip(tooltips.firstname()),
         );
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.lastname(), &mut modify_state.lastname),
+            &mut TextFieldEntry::new(texts.lastname(), &mut modify_state.lastname)
+                .with_tooltip(tooltips.lastname()),
         );
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.mail(), &mut modify_state.mail),
+            &mut TextFieldEntry::new(texts.mail(), &mut modify_state.mail)
+                .with_tooltip(tooltips.email()),
         );
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.group(), &mut modify_state.group),
+            &mut TextFieldEntry::new(texts.group(), &mut modify_state.group)
+                .with_tooltip(tooltips.group()),
         );
         draw_utils::entry_field(
             ui,
             settings,
-            &mut TextFieldEntry::new(texts.default_qos(), &mut modify_state.default_qos),
+            &mut TextFieldEntry::new(texts.default_qos(), &mut modify_state.default_qos)
+                .with_tooltip(tooltips.default_qos()),
         );
         draw_utils::list_view(
             ui,
             settings,
             &mut modify_state.qos,
-            &GroupDrawing::new(texts.qos()),
+            &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
         );
     });
 }

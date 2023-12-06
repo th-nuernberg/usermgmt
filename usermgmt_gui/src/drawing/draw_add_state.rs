@@ -9,49 +9,57 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         let texts = window.settings.texts();
         let adding_fields = &mut window.adding_state;
         let settings = &window.settings;
+        let tooltips = settings.tooltiptexts();
         draw_box_group(ui, settings, &GroupDrawing::new(texts.required()), |ui| {
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.username(), &mut adding_fields.username),
+                &mut TextFieldEntry::new(texts.username(), &mut adding_fields.username)
+                    .with_tooltip(tooltips.username()),
             );
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.firstname(), &mut adding_fields.firstname),
+                &mut TextFieldEntry::new(texts.firstname(), &mut adding_fields.firstname)
+                    .with_tooltip(tooltips.firstname()),
             );
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.lastname(), &mut adding_fields.lastname),
+                &mut TextFieldEntry::new(texts.lastname(), &mut adding_fields.lastname)
+                    .with_tooltip(tooltips.lastname()),
             );
         });
         draw_box_group(ui, settings, &GroupDrawing::new(texts.optional()), |ui| {
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.mail(), &mut adding_fields.mail),
+                &mut TextFieldEntry::new(texts.mail(), &mut adding_fields.mail)
+                    .with_tooltip(tooltips.email()),
             );
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.default_qos(), &mut adding_fields.default_qos),
+                &mut TextFieldEntry::new(texts.default_qos(), &mut adding_fields.default_qos)
+                    .with_tooltip(tooltips.default_qos()),
             );
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.public_key(), &mut adding_fields.publickey),
+                &mut TextFieldEntry::new(texts.public_key(), &mut adding_fields.publickey)
+                    .with_tooltip(tooltips.pub_key()),
             );
             draw_utils::entry_field(
                 ui,
                 settings,
-                &mut TextFieldEntry::new(texts.group(), &mut adding_fields.group),
+                &mut TextFieldEntry::new(texts.group(), &mut adding_fields.group)
+                    .with_tooltip(tooltips.group()),
             );
             draw_utils::list_view(
                 ui,
                 &window.settings,
                 &mut adding_fields.qos,
-                &GroupDrawing::new(texts.qos()),
+                &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
             );
         });
     }

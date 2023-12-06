@@ -5,11 +5,14 @@ use super::draw_utils::{GroupDrawing, TextFieldEntry};
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     let allow_deletion = {
         let remove_state = &mut window.remove_state;
-        draw_utils::draw_box_group(ui, &window.settings, &GroupDrawing::new("Required"), |ui| {
+        let settings = &window.settings;
+        let tooltips = settings.tooltiptexts();
+        draw_utils::draw_box_group(ui, settings, &GroupDrawing::new("Required"), |ui| {
             draw_utils::entry_field(
                 ui,
                 &window.settings,
-                &mut TextFieldEntry::new("Username", &mut remove_state.username),
+                &mut TextFieldEntry::new("Username", &mut remove_state.username)
+                    .with_tooltip(tooltips.username()),
             );
         });
         !remove_state.username.trim().is_empty()
