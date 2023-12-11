@@ -6,9 +6,9 @@ It is meant to be used for local development.
 While it response to the app as a ldap and slurm endpoint, the set up 
 is not designed for production ready security !
 
-**Do not use this [ssh_host_rsa_key](./ssh_host_rsa_key) in any production environment or for your own private usage !**
+**Do not use this [ssh_host_rsa_key](./slurm-docker-cluster/ssh_host_rsa_key) in any production environment or for your own private usage !**
 
-The private [ssh_host_rsa_key](./ssh_host_rsa_key) is located for convenience in this repository.
+The private [ssh_host_rsa_key](./slurm-docker-cluster/ssh_host_rsa_key) is located for convenience in this repository.
 It makes sure that the public key fingerprint is always the same for ssh client.
 
 ## Limitations
@@ -99,3 +99,5 @@ It was not included as a sub module because several files needed to modified.
 
 One could make this folder  a sub module pointing to our own public fork. This fork should be in the control
 of university th-nürnberg however.
+
+[ssh_host_rsa_key]: ./ssh_host_rsa_key

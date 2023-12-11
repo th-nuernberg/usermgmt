@@ -77,7 +77,7 @@ impl FromStr for Group {
             "Staff" | "staff" => Ok(Group::Staff),
             "Student" | "student" => Ok(Group::Student),
             "Faculty" | "faculty" => Ok(Group::Student),
-            _ => Err(anyhow!("given group name ({}) is valid", input)),
+            _ => Err(anyhow!("given group name ({}) is not valid", input)),
         }
     }
 }

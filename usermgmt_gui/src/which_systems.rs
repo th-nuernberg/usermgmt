@@ -1,4 +1,5 @@
 use crate::{current_selected_view::SshConnectionState, prelude::*};
+use drawing::draw_utils::GroupDrawing;
 use usermgmt_lib::{cli::OnWhichSystem, config::MgmtConfig};
 
 use crate::drawing::draw_utils;
@@ -50,13 +51,18 @@ pub fn draw_which_system(
     supports_dir: bool,
 ) {
     let text = settings.texts();
-    draw_utils::draw_box_group(ui, text.mode_main_title(), |ui| {
-        ui.checkbox(&mut state.ldap, text.mode_ldap());
-        ui.checkbox(&mut state.slurm, text.mode_slurm());
-        if supports_dir {
-            ui.checkbox(&mut state.dir, text.mode_directory());
-        }
-    });
+    draw_utils::draw_box_group(
+        ui,
+        settings,
+        &GroupDrawing::new(text.mode_main_title()),
+        |ui| {
+            ui.checkbox(&mut state.ldap, text.mode_ldap());
+            ui.checkbox(&mut state.slurm, text.mode_slurm());
+            if supports_dir {
+                ui.checkbox(&mut state.dir, text.mode_directory());
+            }
+        },
+    );
 }
 
 impl Default for WhichSystem {
