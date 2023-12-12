@@ -1,6 +1,9 @@
+use std::path::Path;
+
 pub trait ConnectionState {
     fn username(&self) -> Option<&str>;
     fn password(&self) -> Option<&str>;
+    fn ssh_key_pair(&self) -> Option<&Path>;
 
     fn all_fields_filled(&self) -> Option<(&str, &str)> {
         match (self.username(), self.password()) {

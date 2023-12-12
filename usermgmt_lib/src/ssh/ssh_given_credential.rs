@@ -1,24 +1,29 @@
 use std::sync::Arc;
 
-use super::SshCredentials;
+use super::{SshCredentials, SshKeyPair};
 
 #[derive(Debug, Clone)]
 pub struct SshGivenCredential {
     username: Arc<str>,
     password: Arc<str>,
+    ssh_key_pair: Option<Arc<SshKeyPair>>,
 }
 
 impl Default for SshGivenCredential {
     fn default() -> Self {
-        Self::new("", "")
+        Self::new("", "", None)
     }
 }
 
 impl SshGivenCredential {
-    #[allow(dead_code)]
-    pub fn new(username: &str, password: &str) -> Self {
-        let (username, password) = (username.into(), password.into());
-        Self { username, password }
+    pub fn new(username: &str, password: &str, path: Option<SshKeyPair>) -> Self {
+        let (username, password, ssh_key_pair) =
+            (username.into(), password.into(), path.map(Arc::from));
+        Self {
+            username,
+            password,
+            ssh_key_pair,
+        }
     }
 }
 
@@ -29,5 +34,9 @@ impl SshCredentials for SshGivenCredential {
 
     fn password(&self) -> crate::prelude::AppResult<&str> {
         Ok(&self.password)
+    }
+
+    fn ssh_paths_pair_key(&self) -> Option<&SshKeyPair> {
+        self.ssh_key_pair.as_deref()
     }
 }

@@ -2,6 +2,7 @@ use log::info;
 use once_cell::sync::OnceCell;
 use usermgmt_lib::prelude::*;
 
+use usermgmt_lib::ssh::SshKeyPair;
 use usermgmt_lib::{
     config::MgmtConfig,
     prelude::{anyhow, AppResult},
@@ -15,14 +16,17 @@ pub struct CliSshCredential {
     default_ssh_user: String,
     username: OnceCell<String>,
     password: OnceCell<String>,
+    ssh_key_path: Option<SshKeyPair>,
 }
 
 impl CliSshCredential {
     pub fn new(config: &MgmtConfig) -> Self {
+        let ssh_key_path = config.ssh_key_path.clone().map(SshKeyPair::from_one_path);
         Self {
             username: Default::default(),
             password: Default::default(),
             default_ssh_user: config.default_ssh_user.clone(),
+            ssh_key_path,
         }
     }
 }
@@ -73,5 +77,9 @@ impl SshCredentials for CliSshCredential {
             info!("{}. ssh key is chosen", user_choice);
             Ok(last_index)
         }
+    }
+
+    fn ssh_paths_pair_key(&self) -> Option<&SshKeyPair> {
+        self.ssh_key_path.as_ref()
     }
 }

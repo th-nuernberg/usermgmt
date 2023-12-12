@@ -144,8 +144,14 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         {
             if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
                 let (username, password) = window.ssh_state.username_maybe_password().unwrap();
-                let ssh_credentials =
-                    SshGivenCredential::new(username, password.unwrap_or_default());
+                let ssh_credentials = SshGivenCredential::new(
+                    username,
+                    password.unwrap_or_default(),
+                    usermgmt_lib::ssh::create_ssh_key_pair_conf(
+                        window.ssh_state.ssh_key_pair(),
+                        &mgmt_conf.config,
+                    ),
+                );
                 let mgmt_conf = mgmt_conf.config.clone();
                 let failed_parsing_slurm = text.failed_parsing_slurm().clone();
                 _ = window.listin_state.list_slurm_user_res.spawn_task(
