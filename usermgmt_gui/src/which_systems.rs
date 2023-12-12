@@ -13,7 +13,7 @@ pub struct WhichSystem {
 impl WhichSystem {
     pub fn create_on_which_system(&self) -> OnWhichSystem {
         let (slurm, ldap, dirs) = (self.ldap, self.slurm, self.dir);
-        OnWhichSystem::new(slurm, ldap, dirs)
+        OnWhichSystem::new(slurm, ldap, dirs, None)
     }
     pub fn is_ssh_cred_needed(&self, supports_dir: bool) -> bool {
         let operates_on_dir = supports_dir && self.dir;

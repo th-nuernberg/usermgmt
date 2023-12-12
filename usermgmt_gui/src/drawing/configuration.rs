@@ -123,6 +123,12 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                         ConfiField::NegNumber { val, label } => {
                             draw_utils::whole_neg_number_fields(ui, &label, val);
                         }
+                        ConfiField::PathOpt { val, label } => {
+                            let mut as_string =
+                                val.as_ref().map(|path| path.to_string_lossy().to_string());
+                            draw_utils::no_password_opt_enty_field(ui, &label, &mut as_string);
+                            *val = as_string.map(PathBuf::from);
+                        }
                     }
 
                     if draw_sep {
@@ -205,6 +211,7 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
         create_conf_field!(staff_gid),
         create_conf_field!(faculty_gid),
         create_conf_field!(sacctmgr_path),
+        create_conf_field!(ssh_key_path),
     ];
     fields.sort();
     fields
@@ -215,6 +222,10 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<Conf
 /// The drawing of the values is alphabetically ordered by the field called label in every variant.
 #[derive(Debug)]
 enum ConfiField<'a> {
+    PathOpt {
+        val: &'a mut Option<PathBuf>,
+        label: LabelTyp,
+    },
     SingleOpt {
         val: &'a mut Option<String>,
         label: LabelTyp,
@@ -249,6 +260,7 @@ impl ConfiField<'_> {
             | ConfiField::List { label, .. }
             | ConfiField::Checkbox { label, .. }
             | ConfiField::Number { label, .. }
+            | ConfiField::PathOpt { label, .. }
             | ConfiField::NegNumber { label, .. } => label,
         }
     }
@@ -295,3 +307,4 @@ impl_from_conf_field!(String, Single);
 impl_from_conf_field!(Vec<String>, List);
 impl_from_conf_field!(Option<String>, SingleOpt);
 impl_from_conf_field!(bool, Checkbox);
+impl_from_conf_field!(Option<PathBuf>, PathOpt);

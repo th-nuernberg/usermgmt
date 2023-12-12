@@ -101,10 +101,18 @@ impl UsermgmtWindow {
     }
 
     pub fn create_ssh_credentials(&self) -> Option<SshGivenCredential> {
-        let ssh_state = &self.ssh_state;
-        let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_deref());
-        let cred = SshGivenCredential::new(username?, password.unwrap_or(""));
-        Some(cred)
+        if let IoTaskStatus::Successful(conf) = self.conf_state.io_conf.status() {
+            let ssh_state = &self.ssh_state;
+            let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_deref());
+            let cred = SshGivenCredential::new(
+                username?,
+                password.unwrap_or(""),
+                usermgmt_lib::ssh::create_ssh_key_pair_conf(ssh_state.ssh_key_pair(), &conf.config),
+            );
+            Some(cred)
+        } else {
+            None
+        }
     }
     pub fn create_ldap_credentials(&self) -> Option<LdapSimpleCredential> {
         let ldap_state = &self.ldap_state;

@@ -8,9 +8,14 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ## [Unreleased]
 
+### Added
+
+- Ssh key pair can be provided by field within configuration file or as a CLI argument.
+
 ## [0.1.0] - 2022-06-20
 
 ### Added
+
 - Usermanagement via subprocess calls to [LDAPUtils](https://wiki.debian.org/LDAP/LDAPUtils) and `sacctmgr`
 
 ## [0.2.0] - 2022-10-29

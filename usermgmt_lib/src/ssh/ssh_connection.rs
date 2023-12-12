@@ -30,6 +30,7 @@ where
     pub fn password(&self) -> AppResult<&str> {
         self.credentials.password()
     }
+
     pub fn username(&self) -> AppResult<&str> {
         self.credentials.username()
     }
@@ -107,9 +108,7 @@ where
         sess.handshake()
             .context("Could not perform ssh handshake")?;
 
-        let username = self.credentials.username()?;
-
-        auth(self, &mut sess, username)?;
+        auth(self, &mut sess, &self.credentials)?;
 
         return Ok(sess);
 
@@ -127,6 +126,28 @@ where
                 .context("Authentication has failed with provided username/password.")?;
             Ok(())
         }
+        fn direct_key_path_auth<T>(
+            session: &mut Session,
+            session_connection: &SshConnection<T>,
+            credentails: &impl SshCredentials,
+        ) -> AppResult
+        where
+            T: SshCredentials,
+        {
+            info!("Try to authenticate over ssh by using ssh key pair");
+            let username = credentails.username()?;
+            let password = session_connection.password()?;
+            let pair = credentails
+                .ssh_paths_pair_key()
+                .ok_or_else(|| anyhow!("No key pair provided"))?;
+            let (public, private) = (pair.pub_key(), pair.private_key());
+            info!(
+                "Ssh key public key at ({:?}) and private key at ({:?}) is used for authentication",
+                public, private
+            );
+            session.userauth_pubkey_file(username, Some(public), private, Some(password))?;
+            Ok(())
+        }
 
         /// Conducts the authentication on the session.
         /// It tries to first authenticate via ssh agent if allowed in the configuration.
@@ -141,11 +162,12 @@ where
         fn auth<T>(
             connection: &SshConnection<T>,
             session: &mut Session,
-            username: &str,
+            cred: &impl SshCredentials,
         ) -> AppResult
         where
             T: SshCredentials,
         {
+            let username = cred.username()?;
             if connection.ssh_agent {
                 match try_authenticate_via_ssh_agent(session, &connection.credentials, username) {
                     Ok(_) => {
@@ -160,14 +182,39 @@ where
                                 \n Details: {}",
                             username, agent_error
                         );
-                        simple_password_auth(session, connection, username)?;
+                        pub_key_file_or_simple_auth(connection, session, cred)?;
                     }
                 }
             } else {
-                simple_password_auth(session, connection, username)?;
+                pub_key_file_or_simple_auth(connection, session, cred)?;
             }
 
-            Ok(())
+            return Ok(());
+
+            fn pub_key_file_or_simple_auth<T>(
+                connection: &SshConnection<T>,
+                session: &mut Session,
+                cred: &impl SshCredentials,
+            ) -> AppResult
+            where
+                T: SshCredentials,
+            {
+                let username = cred.username()?;
+                if let Err(error) = direct_key_path_auth(session, connection, cred) {
+                    warn!(
+                        "Could not connect over ssh to via key file's path\n Details: {}",
+                        error
+                    );
+                    simple_password_auth(session, connection, username)?;
+                }
+                let key_pair = cred.ssh_paths_pair_key().unwrap();
+                let (private, public) = (key_pair.private_key(), key_pair.pub_key());
+                info!(
+                    "Using ssh key pair. (Private key,public key) at ({:?},{:?})",
+                    private, public
+                );
+                Ok(())
+            }
         }
     }
 }
