@@ -12,6 +12,11 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 - Ssh key pair can be provided by field within configuration file or as a CLI argument.
 
+### Changed
+
+- In CLI, user can just press enter to provide no password during password prompt for ssh. 
+  Useful for ssh key pair without password.
+
 ## [0.1.0] - 2022-06-20
 
 ### Added

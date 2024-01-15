@@ -50,8 +50,8 @@ impl SshCredentials for CliSshCredential {
     }
     fn password(&self) -> AppResult<&str> {
         let password = self.password.get_or_try_init(|| {
-            let maybe_password = user_input::cli_ask_for_password("Enter your SSH password: ")?;
-            maybe_password.ok_or_else(|| anyhow!("No password provided"))
+            let from_prompt = user_input::cli_ask_for_password("Enter your SSH password: ")?;
+            Ok::<String, AppError>(from_prompt.unwrap_or_default())
         })?;
 
         Ok(password)
