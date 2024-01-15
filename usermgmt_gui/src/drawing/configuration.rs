@@ -216,7 +216,7 @@ fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
     }))
 }
 
-fn construct_fields<'a>(config: &'a mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField<'a>> {
+fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField> {
     macro_rules! create_conf_field {
         ($field:ident, $too_tip:expr) => {
             (
