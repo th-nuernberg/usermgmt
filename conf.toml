@@ -61,3 +61,4 @@ use_homedir_helper = false
 run_slurm_remote = true
 ssh_agent = true
 ssh_port = 22
+ssh_key_path = "./docker/slurm-docker-cluster/dev_user_ed25519"

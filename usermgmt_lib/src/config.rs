@@ -56,6 +56,7 @@ pub struct MgmtConfig {
     pub run_slurm_remote: bool,
     pub ssh_port: u32,
     pub ssh_agent: bool,
+    pub ssh_key_path: Option<PathBuf>,
 }
 impl MgmtConfig {
     pub fn save(&self, path: &Path) -> AppResult<PathBuf> {
@@ -130,6 +131,7 @@ impl Default for MgmtConfig {
             run_slurm_remote: false,
             ssh_port: 22,
             ssh_agent: false,
+            ssh_key_path: None,
         }
     }
 }

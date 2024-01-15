@@ -136,36 +136,38 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         };
 
         let text = window.settings.texts();
-
-        ui.horizontal(|ui| {
-            if ui
-                .add_enabled(
-                    slurm_list_btn_enabled,
-                    egui::Button::new(text.btn_list_slurm_users()),
-                )
-                .clicked()
-            {
-                if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
-                    let (username, password) = window.ssh_state.username_maybe_password().unwrap();
-                    let ssh_credentials =
-                        SshGivenCredential::new(username, password.unwrap_or_default());
-                    let mgmt_conf = mgmt_conf.config.clone();
-                    let failed_parsing_slurm = text.failed_parsing_slurm().clone();
-                    _ = window.listin_state.list_slurm_user_res.spawn_task(
-                        move || {
-                            let slurm_users_raw =
-                                slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
-                            ListedUser::new(&slurm_users_raw).ok_or(anyhow!(failed_parsing_slurm))
-                        },
-                        String::from("Getting slurm user"),
-                    );
-                } else {
-                    unreachable!();
-                }
+        if ui
+            .add_enabled(
+                slurm_list_btn_enabled,
+                egui::Button::new(text.btn_list_slurm_users()),
+            )
+            .clicked()
+        {
+            if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
+                let (username, password) = window.ssh_state.username_maybe_password().unwrap();
+                let ssh_credentials = SshGivenCredential::new(
+                    username,
+                    password.unwrap_or_default(),
+                    usermgmt_lib::ssh::create_ssh_key_pair_conf(
+                        window.ssh_state.ssh_key_pair(),
+                        &mgmt_conf.config,
+                    ),
+                );
+                let mgmt_conf = mgmt_conf.config.clone();
+                let failed_parsing_slurm = text.failed_parsing_slurm().clone();
+                _ = window.listin_state.list_slurm_user_res.spawn_task(
+                    move || {
+                        let slurm_users_raw = slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
+                        ListedUser::new(&slurm_users_raw).ok_or(anyhow!(failed_parsing_slurm))
+                    },
+                    String::from("Getting slurm user"),
+                );
+            } else {
+                unreachable!();
             }
             let settings = &window.settings;
             draw_utils::tooltip_widget(ui, settings, settings.tooltiptexts().list_ssh_btn());
-        });
+        }
     }
 
     fn ldap_list_btn(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {

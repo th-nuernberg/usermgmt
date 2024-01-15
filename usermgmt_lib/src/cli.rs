@@ -2,7 +2,7 @@ use crate::prelude::*;
 use clap::{Args, Parser, Subcommand};
 mod on_which_system;
 
-pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli};
+pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli, OptFilePath};
 
 use crate::util::TrimmedNonEmptyText;
 use const_format::concatcp;

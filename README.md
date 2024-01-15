@@ -88,19 +88,19 @@ The following examples show how you can run the program with Cargo:
 
 ```bash
 # Show available arguments
-cargo cli -- --help
+cargo cli --help
 
 # Add a user
-cargo cli -- add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
+cargo cli add teststaff123 --group staff --firstname Martina --lastname Musterfrau --publickey key.pub
 
 # Modify user
-cargo cli  -- modify teststaff123 -f Martha -m bla@blubb.de -d interactive
+cargo cli modify teststaff123 -f Martha -m bla@blubb.de -d interactive
 
 # Delete user
-cargo cli -- delete teststaff123
+cargo cli delete teststaff123
 
-# List users in LDAP
-cargo cli -- list --ldap-users
+# List users in LDAP and Slurm
+cargo cli list
 
 # Run with different log-level
 # Available are: error, warn, info, debug, and trace. 
@@ -109,7 +109,12 @@ cargo cli -- list --ldap-users
 RUST_LOG=warn cargo cli -- delete teststaff123
 
 # Add user in LDAP only
-cargo cli -- --ldap-only add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+cargo cli --ldap true --slurm false --dirs false add teststaff123 --group staff --firstname Martina --lastname Musterfrau
+
+# Specify key pair for ssh connection
+# Example of listing all users while using key pair at "~/.ssh/some_user.pub" and "~/.ssh/some_user"
+cargo cli list --ssh-path "~/.ssh/some_user"
+
 ```
 
 ### Install directly from source

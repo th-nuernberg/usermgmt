@@ -9,7 +9,13 @@ Changelog for binary "usermgmt_gui".
 
 ## [Unreleased]
 
+### Added 
+
+- Ssh key pair can be provided by field within configuration
+
 ## [0.1.0] - 2023-11-08
+
+### Added 
 
 - Implemented a GUI which allows to perform the management of LDAP and Slurm users
 

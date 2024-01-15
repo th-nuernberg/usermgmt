@@ -1,7 +1,11 @@
+use std::path::PathBuf;
+
 use clap::Args;
-use getset::CopyGetters;
+use getset::{CopyGetters, Getters};
 
 use crate::config::MgmtConfig;
+pub type OptFilePath = Option<PathBuf>;
+
 #[derive(Args, CopyGetters, Debug)]
 pub struct OnWhichSystemCli {
     #[command(flatten)]
@@ -13,33 +17,48 @@ pub struct OnWhichSystemCli {
     dirs: Option<bool>,
 }
 
-#[derive(Args, CopyGetters, Debug)]
-#[getset(get_copy = "pub")]
+#[derive(Args, CopyGetters, Getters, Debug)]
 pub struct OnSlurmLdapOnlyCli {
     /// If true then the action will be performed on Slurm too, otherwise nothing happens on Slurm.
     /// Overrides the default which is provided by the conf.toml
     #[clap(long, verbatim_doc_comment)]
+    #[getset(get_copy = "pub")]
     slurm: Option<bool>,
     /// If true then the action will be performed on LDAP too, otherwise nothing happens on Ldap.
     /// Overrides the default which is provided by the conf.toml
     #[clap(long, verbatim_doc_comment)]
+    #[getset(get_copy = "pub")]
     ldap: Option<bool>,
+    /// Path where to find key pair to be used for ssh connection.
+    /// Has priority over the path from the configuration file.
+    #[arg(long, verbatim_doc_comment)]
+    #[getset(get = "pub")]
+    ssh_path: Option<PathBuf>,
 }
 
 /// Information on which systems an action like creating an user should happen.
 /// Ensures flexibility for user to toggle systems via CLI and config
 /// CLI option have priority over default values from conf.toml
-#[derive(CopyGetters, Debug)]
-#[getset(get_copy = "pub")]
+#[derive(CopyGetters, Getters, Debug)]
 pub struct OnWhichSystem {
+    #[getset(get_copy = "pub")]
     slurm: bool,
+    #[getset(get_copy = "pub")]
     ldap: bool,
+    #[getset(get_copy = "pub")]
     dirs: bool,
+    #[getset(get = "pub")]
+    ssh_path: OptFilePath,
 }
 
 impl OnWhichSystem {
-    pub fn new(slurm: bool, ldap: bool, dirs: bool) -> Self {
-        Self { slurm, ldap, dirs }
+    pub fn new(slurm: bool, ldap: bool, dirs: bool, ssh_path: OptFilePath) -> Self {
+        Self {
+            slurm,
+            ldap,
+            dirs,
+            ssh_path,
+        }
     }
 
     pub fn from_config_for_all(config: &MgmtConfig, from_cli: &OnWhichSystemCli) -> Self {
@@ -52,10 +71,15 @@ impl OnWhichSystem {
             ldap: Self::use_cli_over_config(from_cli.ldap(), config.include_ldap),
             slurm: Self::use_cli_over_config(from_cli.slurm(), config.include_slurm),
             dirs: false,
+            ssh_path: from_cli
+                .ssh_path()
+                .as_ref()
+                .cloned()
+                .or_else(|| config.ssh_key_path.clone()),
         }
     }
 
-    fn use_cli_over_config(cli: Option<bool>, config_val: bool) -> bool {
+    fn use_cli_over_config<T>(cli: Option<T>, config_val: T) -> T {
         match cli {
             Some(cli_over_config) => cli_over_config,
             None => config_val,
@@ -76,6 +100,7 @@ mod testing {
             &OnSlurmLdapOnlyCli {
                 ldap: Some(true),
                 slurm: Some(true),
+                ssh_path: None,
             },
         );
 
@@ -92,6 +117,7 @@ mod testing {
                 ldap_slurm: OnSlurmLdapOnlyCli {
                     ldap: None,
                     slurm: None,
+                    ssh_path: None,
                 },
                 dirs: None,
             },
@@ -104,6 +130,7 @@ mod testing {
                 ldap_slurm: OnSlurmLdapOnlyCli {
                     ldap: None,
                     slurm: Some(false),
+                    ssh_path: None,
                 },
                 dirs: None,
             },
@@ -116,6 +143,7 @@ mod testing {
                 ldap_slurm: OnSlurmLdapOnlyCli {
                     ldap: Some(false),
                     slurm: Some(false),
+                    ssh_path: None,
                 },
                 dirs: None,
             },
@@ -131,6 +159,7 @@ mod testing {
                 ldap_slurm: OnSlurmLdapOnlyCli {
                     ldap: None,
                     slurm: None,
+                    ssh_path: None,
                 },
                 dirs: None,
             },
@@ -147,6 +176,7 @@ mod testing {
                 ldap_slurm: OnSlurmLdapOnlyCli {
                     ldap: Some(false),
                     slurm: Some(false),
+                    ssh_path: None,
                 },
                 dirs: Some(true),
             },
