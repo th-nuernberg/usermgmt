@@ -1,27 +1,66 @@
+use drawing::draw_utils::{GroupDrawing, TextFieldEntry};
+
 use crate::prelude::*;
 
-use super::draw_utils::{draw_box_group, no_password_enty_field};
+use super::draw_utils::draw_box_group;
 
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     {
         let texts = window.settings.texts();
         let adding_fields = &mut window.adding_state;
-        draw_box_group(ui, texts.required(), |ui| {
-            no_password_enty_field(ui, texts.username(), &mut adding_fields.username, |_| {});
-            no_password_enty_field(ui, texts.firstname(), &mut adding_fields.firstname, |_| {});
-            no_password_enty_field(ui, texts.lastname(), &mut adding_fields.lastname, |_| {});
-        });
-        draw_box_group(ui, texts.optional(), |ui| {
-            no_password_enty_field(ui, texts.mail(), &mut adding_fields.mail, |_| {});
-            no_password_enty_field(
+        let settings = &window.settings;
+        let tooltips = settings.tooltiptexts();
+        draw_box_group(ui, settings, &GroupDrawing::new(texts.required()), |ui| {
+            draw_utils::entry_field(
                 ui,
-                texts.default_qos(),
-                &mut adding_fields.default_qos,
-                |_| {},
+                settings,
+                &mut TextFieldEntry::new(texts.username(), &mut adding_fields.username)
+                    .with_tooltip(tooltips.username()),
             );
-            no_password_enty_field(ui, texts.public_key(), &mut adding_fields.publickey, |_| {});
-            no_password_enty_field(ui, texts.group(), &mut adding_fields.group, |_| {});
-            draw_utils::list_view(ui, &window.settings, &mut adding_fields.qos, texts.qos());
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.firstname(), &mut adding_fields.firstname)
+                    .with_tooltip(tooltips.firstname()),
+            );
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.lastname(), &mut adding_fields.lastname)
+                    .with_tooltip(tooltips.lastname()),
+            );
+        });
+        draw_box_group(ui, settings, &GroupDrawing::new(texts.optional()), |ui| {
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.mail(), &mut adding_fields.mail)
+                    .with_tooltip(tooltips.email()),
+            );
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.default_qos(), &mut adding_fields.default_qos)
+                    .with_tooltip(tooltips.default_qos()),
+            );
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.public_key(), &mut adding_fields.publickey)
+                    .with_tooltip(tooltips.pub_key()),
+            );
+            draw_utils::entry_field(
+                ui,
+                settings,
+                &mut TextFieldEntry::new(texts.group(), &mut adding_fields.group)
+                    .with_tooltip(tooltips.group()),
+            );
+            draw_utils::list_view(
+                ui,
+                &window.settings,
+                &mut adding_fields.qos,
+                &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
+            );
         });
     }
 

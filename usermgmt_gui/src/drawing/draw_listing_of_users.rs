@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use crate::current_selected_view::ConnectionState;
+use drawing::draw_utils::GroupDrawing;
 use egui_extras::{Size, StripBuilder};
 use usermgmt_lib::{
     ldap::{list_ldap_users, LDAPConfig, LdapSearchResult, LdapSimpleCredential},
@@ -164,6 +165,8 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
             } else {
                 unreachable!();
             }
+            let settings = &window.settings;
+            draw_utils::tooltip_widget(ui, settings, settings.tooltiptexts().list_ssh_btn());
         }
     }
 
@@ -179,35 +182,39 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         };
 
         let text = window.settings.texts();
-        if ui
-            .add_enabled(
-                list_ldap_btn_enabled,
-                egui::Button::new(text.btn_list_ldap_users()),
-            )
-            .clicked()
-        {
-            if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
-                let lising_state = &window.listin_state;
-                let (username, password) = (
-                    lising_state.rw_user_name.clone().unwrap(),
-                    lising_state.rw_pw.clone().unwrap(),
-                );
-                let mgmt_conf = mgmt_conf.config.clone();
-                window.listin_state.list_ldap_res.spawn_task(
-                    move || {
-                        let config = LDAPConfig::new(
-                            &mgmt_conf,
-                            LdapSimpleCredential::new(username, password),
-                        )
-                        .unwrap();
-                        list_ldap_users(config)
-                    },
-                    "Listing ldap user".to_owned(),
-                );
-            } else {
-                unreachable!();
-            }
-        };
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(
+                    list_ldap_btn_enabled,
+                    egui::Button::new(text.btn_list_ldap_users()),
+                )
+                .clicked()
+            {
+                if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
+                    let lising_state = &window.listin_state;
+                    let (username, password) = (
+                        lising_state.rw_user_name.clone().unwrap(),
+                        lising_state.rw_pw.clone().unwrap(),
+                    );
+                    let mgmt_conf = mgmt_conf.config.clone();
+                    window.listin_state.list_ldap_res.spawn_task(
+                        move || {
+                            let config = LDAPConfig::new(
+                                &mgmt_conf,
+                                LdapSimpleCredential::new(username, password),
+                            )
+                            .unwrap();
+                            list_ldap_users(config)
+                        },
+                        "Listing ldap user".to_owned(),
+                    );
+                } else {
+                    unreachable!();
+                }
+            };
+            let settings = &window.settings;
+            draw_utils::tooltip_widget(ui, settings, settings.tooltiptexts().list_ldap_btn());
+        });
     }
 
     fn draw_readonly_ldap_cred(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
@@ -228,20 +235,21 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         draw_utils::user_password_box(
             ui,
             settings,
-            settings.texts().readonly_ldap_cred(),
+            &GroupDrawing::new(settings.texts().readonly_ldap_cred())
+                .with_tooltip(settings.tooltiptexts().ldap_readonly_creds()),
             &mut rw_user,
             &mut rw_password,
-            |rw_user| window.listin_state.rw_user_name = Some(rw_user.clone()),
-            |rw_password| {
-                window.listin_state.rw_pw = Some(rw_password.to_string());
-            },
         );
+        window.listin_state.rw_user_name = rw_user;
+        window.listin_state.rw_pw = rw_password;
     }
 
-    fn field_conf_or_state(from_window: Option<&str>, from_conf: Option<&str>) -> String {
-        from_window
-            .unwrap_or(from_conf.unwrap_or_default())
-            .to_owned()
+    fn field_conf_or_state(from_window: Option<&str>, from_conf: Option<&str>) -> Option<String> {
+        let no_owned = match from_window {
+            None => from_conf,
+            some => some,
+        };
+        no_owned.map(|unowned| unowned.to_string())
     }
 
     fn draw_ldap_tables(ui: &mut egui::Ui, raw: &LdapSearchResult, settings: &Settings) {

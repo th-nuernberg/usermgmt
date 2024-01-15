@@ -8,14 +8,102 @@ use crate::{
     which_systems,
 };
 
+#[derive(Debug)]
+pub struct GroupDrawing<'a, 'b> {
+    name: &'a str,
+    tooltip: Option<&'b str>,
+}
+
+impl<'a, 'b> GroupDrawing<'a, 'b> {
+    pub fn new(name: &'a str) -> Self {
+        Self {
+            name,
+            tooltip: None,
+        }
+    }
+    pub fn with_tooltip(self, text: &'b str) -> GroupDrawing<'a, 'b> {
+        Self {
+            name: self.name,
+            tooltip: Some(text),
+        }
+    }
+    pub fn tooltip(self, text: Option<&'b str>) -> Self {
+        Self {
+            name: self.name,
+            tooltip: text,
+        }
+    }
+}
+
+#[derive(Debug)]
+enum ContentField<'a> {
+    Required(&'a mut String),
+    Optional(&'a mut Option<String>),
+}
+#[derive(Debug)]
+pub struct TextFieldEntry<'a, 'b> {
+    label: &'a str,
+    content: ContentField<'a>,
+    tool_tip: Option<&'b str>,
+    as_password: bool,
+}
+
+impl<'a, 'b> TextFieldEntry<'a, 'b> {
+    pub fn new(label: &'a str, content: &'a mut String) -> Self {
+        Self {
+            label,
+            content: ContentField::Required(content),
+            as_password: false,
+            tool_tip: None,
+        }
+    }
+    pub fn new_opt(label: &'a str, content: &'a mut Option<String>) -> Self {
+        Self {
+            label,
+            content: ContentField::Optional(content),
+            as_password: false,
+            tool_tip: None,
+        }
+    }
+    pub fn as_password(mut self) -> Self {
+        self.as_password = true;
+        self
+    }
+    pub fn tool_tip(self, too_tip: Option<&'b str>) -> Self {
+        Self {
+            label: self.label,
+            content: self.content,
+            as_password: self.as_password,
+            tool_tip: too_tip,
+        }
+    }
+    pub fn with_tooltip(self, tooltip: &'b str) -> Self {
+        Self {
+            label: self.label,
+            content: self.content,
+            as_password: self.as_password,
+            tool_tip: Some(tooltip),
+        }
+    }
+}
+
+pub fn tooltip_widget(ui: &mut egui::Ui, settings: &Settings, text: &str) {
+    ui.label(
+        RichText::new(settings.tooltip_symbol())
+            .size(settings.tooltip_size())
+            .color(settings.colors().tool_tip()),
+    )
+    .on_hover_text(text);
+}
+
 pub fn list_view(
     ui: &mut egui::Ui,
     settings: &Settings,
     list_field: &mut Vec<String>,
-    group_label: &str,
+    group_drawing: &GroupDrawing,
 ) {
     let text = settings.texts();
-    draw_box_group(ui, group_label, |ui| {
+    draw_box_group(ui, settings, group_drawing, |ui| {
         if ui.button(text.btn_new_item()).clicked() {
             list_field.push(Default::default());
         }
@@ -49,13 +137,24 @@ pub fn draw_file_path(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     let conf_state = &window.conf_state;
     let mut path = window.conf_path_owned();
 
-    let texts = window.settings.texts();
+    let settings = &window.settings;
+    let texts = settings.texts();
     if conf_state.io_conf.status().is_loading() {
-        draw_box_group(ui, texts.dir_conf_path(), |ui| ui.label(&path));
+        draw_box_group(
+            ui,
+            settings,
+            &GroupDrawing::new(texts.dir_conf_path()),
+            |ui| ui.label(&path),
+        );
     } else {
-        draw_box_group(ui, texts.dir_conf_path(), |ui| {
-            ui.text_edit_singleline(&mut path);
-        });
+        draw_box_group(
+            ui,
+            settings,
+            &GroupDrawing::new(texts.dir_conf_path()),
+            |ui| {
+                ui.text_edit_singleline(&mut path);
+            },
+        );
         window.set_conf_path(path);
     }
 }
@@ -64,18 +163,15 @@ pub fn draw_ssh_credentials(
     settings: &Settings,
     ssh_state: &mut SshConnectionState,
 ) {
-    let mut username = ssh_state.username.as_deref().unwrap_or_default().to_owned();
-    let mut password = ssh_state.password.as_deref().unwrap_or_default().to_owned();
+    let username = &mut ssh_state.username;
+    let password = &mut ssh_state.password;
     user_password_box(
         ui,
         settings,
-        settings.texts().ssh_cred(),
-        &mut username,
-        &mut password,
-        |new| ssh_state.username = Some(new.to_string()),
-        |new| {
-            ssh_state.password = Some(new.to_string());
-        },
+        &GroupDrawing::new(settings.texts().ssh_cred())
+            .with_tooltip(settings.tooltiptexts().ssh_creds()),
+        username,
+        password,
     );
 }
 
@@ -84,60 +180,54 @@ pub fn draw_ldap_credentials(
     settings: &Settings,
     ldap_state: &mut LdapConnectionState,
 ) {
-    let mut username = ldap_state
-        .username
-        .as_deref()
-        .unwrap_or_default()
-        .to_owned();
-    let mut password = ldap_state
-        .password
-        .as_deref()
-        .unwrap_or_default()
-        .to_owned();
+    let username = &mut ldap_state.username;
+    let password = &mut ldap_state.password;
     user_password_box(
         ui,
         settings,
-        settings.texts().ldap_cred(),
-        &mut username,
-        &mut password,
-        |new| ldap_state.username = Some(new.to_string()),
-        |new| {
-            ldap_state.password = Some(new.to_string());
-        },
+        &GroupDrawing::new(settings.texts().ldap_cred())
+            .with_tooltip(settings.tooltiptexts().ldap_creds()),
+        username,
+        password,
     );
 }
 
 pub fn user_password_box(
     ui: &mut egui::Ui,
     settings: &Settings,
-    group_name: &str,
-    username_content: &mut String,
-    password_content: &mut String,
-    on_change_username: impl FnOnce(&mut String),
-    on_change_password: impl FnOnce(&mut String),
+    group_draw: &GroupDrawing,
+    username_content: &mut Option<String>,
+    password_content: &mut Option<String>,
 ) {
-    draw_box_group(ui, group_name, |ui| {
-        no_password_enty_field(
+    draw_box_group(ui, settings, group_draw, |ui| {
+        entry_field(
             ui,
-            settings.texts().username(),
-            username_content,
-            on_change_username,
+            settings,
+            &mut TextFieldEntry::new_opt(settings.texts().username(), username_content),
         );
-        password_enty_field(
+        entry_field(
             ui,
-            settings.texts().password(),
-            password_content,
-            on_change_password,
+            settings,
+            &mut TextFieldEntry::new_opt(settings.texts().password(), password_content)
+                .as_password(),
         );
     });
 }
 
 pub fn draw_box_group<R>(
     ui: &mut egui::Ui,
-    group_name: &str,
+    settings: &Settings,
+    group: &GroupDrawing,
     on_draw: impl FnOnce(&mut egui::Ui) -> R,
 ) {
-    ui.label(RichText::new(group_name).strong());
+    if let Some(tool_tip_name) = group.tooltip {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(group.name).strong());
+            tooltip_widget(ui, settings, tool_tip_name);
+        });
+    } else {
+        ui.label(RichText::new(group.name).strong());
+    }
     ui.group(on_draw);
 }
 
@@ -147,7 +237,7 @@ pub fn box_centered_single_line(
     box_name: &str,
     label: &str,
 ) {
-    draw_box_group(ui, box_name, |ui| {
+    draw_box_group(ui, settings, &GroupDrawing::new(box_name), |ui| {
         ui.label(
             RichText::new(label)
                 .strong()
@@ -155,8 +245,14 @@ pub fn box_centered_single_line(
         );
     });
 }
-pub fn link_box(ui: &mut egui::Ui, box_name: &str, link: &str, opt_label: Option<&str>) {
-    draw_box_group(ui, box_name, |ui| {
+pub fn link_box(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    box_name: &str,
+    link: &str,
+    opt_label: Option<&str>,
+) {
+    draw_box_group(ui, settings, &GroupDrawing::new(box_name), |ui| {
         if let Some(label) = opt_label {
             ui.vertical_centered(|ui| {
                 ui.label(label);
@@ -167,16 +263,16 @@ pub fn link_box(ui: &mut egui::Ui, box_name: &str, link: &str, opt_label: Option
         };
     })
 }
-pub fn no_password_enty_field(
-    ui: &mut egui::Ui,
-    label: &str,
-    content: &mut String,
-    on_change: impl FnOnce(&mut String),
-) {
-    draw_enty_field(ui, label, content, false, on_change)
+pub fn entry_field(ui: &mut egui::Ui, settings: &Settings, entry_field: &mut TextFieldEntry) {
+    draw_enty_field(ui, settings, entry_field)
 }
-pub fn whole_pos_number_fields<T>(ui: &mut egui::Ui, label: &str, content: &mut T)
-where
+pub fn whole_pos_number_fields<T>(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    label: &str,
+    content: &mut T,
+    tooltip: Option<&str>,
+) where
     T: ToPrimitive + FromPrimitive + Bounded + Copy,
 {
     let mut float: f32 = content.to_f32().unwrap_or_else(|| {
@@ -187,6 +283,10 @@ where
     ui.horizontal(|ui| {
         ui.label(label);
         ui.add(egui::DragValue::new(&mut float).speed(0.1));
+        if let Some(tooltip) = tooltip {
+            tooltip_widget(ui, settings, tooltip)
+        }
+
         let rounded = float.round().max(0.0);
         let new_value = <T as FromPrimitive>::from_f32(rounded).unwrap_or_else(|| {
             let max = <T as Bounded>::max_value();
@@ -199,8 +299,13 @@ where
     });
 }
 
-pub fn whole_neg_number_fields<T>(ui: &mut egui::Ui, label: &str, content: &mut T)
-where
+pub fn whole_neg_number_fields<T>(
+    ui: &mut egui::Ui,
+    settings: &Settings,
+    label: &str,
+    content: &mut T,
+    tooltip: Option<&str>,
+) where
     T: ToPrimitive + FromPrimitive + Signed + Bounded + Copy,
 {
     let mut float: f32 = content.to_f32().unwrap_or_else(|| {
@@ -216,6 +321,9 @@ where
     ui.horizontal(|ui| {
         ui.label(label);
         ui.add(egui::DragValue::new(&mut float).speed(0.1));
+        if let Some(tooltip) = tooltip {
+            tooltip_widget(ui, settings, tooltip)
+        }
         let rounded = float.round();
         let new_value = <T as FromPrimitive>::from_f32(rounded).unwrap_or_else(|| {
             let (min, max) = (<T as Bounded>::min_value(), <T as Bounded>::max_value());
@@ -230,21 +338,6 @@ where
         });
         *content = new_value;
     });
-}
-
-pub fn no_password_opt_enty_field(ui: &mut egui::Ui, label: &str, content: &mut Option<String>) {
-    let mut text = content.to_owned().unwrap_or_default();
-    draw_enty_field(ui, label, &mut text, false, |text| {
-        *content = general_utils::some_if_not_blank_str(text).map(|trimmed| trimmed.into())
-    })
-}
-pub fn password_enty_field(
-    ui: &mut egui::Ui,
-    label: &str,
-    content: &mut String,
-    on_change: impl FnOnce(&mut String),
-) {
-    draw_enty_field(ui, label, content, true, on_change)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -301,21 +394,34 @@ pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports
     }
 }
 
-fn draw_enty_field(
-    ui: &mut egui::Ui,
-    label: &str,
-    content: &mut String,
-    password: bool,
-    on_change: impl FnOnce(&mut String),
-) {
+fn draw_enty_field(ui: &mut egui::Ui, settings: &Settings, entry_field: &mut TextFieldEntry) {
     ui.horizontal(|ui| {
-        ui.label(label);
+        ui.label(entry_field.label);
 
+        let mut empty = String::default();
+        let mut opt = false;
+        let content: &mut String = match &mut entry_field.content {
+            ContentField::Required(content) => content,
+            ContentField::Optional(optional) => {
+                opt = true;
+                optional.as_mut().unwrap_or(&mut empty)
+            }
+        };
         if ui
-            .add(egui::TextEdit::singleline(content).password(password))
+            .add(egui::TextEdit::singleline(content).password(entry_field.as_password))
             .changed()
+            && opt
+            && !content.as_str().trim().is_empty()
         {
-            on_change(content);
+            let content = content.to_owned();
+            if let ContentField::Optional(to_change) = &mut entry_field.content {
+                **to_change = Some(content)
+            } else {
+                unreachable!();
+            }
+        }
+        if let Some(tool_tip_text) = entry_field.tool_tip {
+            tooltip_widget(ui, settings, tool_tip_text)
         }
     });
 }
@@ -331,7 +437,7 @@ fn status_msg<T>(
     msg_success: impl FnOnce(&T) -> String,
     error_msg: impl FnOnce() -> String,
 ) {
-    draw_box_group(ui, label, |ui| {
+    draw_box_group(ui, settings, &GroupDrawing::new(label), |ui| {
         let colors = settings.colors();
         let (color, raw_text) = match status {
             IoTaskStatus::NotStarted => (colors.init_msg(), msg_init()),

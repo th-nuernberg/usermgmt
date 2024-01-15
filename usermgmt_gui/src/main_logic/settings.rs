@@ -25,10 +25,16 @@ pub struct Settings {
     pub ldap_multi_field_sep: ReadonlyText,
     #[getset(get_copy = "pub")]
     pub box_label_font_size: f32,
+    #[getset(get_copy = "pub")]
+    pub tooltip_size: f32,
+    #[getset(get = "pub")]
+    pub tooltip_symbol: String,
     #[getset(get = "pub")]
     colors: Colors,
     #[getset(get = "pub")]
     texts: Texts,
+    #[getset(get = "pub")]
+    tooltiptexts: TextTooltip,
 }
 
 #[derive(Debug, Deserialize, Default, Getters, CopyGetters)]
@@ -106,11 +112,71 @@ pub struct Texts {
     ldap_cred_missing: ReadonlyText,
     ssh_cred_missing: ReadonlyText,
 }
+#[derive(Debug, Deserialize, Default, Getters)]
+#[getset(get = "pub")]
+pub struct TextTooltip {
+    ldap_creds: String,
+    ldap_readonly_creds: String,
+    ssh_creds: String,
+    list_ldap_btn: String,
+    list_ssh_btn: String,
+    username: String,
+    firstname: String,
+    lastname: String,
+    email: String,
+    pub_key: String,
+    group: String,
+    default_qos: String,
+    qos: String,
+    conf_student_qos: String,
+    conf_student_default_qos: String,
+    conf_run_slurm_remote: String,
+    conf_staff_gid: String,
+    conf_ssh_port: String,
+    conf_staff_default_qos: String,
+    conf_default_ssh_user: String,
+    conf_head_node: String,
+    conf_nfs_host: String,
+    conf_nfs_root_dir: String,
+    conf_valid_qos: String,
+    conf_staff_qos: String,
+    conf_valid_slurm_groups: String,
+    conf_compute_nodes: String,
+    conf_ldap_domain_components: String,
+    conf_ldap_org_unit: String,
+    conf_ldap_bind_org_unit: String,
+    conf_ldap_bind_prefix: String,
+    conf_ldap_readonly_user_prefix: String,
+    conf_ldap_readonly_bind: String,
+    conf_ldap_server: String,
+    conf_ldap_readonly_user: String,
+    conf_ldap_readonly_pw: String,
+    conf_include_ldap: String,
+    conf_include_slurm: String,
+    conf_include_dir_mgmt: String,
+    conf_use_homedir_helper: String,
+    conf_ssh_agent: String,
+    conf_compute_node_root_dir: String,
+    conf_filesystem: String,
+    conf_home_filesystem: String,
+    conf_nfs_filesystem: String,
+    conf_quota_softlimit: String,
+    conf_quota_hardlimit: String,
+    conf_quota_nfs_softlimit: String,
+    conf_quota_nfs_hardlimit: String,
+    conf_quota_home_softlimit: String,
+    conf_quota_home_hardlimit: String,
+    conf_login_shell: String,
+    conf_student_gid: String,
+    conf_faculty_gid: String,
+    conf_sacctmgr_path: String,
+}
 
 #[derive(Debug, Deserialize, Default, CopyGetters)]
 #[getset(get_copy = "pub")]
 /// Colors of certain elements in the GUI.
 pub struct Colors {
+    tool_tip: Color32,
     err_msg: Color32,
     init_msg: Color32,
     success_msg: Color32,
