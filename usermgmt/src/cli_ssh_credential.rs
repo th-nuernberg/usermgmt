@@ -21,19 +21,12 @@ pub struct CliSshCredential {
 }
 
 impl CliSshCredential {
-<<<<<<< HEAD
     pub fn new(config: &MgmtConfig, on_which_sys: &OptFilePath) -> Self {
         let ssh_key_path = on_which_sys
             .as_ref()
             .cloned()
             .or_else(|| config.ssh_key_path.clone())
             .map(SshKeyPair::from_one_path);
-||||||| 2bc7a86
-    pub fn new(config: &MgmtConfig) -> Self {
-=======
-    pub fn new(config: &MgmtConfig) -> Self {
-        let ssh_key_path = config.ssh_key_path.clone().map(SshKeyPair::from_one_path);
->>>>>>> refs/remotes/origin/ssh_key_path_feat
         Self {
             username: Default::default(),
             password: Default::default(),
