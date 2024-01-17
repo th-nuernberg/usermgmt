@@ -15,7 +15,7 @@ pub mod main_logic;
 fn main() -> Result<(), eframe::Error> {
     // Set up logging and panic messages with link to issue page
     usermgmt_lib::app_panic_hook::set_app_panic_hook();
-    env_logger::init();
+    let _logger = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME")).unwrap();
 
     // Construct application state before starting the main window for egui frontend.
     // This default impl for app state panics if set up failed due to invalid setting files

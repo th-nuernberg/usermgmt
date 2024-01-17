@@ -8,6 +8,7 @@ pub mod cli;
 pub mod config;
 pub mod constants;
 pub mod dir;
+pub mod logging;
 pub mod util;
 
 pub mod entity;
