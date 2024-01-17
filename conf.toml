@@ -61,4 +61,5 @@ use_homedir_helper = false
 run_slurm_remote = true
 ssh_agent = true
 ssh_port = 22
+# Path key pair of dev user with approbate rights to add/remove and modify users in the slurm db on the dev docker set up. 
 ssh_key_path = "./docker/slurm-docker-cluster/dev_user_ed25519"

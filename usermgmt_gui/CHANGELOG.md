@@ -11,6 +11,7 @@ Changelog for binary "usermgmt_gui".
 
 ### Added 
 
+- Logging also performed to logging file
 - Ssh key pair can be provided by field within configuration
 
 ## [0.1.0] - 2023-11-08

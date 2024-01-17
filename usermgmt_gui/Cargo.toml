@@ -10,7 +10,6 @@ rust-version = "1.70.0"
 [dependencies]
 usermgmt_lib = { path = "../usermgmt_lib" }
 
-env_logger = { workspace = true }
 log = { workspace = true }
 strum = { workspace = true }
 once_cell = { workspace = true }

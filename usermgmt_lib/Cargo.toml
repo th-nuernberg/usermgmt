@@ -32,6 +32,7 @@ derive_more = { version = "0.99.17", default-features = false, features = [
   "into_iterator",
   "deref",
 ] }
+flexi_logger = { version = "0.27.3", features = ["async"] }
 
 [dev-dependencies]
 insta = { version = "1.33.0", features = ["yaml"] }

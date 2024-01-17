@@ -10,7 +10,6 @@ rust-version = "1.70.0"
 [dependencies]
 clap = { workspace = true }
 log = { workspace = true }
-env_logger = { workspace = true }
 once_cell = { workspace = true }
 usermgmt_lib = { path = "../usermgmt_lib" }
 rpassword = "7.2.0"

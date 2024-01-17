@@ -95,6 +95,7 @@ where
                     unreachable!()
                 }
                 Err(error) => {
+                    error!("Error: {}", error);
                     self.status = IoTaskStatus::Failed(error);
                     None
                 }

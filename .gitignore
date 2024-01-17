@@ -4,3 +4,4 @@
 conf_thn.toml
 .DS_Store
 *.pdf
+*.log
