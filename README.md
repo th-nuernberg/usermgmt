@@ -439,8 +439,9 @@ RUST_LOG=debug usermgmt delete teststaff123
 ```
 
 The application also tries to write logs to logging file. 
-If that fails, the application only writes to the terminal.
-The application writes to a logs file within the data folder of the application according to the convention of used OS.
+The application writes to a logs file within the data folder of the application according to the convention of the used OS.
+If this is not possible, it tries to log within the same folder of the executable of this application.
+If that fails too, the application only writes to the terminal via stderr.
 See the [docs](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) of this rust crate for details about this convention.
 
 ### Show stack trace in case of error
