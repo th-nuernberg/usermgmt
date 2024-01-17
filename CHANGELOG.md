@@ -10,6 +10,7 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ### Added
 
+- Logging also performed to logging file
 - Ssh key pair can be provided by field within configuration file or as a CLI argument.
 
 ### Changed

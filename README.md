@@ -341,6 +341,11 @@ run_slurm_remote = true
 ssh_port = 22
 # If true, the application will try to authenticate via a ssh agent before the simple password authentication
 ssh_agent = false
+# Path to ssh key pair to be used if no ssh agent is used.
+# Path points to base name of the private and public key. 
+# Example: With path "~/.shh/some_key_pair", there should be private key named "~/.shh/some_key_pair" 
+# and public key "~/.shh/some_key_pair.pub"
+ssh_key_path = "~/.shh/some_key_pair"
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
@@ -425,13 +430,18 @@ you will be asked for which key to use via a prompt in the terminal.
 The log-level can be changed using the `RUST_LOG` environment variable. 
 Available log-levels are *error*, *warn*, *info*, *debug*, and *trace*. 
 *Error* represents the highest-priority log messages and *trace* the lowest. 
-The default log-level is *info*. 
+The default log-level is *info* during production. During development the default is debug. 
 You'll receive the most verbose output when you set it to *debug*. 
 
 ```bash
 # Delete user with log-level debug
 RUST_LOG=debug usermgmt delete teststaff123
 ```
+
+The application also tries to write logs to logging file. 
+If that fails, the application only writes to the terminal.
+The application writes to a logs file within the data folder of the application according to the convention of used OS.
+See the [docs](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) of this rust crate for details about this convention.
 
 ### Show stack trace in case of error
 

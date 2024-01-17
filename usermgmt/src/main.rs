@@ -1,6 +1,5 @@
 use clap::Parser;
 use cli_ssh_credential::CliSshCredential;
-use env_logger::Env;
 use ldap_cli_credential::LdapCliCredential;
 use log::error;
 use std::process::ExitCode;
@@ -14,9 +13,10 @@ mod ldap_cli_credential;
 mod user_input;
 fn main() -> ExitCode {
     usermgmt_lib::app_panic_hook::set_app_panic_hook();
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .format_timestamp(None)
-        .init();
+    // Logger handler in variable so background thread for file logging is not stopped until the
+    // end of application.
+    let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
+        .expect("Failed to initilize logger");
 
     if let Err(error) = execute_command() {
         error!("Error: {:?}", error);
