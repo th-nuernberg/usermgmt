@@ -136,6 +136,7 @@ where
 
     if on_which_sys.slurm() {
         let session = SshConnection::from_head_node(config, ssh_credentials.clone());
+        session.establish_connection()?;
         slurm::add_slurm_user(&entity, config, &session)?;
     }
 
