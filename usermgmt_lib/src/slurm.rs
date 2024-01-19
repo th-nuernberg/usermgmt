@@ -84,14 +84,16 @@ where
 }
 
 /// Lists all users in slurm database on a remote machine
-pub fn list_users(
+pub fn list_users<T>(
     config: &MgmtConfig,
-    credentials: impl SshCredentials,
+    session: &SshConnection<T>,
     parseable: bool,
-) -> AppResult<String> {
+) -> AppResult<String>
+where
+    T: SshCredentials,
+{
     let action = CommandBuilder::new_show(parseable);
-    let session = SshConnection::from_head_node(config, credentials);
-    let output = run_slurm_action(action, config, &session)?;
+    let output = run_slurm_action(action, config, session)?;
 
     Ok(output)
 }

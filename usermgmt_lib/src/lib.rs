@@ -43,6 +43,7 @@ use crate::{
         add_ldap_user, delete_ldap_user, modify_ldap_user, text_list_output, LDAPConfig,
         LdapSession,
     },
+    slurm::{add_slurm_user, delete_slurm_user},
     ssh::SshConnection,
 };
 extern crate confy;
@@ -86,6 +87,78 @@ impl FromStr for Group {
     }
 }
 
+fn perform_action_on_context<T, C>(
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+    ldap_credentials: T,
+    ssh_credentials: &C,
+    on_ldap_action: impl FnOnce(&mut LdapSession<T>) -> AppResult,
+    on_slurm_action: impl FnOnce(&SshConnection<C>) -> AppResult,
+    on_dir_action: impl FnOnce(&SshConnection<C>) -> AppResult,
+) -> AppResult
+where
+    T: LdapCredential,
+    C: SshCredentials,
+{
+    let ssh_session = SshConnection::from_head_node(config, ssh_credentials.clone());
+    let mut ldap_session = LdapSession::new(config, ldap_credentials)?;
+
+    if on_which_sys.slurm() {
+        ssh_session.establish_connection()?;
+    }
+
+    if on_which_sys.ldap() {
+        ldap_session.establish_connection()?;
+        on_ldap_action(&mut ldap_session)?;
+    }
+
+    if on_which_sys.slurm() {
+        on_slurm_action(&ssh_session)?;
+    }
+
+    if on_which_sys.dirs() {
+        on_dir_action(&ssh_session)?;
+    }
+
+    Ok(())
+}
+
+fn perform_action_context_no_dirs<T, C>(
+    on_which_sys: &OnWhichSystem,
+    config: &MgmtConfig,
+    ldap_credentials: T,
+    ssh_credentials: &C,
+    readonly: bool,
+    on_ldap_action: impl FnOnce(&mut LdapSession<T>) -> AppResult,
+    on_slurm_action: impl FnOnce(&SshConnection<C>) -> AppResult,
+) -> AppResult
+where
+    T: LdapCredential,
+    C: SshCredentials,
+{
+    let ssh_session = SshConnection::from_head_node(config, ssh_credentials.clone());
+    let mut ldap_session = if readonly {
+        LdapSession::from_ldap_readonly_config(config, ldap_credentials)?
+    } else {
+        LdapSession::new(config, ldap_credentials)?
+    };
+
+    if on_which_sys.slurm() {
+        ssh_session.establish_connection()?;
+    }
+
+    if on_which_sys.ldap() {
+        ldap_session.establish_connection()?;
+        on_ldap_action(&mut ldap_session)?;
+    }
+
+    if on_which_sys.slurm() {
+        on_slurm_action(&ssh_session)?;
+    }
+
+    Ok(())
+}
+
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
 /// Filters out duplicates too.
 /// Returns an empty vector if `qos` or `valid_qos` is empty.
@@ -125,29 +198,22 @@ pub fn add_user<T, C>(
     ssh_credentials: C,
 ) -> AppResult
 where
-    T: LdapCredential,
-    C: SshCredentials,
+    T: LdapCredential + Clone,
+    C: SshCredentials + Clone,
 {
     debug!("Start add_user");
 
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
-    if on_which_sys.ldap() {
-        let mut ldap_session = LdapSession::new(config, ldap_credentials)?;
-        add_ldap_user(&entity, config, &mut ldap_session)?;
-    }
-
-    if on_which_sys.slurm() {
-        let session = SshConnection::from_head_node(config, ssh_credentials.clone());
-        session.establish_connection()?;
-        slurm::add_slurm_user(&entity, config, &session)?;
-    }
-
-    if on_which_sys.dirs() {
-        add_user_directories(&entity, config, &ssh_credentials)?;
-    } else {
-        debug!("include_dir_mgmt in conf.toml is false (or not set). Not creating directories.");
-    }
+    perform_action_on_context(
+        on_which_sys,
+        config,
+        ldap_credentials.clone(),
+        &ssh_credentials,
+        |session| add_ldap_user(&entity, config, session),
+        |ssh_con| add_slurm_user(&entity, config, ssh_con),
+        |_| add_user_directories(&entity, config, &ssh_credentials),
+    )?;
 
     debug!("Finished add_user");
 
@@ -167,15 +233,15 @@ where
 {
     debug!("Start delete_user");
 
-    if on_which_sys.ldap() {
-        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
-        delete_ldap_user(user, ldap_config)?;
-    }
-
-    if on_which_sys.slurm() {
-        let session = SshConnection::from_head_node(config, credentials);
-        slurm::delete_slurm_user(user, config, &session)?;
-    }
+    perform_action_context_no_dirs(
+        on_which_sys,
+        config,
+        ldap_credentials,
+        &credentials,
+        false,
+        |ldap_session| delete_ldap_user(user, ldap_session),
+        |ssh_connection| delete_slurm_user(user, config, ssh_connection),
+    )?;
 
     debug!("Finished delete_user");
     Ok(())
@@ -194,15 +260,16 @@ where
 {
     debug!("Start modify_user for {}", data.username);
 
-    let data = ChangesToUser::try_new(data.clone())?;
-    if on_which_sys.ldap() {
-        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
-        modify_ldap_user(&data, config, ldap_config)?;
-    }
-    if on_which_sys.slurm() {
-        let session = SshConnection::from_head_node(config, credential);
-        slurm::modify_slurm_user(&data, config, &session)?;
-    }
+    let modifiable = ChangesToUser::try_new(data.clone())?;
+    perform_action_context_no_dirs(
+        on_which_sys,
+        config,
+        ldap_credentials,
+        &credential,
+        false,
+        |ldap_session| modify_ldap_user(&modifiable, ldap_session),
+        |ssh_connection| slurm::modify_slurm_user(&modifiable, config, ssh_connection),
+    )?;
 
     debug!("Finished modify_user");
     Ok(())
@@ -219,22 +286,30 @@ where
     T: LdapCredential,
     C: SshCredentials,
 {
-    if on_which_sys.ldap() {
-        let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
-        let search_result_data = ldap::list_ldap_users(ldap_config)?;
+    perform_action_context_no_dirs(
+        on_which_sys,
+        config,
+        ldap_credentials.clone(),
+        &credentials,
+        true,
+        |_ldap_session| {
+            let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
+            let search_result_data = ldap::list_ldap_users(ldap_config)?;
 
-        let output = if simple_output_ldap {
-            text_list_output::ldap_simple_output(&search_result_data)
-        } else {
-            text_list_output::ldap_search_to_pretty_table(&search_result_data)
-        };
-        println!("{}", &output);
-    }
-
-    if on_which_sys.slurm() {
-        let output = slurm::list_users(config, credentials, false)?;
-        println!("{}", output);
-    }
+            let output = if simple_output_ldap {
+                text_list_output::ldap_simple_output(&search_result_data)
+            } else {
+                text_list_output::ldap_search_to_pretty_table(&search_result_data)
+            };
+            println!("{}", &output);
+            Ok(())
+        },
+        |ssh_connnection| {
+            let output = slurm::list_users(config, ssh_connnection, false)?;
+            println!("{}", output);
+            Ok(())
+        },
+    )?;
 
     Ok(())
 }

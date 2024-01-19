@@ -21,7 +21,7 @@ use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::{prelude::*, NewEntity};
 use crate::{ChangesToUser, MgmtConfig};
 use ldap3::controls::{MakeCritical, RelaxRules};
-use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
+use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry, SearchResult};
 use log::{debug, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
@@ -133,20 +133,25 @@ where
     }
 }
 
-pub fn delete_ldap_user<T>(username: &str, ldap_config: LDAPConfig<T>) -> AppResult
+pub fn delete_ldap_user<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult
 where
     T: LdapCredential,
 {
-    // get dn for uid
-    let mut ldap = make_ldap_connection(&ldap_config)?;
-    let dn = find_dn_by_uid(username, &mut ldap, &ldap_config)
+    let dn = find_dn_by_uid(username, ldap_session)
         .with_context(|| format!("No DN found for username {}!", username))?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     match &dn {
         Some(dn_to_delete) => {
-            ldap_is_success(ldap.delete(dn_to_delete)).context("User deletion in LDAP failed!")?;
-            info!("Successfully deleted DN {}", dn_to_delete);
+            ldap_session.action(|ldap, _| {
+                let result = ldap.delete(dn_to_delete);
+                ldap_is_success(result)?;
+                info!("Successfully deleted DN {}", dn_to_delete);
+                Ok(())
+            })?;
         }
         None => {
             warn!("No dn found to delete under the username {}", username);
@@ -158,14 +163,12 @@ where
 
 pub fn modify_ldap_user<T>(
     modifiable: &ChangesToUser,
-    config: &MgmtConfig,
-    ldap_config: LDAPConfig<T>,
+    ldap_session: &mut LdapSession<T>,
 ) -> AppResult
 where
     T: LdapCredential,
 {
-    let mut ldap = make_ldap_connection(&ldap_config)?;
-    let dn = find_dn_by_uid(modifiable.username.as_ref(), &mut ldap, &ldap_config)
+    let dn = find_dn_by_uid(modifiable.username.as_ref(), ldap_session)
         .with_context(|| {
             format!(
                 "No DN found for username {}! Unable to modify user.",
@@ -174,29 +177,22 @@ where
         })?
         .ok_or(anyhow!("No dn found for uid"))?;
 
-    let password = &ldap_config.password()?;
-    ldap.simple_bind(ldap_config.bind(), password)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
-
     // Prepare replace operation
 
     let old_qos = match &modifiable.qos {
-        Some(_) => find_qos_by_uid(
-            modifiable.username.as_ref(),
-            config,
-            ldap_config.username(),
-            password,
-        ),
+        Some(_) => find_qos_by_uid(modifiable.username.as_ref(), ldap_session),
         None => Ok(Vec::default()),
     }?;
     let mod_vec = make_modification_vec(modifiable, &old_qos);
 
     // Replace userPassword at given dn
-    let res = ldap
-        .with_controls(RelaxRules.critical())
-        .modify(&dn, mod_vec);
+    ldap_session.action(|ldap_connection, _| {
+        let result = ldap_connection
+            .with_controls(RelaxRules.critical())
+            .modify(&dn, mod_vec);
+        ldap_is_success(result).context("User modification in LDAP failed!")
+    })?;
 
-    ldap_is_success(res).context("User modification in LDAP failed!")?;
     info!("Successfully modified user {} in LDAP", modifiable.username);
     Ok(())
 }
@@ -331,23 +327,25 @@ where
 }
 
 /// Search for a specific uid and return the corresponding dn.
-fn find_dn_by_uid<T>(
-    username: &str,
-    ldap: &mut LdapConn,
-    ldap_config: &LDAPConfig<T>,
-) -> AppResult<Option<String>>
+fn find_dn_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Option<String>>
 where
     T: LdapCredential,
 {
-    debug!("LDAP connection established to {}", ldap_config.bind());
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     // Search for all uids under base dn and return dn of user
-    let search = ldap.search(
-        ldap_config.base(),
-        Scope::OneLevel,
-        &format!("(uid={username})"),
-        vec!["dn"],
-    )?;
+    let search: SearchResult = ldap_session.action(|con, config| {
+        con.search(
+            config.base(),
+            Scope::OneLevel,
+            &format!("(uid={username})"),
+            vec!["dn"],
+        )
+        .context("LDAP search failed")
+    })?;
 
     let entry = search
         .0
@@ -362,38 +360,33 @@ where
 }
 
 /// Search for a specific uid and return the corresponding qos.
-fn find_qos_by_uid(
-    username: &str,
-    config: &MgmtConfig,
-    ldap_user: &str,
-    ldap_pass: &str,
-) -> AppResult<Vec<String>> {
-    let ldap_config = LDAPConfig::new(
-        config,
-        LdapSimpleCredential::new(ldap_user.to_string(), ldap_pass.to_string()),
-    )?;
+fn find_qos_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Vec<String>>
+where
+    T: LdapCredential,
+{
     let mut fetched_all_qos: Vec<String> = Vec::new();
 
-    let ldap_server = &ldap_config.ldap_server;
-    let mut ldap_connection = make_ldap_connection(&ldap_config)
-        .with_context(|| format!("Connection to {} failed", ldap_server))?;
-
-    debug!("LDAP connection established to {}", ldap_config.bind());
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     // Search for all uid under base dn and return dn of user
-    let search = ldap_connection
-        .search(
-            ldap_config.base(),
-            Scope::OneLevel,
-            &format!("(uid={})", username),
-            vec!["slurmQos"],
-        )
-        .with_context(|| {
-            format!(
-                "search did not find any slurmQos for the user with uid {}",
-                username
+    let search = ldap_session.action(|ldap_connection, ldap_config| {
+        ldap_connection
+            .search(
+                ldap_config.base(),
+                Scope::OneLevel,
+                &format!("(uid={})", username),
+                vec!["slurmQos"],
             )
-        })?;
+            .with_context(|| {
+                format!(
+                    "search did not find any slurmQos for the user with uid {}",
+                    username
+                )
+            })
+    })?;
 
     for elem in search.0.iter() {
         let search_result = SearchEntry::construct(elem.to_owned());
@@ -414,7 +407,7 @@ where
     T: LdapCredential,
 {
     let mut username_exists = false;
-    let mut ldap = make_ldap_connection(&ldap_config)?;
+    let mut ldap = make_ldap_connection(ldap_config)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Search for all uid under base dn and return dn of user

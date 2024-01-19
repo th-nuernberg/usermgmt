@@ -2,7 +2,7 @@ use crate::prelude::AppResult;
 
 use super::LdapCredential;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct LdapSimpleCredential {
     username: String,
     password: String,

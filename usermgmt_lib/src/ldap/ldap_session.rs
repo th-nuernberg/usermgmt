@@ -1,5 +1,6 @@
 use crate::{AppError, AppResult};
 use ldap3::LdapConn;
+use log::debug;
 
 use crate::config::MgmtConfig;
 use crate::ldap;
@@ -20,6 +21,11 @@ where
         let connection = None;
         Ok(Self { config, connection })
     }
+    pub fn from_ldap_readonly_config(config: &MgmtConfig, credentials: T) -> AppResult<Self> {
+        let config = LDAPConfig::new_readonly(config, credentials)?;
+        let connection = None;
+        Ok(Self { config, connection })
+    }
 
     pub fn config(&self) -> &LDAPConfig<T> {
         &self.config
@@ -36,7 +42,10 @@ where
 
     pub fn establish_connection(&mut self) -> Result<(), AppError> {
         match self.connection.as_mut() {
-            Some(Ok(_)) => Ok(()),
+            Some(Ok(_)) => {
+                debug!("LDAP connection established to {}", self.config.bind());
+                Ok(())
+            }
             Some(Err(error)) => Err(anyhow::format_err!(
                 "Establishing connection failed\n{:?}",
                 error

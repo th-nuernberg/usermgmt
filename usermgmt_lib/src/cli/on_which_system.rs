@@ -85,6 +85,10 @@ impl OnWhichSystem {
             None => config_val,
         }
     }
+
+    pub fn needs_ssh(&self) -> bool {
+        self.slurm() || self.ldap()
+    }
 }
 
 #[cfg(test)]
