@@ -4,12 +4,14 @@ mod ldap_config;
 mod ldap_credential;
 mod ldap_paths;
 mod ldap_search_result;
+mod ldap_session;
 mod ldap_simple_credential;
 pub mod text_list_output;
 
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
 pub use ldap_search_result::LdapSearchResult;
+pub use ldap_session::LdapSession;
 pub use ldap_simple_credential::LdapSimpleCredential;
 
 #[cfg(test)]
@@ -43,12 +45,12 @@ where
 pub fn add_ldap_user<T>(
     entity: &NewEntity,
     config: &MgmtConfig,
-    ldap_config: &LDAPConfig<T>,
+    ldap_session: &mut LdapSession<T>,
 ) -> AppResult
 where
     T: LdapCredential,
 {
-    let exitence_of_username = username_exists(entity.username.as_ref(), ldap_config)?;
+    let exitence_of_username = username_exists(entity.username.as_ref(), ldap_session.config())?;
     if exitence_of_username {
         warn!(
             "User {} already exists in LDAP. Skipping LDAP user creation.",
@@ -57,15 +59,15 @@ where
         return Ok(());
     }
 
-    let uid_number = find_next_available_uid(ldap_config, entity.group.id())
+    let uid_number = find_next_available_uid(ldap_session, entity.group.id())
         .context("No users found or LDAP query failed. Unable to assign uid. Aborting...")?;
 
-    let mut ldap_connection = make_ldap_connection(&ldap_config)?;
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
-    ldap_connection.simple_bind(ldap_config.bind(), ldap_config.password()?)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
-
-    add_to_ldap_db(entity, uid_number, ldap_connection, config, ldap_config)?;
+    add_to_ldap_db(entity, uid_number, ldap_session, config)?;
 
     info!("Added LDAP user {}", entity.username);
     return Ok(());
@@ -73,9 +75,8 @@ where
     fn add_to_ldap_db<T>(
         entity: &NewEntity,
         uid: u32,
-        mut ldap_connection: LdapConn,
+        ldap_session: &mut LdapSession<T>,
         config: &MgmtConfig,
-        ldap_config: &LDAPConfig<T>,
     ) -> AppResult
     where
         T: LdapCredential,
@@ -103,30 +104,32 @@ where
             .map(|trimmmed| trimmmed.as_ref().as_str())
             .unwrap_or("");
 
-        let result_form_adding = ldap_connection.add(
-            &format!("uid={},{}", entity.username, ldap_config.base()),
-            vec![
-                ("cn", hashset! {un}),
-                (
-                    "objectClass",
-                    hashset_from_vec_str(&config.objectclass_common).to_owned(),
-                ),
-                ("gidNumber", hashset! {gid.as_str()}),
-                ("uidNumber", hashset! {uid.as_str()}),
-                ("uid", hashset! {un}),
-                ("sn", hashset! {ln}),
-                ("givenName", hashset! {gn}),
-                ("mail", hashset! {mail}),
-                ("slurmDefaultQos", hashset! {def_qos}),
-                ("homeDirectory", hashset! {home.as_str()}),
-                ("slurmQos", qos),
-                ("sshPublicKey", hashset! {pubkey}),
-                ("loginShell", hashset! {config.login_shell.as_str()}),
-            ],
-        );
+        ldap_session.action(|connection, ldap_config| {
+            let result_form_adding = connection.add(
+                &format!("uid={},{}", entity.username, ldap_config.base()),
+                vec![
+                    ("cn", hashset! {un}),
+                    (
+                        "objectClass",
+                        hashset_from_vec_str(&config.objectclass_common).to_owned(),
+                    ),
+                    ("gidNumber", hashset! {gid.as_str()}),
+                    ("uidNumber", hashset! {uid.as_str()}),
+                    ("uid", hashset! {un}),
+                    ("sn", hashset! {ln}),
+                    ("givenName", hashset! {gn}),
+                    ("mail", hashset! {mail}),
+                    ("slurmDefaultQos", hashset! {def_qos}),
+                    ("homeDirectory", hashset! {home.as_str()}),
+                    ("slurmQos", qos),
+                    ("sshPublicKey", hashset! {pubkey}),
+                    ("loginShell", hashset! {config.login_shell.as_str()}),
+                ],
+            );
 
-        ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
-        Ok(())
+            ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
+            Ok(())
+        })
     }
 }
 
@@ -288,32 +291,34 @@ fn make_modification_vec<'a>(
 }
 
 /// Do a LDAP search to determine the next available uid
-fn find_next_available_uid<T>(ldap_config: &LDAPConfig<T>, group: crate::Group) -> AppResult<u32>
+fn find_next_available_uid<T>(
+    ldap_session: &mut LdapSession<T>,
+    group: crate::Group,
+) -> AppResult<u32>
 where
     T: LdapCredential,
 {
-    let mut ldap = make_ldap_connection(&ldap_config).context("Error during uid search!")?;
+    {
+        let config = ldap_session.config();
+        debug!(
+            "find_next_available_uid: LDAP connection established to {}",
+            config.bind(),
+        );
 
-    let password = ldap_config.password()?;
-    debug!("Binding with dn: {}, pw: {}", ldap_config.bind(), password);
-
-    debug!(
-        "find_next_available_uid: LDAP connection established to {}",
-        ldap_config.bind(),
-    );
-
-    debug!("Search under {}", ldap_config.base());
+        debug!("Search under {}", config.base());
+    }
 
     // Search for all uidNumbers under base dn
-    let search_result = ldap
-        .search(
-            ldap_config.base(),
-            Scope::OneLevel,
-            "(objectclass=*)",
-            vec!["uidNumber"],
-        )
-        .context("Error during uid search!")?;
-
+    let search_result = ldap_session.action(|connection, config| {
+        connection
+            .search(
+                config.base(),
+                Scope::OneLevel,
+                "(objectclass=*)",
+                vec!["uidNumber"],
+            )
+            .context("Error during uid search!")
+    })?;
     let mut uids: Vec<u32> = Vec::new();
     for elem in search_result.0.iter() {
         let search_result = SearchEntry::construct(elem.to_owned());

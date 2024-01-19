@@ -39,7 +39,10 @@ pub mod app_panic_hook;
 
 use crate::{
     dir::add_user_directories,
-    ldap::{add_ldap_user, delete_ldap_user, modify_ldap_user, text_list_output, LDAPConfig},
+    ldap::{
+        add_ldap_user, delete_ldap_user, modify_ldap_user, text_list_output, LDAPConfig,
+        LdapSession,
+    },
     ssh::SshConnection,
 };
 extern crate confy;
@@ -130,8 +133,8 @@ where
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
     if on_which_sys.ldap() {
-        let ldap_config = LDAPConfig::new(config, ldap_credentials)?;
-        add_ldap_user(&entity, config, &ldap_config)?;
+        let mut ldap_session = LdapSession::new(config, ldap_credentials)?;
+        add_ldap_user(&entity, config, &mut ldap_session)?;
     }
 
     if on_which_sys.slurm() {
