@@ -1,3 +1,5 @@
+use usermgmt_lib::operations;
+
 use crate::{
     current_selected_view::ModifyState, general_utils::PreparationBeforIoTask, prelude::*,
 };
@@ -38,7 +40,7 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
                 window.modify_state.res_io.spawn_task(
                     move || {
                         let username = changes.username.to_string();
-                        usermgmt_lib::modify_user(
+                        operations::modify_user(
                             changes,
                             &on_which_sys,
                             &config,

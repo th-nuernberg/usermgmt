@@ -62,6 +62,7 @@ where
         );
 
         let ldap_user = credentials.username()?;
+        let _trigger_password_resolvement = credentials.password()?;
 
         let ldap_paths = LdapPaths::new(
             dc.clone(),

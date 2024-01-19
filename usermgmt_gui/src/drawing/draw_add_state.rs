@@ -1,4 +1,5 @@
 use drawing::draw_utils::{GroupDrawing, TextFieldEntry};
+use usermgmt_lib::operations;
 
 use crate::prelude::*;
 
@@ -97,7 +98,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
             let username = to_add.common_user_fields.username.to_string();
             let _ = adding_state.adding_res_io.spawn_task(
                 move || {
-                    usermgmt_lib::add_user(
+                    operations::add_user(
                         to_add,
                         &prep.on_which_sys,
                         &prep.config,
