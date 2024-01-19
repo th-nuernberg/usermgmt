@@ -1,3 +1,5 @@
+use usermgmt_lib::operations;
+
 use crate::prelude::*;
 
 use super::draw_utils::{GroupDrawing, TextFieldEntry};
@@ -45,7 +47,7 @@ fn delte_user(window: &mut UsermgmtWindow) {
         let username = window.remove_state.username.clone();
         let _ = window.remove_state.remove_res_io.spawn_task(
             move || {
-                usermgmt_lib::delete_user(
+                operations::delete_user(
                     &username,
                     &prep.on_which_sys,
                     &prep.config,

@@ -82,7 +82,7 @@ where
         Ok((output, exit_status))
     }
 
-    fn establish_connection(&self) -> AppResult<Session> {
+    pub fn establish_connection(&self) -> AppResult<Session> {
         info!("Connecting to host {}", self.endpoint);
 
         let mut sess = Session::new().context("Could not build up ssh session")?;

@@ -4,12 +4,14 @@ mod ldap_config;
 mod ldap_credential;
 mod ldap_paths;
 mod ldap_search_result;
+mod ldap_session;
 mod ldap_simple_credential;
 pub mod text_list_output;
 
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
 pub use ldap_search_result::LdapSearchResult;
+pub use ldap_session::LdapSession;
 pub use ldap_simple_credential::LdapSimpleCredential;
 
 #[cfg(test)]
@@ -19,24 +21,36 @@ use crate::util::{get_new_uid, hashset_from_vec_str};
 use crate::{prelude::*, NewEntity};
 use crate::{ChangesToUser, MgmtConfig};
 use ldap3::controls::{MakeCritical, RelaxRules};
-use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry};
+use ldap3::{LdapConn, LdapError, LdapResult, Mod, Scope, SearchEntry, SearchResult};
 use log::{debug, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
 
-fn make_ldap_connection(server: &str) -> Result<LdapConn, LdapError> {
-    LdapConn::new(server)
+pub fn make_ldap_connection<T>(ldap_config: &LDAPConfig<T>) -> AppResult<LdapConn>
+where
+    T: LdapCredential,
+{
+    let mut ldap = LdapConn::new(&ldap_config.ldap_server)?;
+    let _ = ldap
+        .simple_bind(ldap_config.bind(), ldap_config.password()?)
+        .with_context(|| {
+            format!(
+                "Failed to establish ldap connection via the bind {}",
+                ldap_config.bind()
+            )
+        })?;
+    Ok(ldap)
 }
 
 pub fn add_ldap_user<T>(
     entity: &NewEntity,
     config: &MgmtConfig,
-    ldap_config: &LDAPConfig<T>,
+    ldap_session: &mut LdapSession<T>,
 ) -> AppResult
 where
     T: LdapCredential,
 {
-    let exitence_of_username = username_exists(entity.username.as_ref(), ldap_config)?;
+    let exitence_of_username = username_exists(entity.username.as_ref(), ldap_session.config())?;
     if exitence_of_username {
         warn!(
             "User {} already exists in LDAP. Skipping LDAP user creation.",
@@ -45,15 +59,15 @@ where
         return Ok(());
     }
 
-    let uid_number = find_next_available_uid(ldap_config, entity.group.id())
+    let uid_number = find_next_available_uid(ldap_session, entity.group.id())
         .context("No users found or LDAP query failed. Unable to assign uid. Aborting...")?;
 
-    let mut ldap_connection = make_ldap_connection(&ldap_config.ldap_server)?;
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
-    ldap_connection.simple_bind(ldap_config.bind(), ldap_config.password()?)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
-
-    add_to_ldap_db(entity, uid_number, ldap_connection, config, ldap_config)?;
+    add_to_ldap_db(entity, uid_number, ldap_session, config)?;
 
     info!("Added LDAP user {}", entity.username);
     return Ok(());
@@ -61,9 +75,8 @@ where
     fn add_to_ldap_db<T>(
         entity: &NewEntity,
         uid: u32,
-        mut ldap_connection: LdapConn,
+        ldap_session: &mut LdapSession<T>,
         config: &MgmtConfig,
-        ldap_config: &LDAPConfig<T>,
     ) -> AppResult
     where
         T: LdapCredential,
@@ -91,56 +104,54 @@ where
             .map(|trimmmed| trimmmed.as_ref().as_str())
             .unwrap_or("");
 
-        let result_form_adding = ldap_connection.add(
-            &format!("uid={},{}", entity.username, ldap_config.base()),
-            vec![
-                ("cn", hashset! {un}),
-                (
-                    "objectClass",
-                    hashset_from_vec_str(&config.objectclass_common).to_owned(),
-                ),
-                ("gidNumber", hashset! {gid.as_str()}),
-                ("uidNumber", hashset! {uid.as_str()}),
-                ("uid", hashset! {un}),
-                ("sn", hashset! {ln}),
-                ("givenName", hashset! {gn}),
-                ("mail", hashset! {mail}),
-                ("slurmDefaultQos", hashset! {def_qos}),
-                ("homeDirectory", hashset! {home.as_str()}),
-                ("slurmQos", qos),
-                ("sshPublicKey", hashset! {pubkey}),
-                ("loginShell", hashset! {config.login_shell.as_str()}),
-            ],
-        );
+        ldap_session.action(|connection, ldap_config| {
+            let result_form_adding = connection.add(
+                &format!("uid={},{}", entity.username, ldap_config.base()),
+                vec![
+                    ("cn", hashset! {un}),
+                    (
+                        "objectClass",
+                        hashset_from_vec_str(&config.objectclass_common).to_owned(),
+                    ),
+                    ("gidNumber", hashset! {gid.as_str()}),
+                    ("uidNumber", hashset! {uid.as_str()}),
+                    ("uid", hashset! {un}),
+                    ("sn", hashset! {ln}),
+                    ("givenName", hashset! {gn}),
+                    ("mail", hashset! {mail}),
+                    ("slurmDefaultQos", hashset! {def_qos}),
+                    ("homeDirectory", hashset! {home.as_str()}),
+                    ("slurmQos", qos),
+                    ("sshPublicKey", hashset! {pubkey}),
+                    ("loginShell", hashset! {config.login_shell.as_str()}),
+                ],
+            );
 
-        ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
-        Ok(())
+            ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
+            Ok(())
+        })
     }
 }
 
-pub fn delete_ldap_user<T>(username: &str, ldap_config: LDAPConfig<T>) -> AppResult
+pub fn delete_ldap_user<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult
 where
     T: LdapCredential,
 {
-    // get dn for uid
-    let dn = find_dn_by_uid(username, &ldap_config)
+    let dn = find_dn_by_uid(username, ldap_session)
         .with_context(|| format!("No DN found for username {}!", username))?;
-    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
-
-    let _ = ldap
-        .simple_bind(ldap_config.bind(), ldap_config.password()?)
-        .with_context(|| {
-            format!(
-                "Failed to establish ldap connection via the bind {}",
-                ldap_config.bind()
-            )
-        })?;
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     match &dn {
         Some(dn_to_delete) => {
-            ldap_is_success(ldap.delete(dn_to_delete)).context("User deletion in LDAP failed!")?;
-            info!("Successfully deleted DN {}", dn_to_delete);
+            ldap_session.action(|ldap, _| {
+                let result = ldap.delete(dn_to_delete);
+                ldap_is_success(result)?;
+                info!("Successfully deleted DN {}", dn_to_delete);
+                Ok(())
+            })?;
         }
         None => {
             warn!("No dn found to delete under the username {}", username);
@@ -152,13 +163,12 @@ where
 
 pub fn modify_ldap_user<T>(
     modifiable: &ChangesToUser,
-    config: &MgmtConfig,
-    ldap_config: LDAPConfig<T>,
+    ldap_session: &mut LdapSession<T>,
 ) -> AppResult
 where
     T: LdapCredential,
 {
-    let dn = find_dn_by_uid(modifiable.username.as_ref(), &ldap_config)
+    let dn = find_dn_by_uid(modifiable.username.as_ref(), ldap_session)
         .with_context(|| {
             format!(
                 "No DN found for username {}! Unable to modify user.",
@@ -167,30 +177,22 @@ where
         })?
         .ok_or(anyhow!("No dn found for uid"))?;
 
-    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    let password = &ldap_config.password()?;
-    ldap.simple_bind(ldap_config.bind(), password)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
-
     // Prepare replace operation
 
     let old_qos = match &modifiable.qos {
-        Some(_) => find_qos_by_uid(
-            modifiable.username.as_ref(),
-            config,
-            ldap_config.username(),
-            password,
-        ),
+        Some(_) => find_qos_by_uid(modifiable.username.as_ref(), ldap_session),
         None => Ok(Vec::default()),
     }?;
     let mod_vec = make_modification_vec(modifiable, &old_qos);
 
     // Replace userPassword at given dn
-    let res = ldap
-        .with_controls(RelaxRules.critical())
-        .modify(&dn, mod_vec);
+    ldap_session.action(|ldap_connection, _| {
+        let result = ldap_connection
+            .with_controls(RelaxRules.critical())
+            .modify(&dn, mod_vec);
+        ldap_is_success(result).context("User modification in LDAP failed!")
+    })?;
 
-    ldap_is_success(res).context("User modification in LDAP failed!")?;
     info!("Successfully modified user {} in LDAP", modifiable.username);
     Ok(())
 }
@@ -203,11 +205,8 @@ where
     T: LdapCredential,
 {
     // Establish LDAP connection and bind
-    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)
-        .context("Error while connecting via LDAP !")?;
-
-    ldap.simple_bind(ldap_config.bind(), ldap_config.password()?)
-        .context("Error during LDAP binding!")?;
+    let mut ldap =
+        make_ldap_connection(&ldap_config).context("Error while connecting via LDAP !")?;
 
     debug!(
         "LDAP connection established to {}. Will search under {}",
@@ -288,35 +287,34 @@ fn make_modification_vec<'a>(
 }
 
 /// Do a LDAP search to determine the next available uid
-fn find_next_available_uid<T>(ldap_config: &LDAPConfig<T>, group: crate::Group) -> AppResult<u32>
+fn find_next_available_uid<T>(
+    ldap_session: &mut LdapSession<T>,
+    group: crate::Group,
+) -> AppResult<u32>
 where
     T: LdapCredential,
 {
-    let mut ldap =
-        make_ldap_connection(&ldap_config.ldap_server).context("Error during uid search!")?;
+    {
+        let config = ldap_session.config();
+        debug!(
+            "find_next_available_uid: LDAP connection established to {}",
+            config.bind(),
+        );
 
-    let password = ldap_config.password()?;
-    debug!("Binding with dn: {}, pw: {}", ldap_config.bind(), password);
-
-    let bind = ldap.simple_bind(ldap_config.bind(), password)?;
-    debug!(
-        "find_next_available_uid: LDAP connection established to {}, {}",
-        ldap_config.bind(),
-        bind
-    );
-
-    debug!("Search under {}", ldap_config.base());
+        debug!("Search under {}", config.base());
+    }
 
     // Search for all uidNumbers under base dn
-    let search_result = ldap
-        .search(
-            ldap_config.base(),
-            Scope::OneLevel,
-            "(objectclass=*)",
-            vec!["uidNumber"],
-        )
-        .context("Error during uid search!")?;
-
+    let search_result = ldap_session.action(|connection, config| {
+        connection
+            .search(
+                config.base(),
+                Scope::OneLevel,
+                "(objectclass=*)",
+                vec!["uidNumber"],
+            )
+            .context("Error during uid search!")
+    })?;
     let mut uids: Vec<u32> = Vec::new();
     for elem in search_result.0.iter() {
         let search_result = SearchEntry::construct(elem.to_owned());
@@ -329,22 +327,25 @@ where
 }
 
 /// Search for a specific uid and return the corresponding dn.
-fn find_dn_by_uid<T>(username: &str, ldap_config: &LDAPConfig<T>) -> AppResult<Option<String>>
+fn find_dn_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Option<String>>
 where
     T: LdapCredential,
 {
-    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    let password = ldap_config.password()?;
-    ldap.simple_bind(ldap_config.bind(), password)?;
-    debug!("LDAP connection established to {}", ldap_config.bind());
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     // Search for all uids under base dn and return dn of user
-    let search = ldap.search(
-        ldap_config.base(),
-        Scope::OneLevel,
-        &format!("(uid={username})"),
-        vec!["dn"],
-    )?;
+    let search: SearchResult = ldap_session.action(|con, config| {
+        con.search(
+            config.base(),
+            Scope::OneLevel,
+            &format!("(uid={username})"),
+            vec!["dn"],
+        )
+        .context("LDAP search failed")
+    })?;
 
     let entry = search
         .0
@@ -359,41 +360,33 @@ where
 }
 
 /// Search for a specific uid and return the corresponding qos.
-fn find_qos_by_uid(
-    username: &str,
-    config: &MgmtConfig,
-    ldap_user: &str,
-    ldap_pass: &str,
-) -> AppResult<Vec<String>> {
-    let ldap_config = LDAPConfig::new(
-        config,
-        LdapSimpleCredential::new(ldap_user.to_string(), ldap_pass.to_string()),
-    )?;
+fn find_qos_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Vec<String>>
+where
+    T: LdapCredential,
+{
     let mut fetched_all_qos: Vec<String> = Vec::new();
 
-    let ldap_server = &ldap_config.ldap_server;
-    let mut ldap_connection = make_ldap_connection(ldap_server)
-        .with_context(|| format!("Connection to {} failed", ldap_server))?;
-
-    let password = ldap_config.password()?;
-    ldap_connection.simple_bind(ldap_config.bind(), password)?;
-
-    debug!("LDAP connection established to {}", ldap_config.bind());
+    debug!(
+        "LDAP connection established to {}",
+        ldap_session.config().bind()
+    );
 
     // Search for all uid under base dn and return dn of user
-    let search = ldap_connection
-        .search(
-            ldap_config.base(),
-            Scope::OneLevel,
-            &format!("(uid={})", username),
-            vec!["slurmQos"],
-        )
-        .with_context(|| {
-            format!(
-                "search did not find any slurmQos for the user with uid {}",
-                username
+    let search = ldap_session.action(|ldap_connection, ldap_config| {
+        ldap_connection
+            .search(
+                ldap_config.base(),
+                Scope::OneLevel,
+                &format!("(uid={})", username),
+                vec!["slurmQos"],
             )
-        })?;
+            .with_context(|| {
+                format!(
+                    "search did not find any slurmQos for the user with uid {}",
+                    username
+                )
+            })
+    })?;
 
     for elem in search.0.iter() {
         let search_result = SearchEntry::construct(elem.to_owned());
@@ -414,8 +407,7 @@ where
     T: LdapCredential,
 {
     let mut username_exists = false;
-    let mut ldap = make_ldap_connection(&ldap_config.ldap_server)?;
-    ldap.simple_bind(ldap_config.bind(), ldap_config.password()?)?;
+    let mut ldap = make_ldap_connection(ldap_config)?;
     debug!("LDAP connection established to {}", ldap_config.bind());
 
     // Search for all uid under base dn and return dn of user

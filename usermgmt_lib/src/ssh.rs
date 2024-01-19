@@ -45,8 +45,10 @@ where
 
     let (s, exit_status) = sess.exec(cmd)?;
 
-    debug!("command output: {}", s);
     debug!("command exit status: {}", exit_status);
+    if exit_status != 0 {
+        debug!("command output: {}", s);
+    }
     Ok((exit_status, s))
 }
 

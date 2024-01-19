@@ -6,7 +6,7 @@ use egui_extras::{Size, StripBuilder};
 use usermgmt_lib::{
     ldap::{list_ldap_users, LDAPConfig, LdapSearchResult, LdapSimpleCredential},
     slurm::{self, ListedUser},
-    ssh::SshGivenCredential,
+    ssh::{SshConnection, SshGivenCredential},
 };
 
 use crate::{current_selected_view::ListingState, io_resource_manager::IoTaskStatus};
@@ -157,7 +157,8 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 let failed_parsing_slurm = text.failed_parsing_slurm().clone();
                 _ = window.listin_state.list_slurm_user_res.spawn_task(
                     move || {
-                        let slurm_users_raw = slurm::list_users(&mgmt_conf, ssh_credentials, true)?;
+                        let connection = SshConnection::from_head_node(&mgmt_conf, ssh_credentials);
+                        let slurm_users_raw = slurm::list_users(&mgmt_conf, &connection, true)?;
                         ListedUser::new(&slurm_users_raw).ok_or(anyhow!(failed_parsing_slurm))
                     },
                     String::from("Getting slurm user"),

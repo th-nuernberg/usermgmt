@@ -15,6 +15,7 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ### Changed
 
+- In Cli, connection to LDAP and Slurm is checked before any attempt at performing adding/removing/listing or modifying/listing.
 - In CLI, user can just press enter to provide no password during password prompt for ssh. 
   Useful for ssh key pair without password.
 

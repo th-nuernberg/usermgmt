@@ -5,7 +5,7 @@ use log::error;
 use std::process::ExitCode;
 use usermgmt_lib::cli::{self, Commands, GeneralArgs, OnWhichSystem};
 use usermgmt_lib::config::{self};
-use usermgmt_lib::{prelude::*, ChangesToUser, Entity};
+use usermgmt_lib::{operations, prelude::*, ChangesToUser, Entity};
 
 mod cli_ssh_credential;
 mod cli_user_input;
@@ -47,7 +47,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let on_which_sys = &OnWhichSystem::from_config_for_all(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            usermgmt_lib::add_user(
+            operations::add_user(
                 to_add,
                 on_which_sys,
                 &config,
@@ -61,7 +61,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
             let data = Entity::new_modifieble_conf(data, &config)?;
             let data = ChangesToUser::try_new(data)?;
-            usermgmt_lib::modify_user(
+            operations::modify_user(
                 data,
                 on_which_sys,
                 &config,
@@ -73,7 +73,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            usermgmt_lib::delete_user(
+            operations::delete_user(
                 user.as_ref(),
                 on_which_sys,
                 &config,
@@ -88,7 +88,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            usermgmt_lib::list_users(
+            operations::list_users(
                 &config,
                 on_which_sys,
                 simple_output_for_ldap.unwrap_or(false),

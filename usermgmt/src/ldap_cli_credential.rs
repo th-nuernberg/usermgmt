@@ -3,7 +3,7 @@ use usermgmt_lib::{ldap::LdapCredential, prelude::AppResult};
 
 use crate::cli_user_input;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct LdapCliCredential {
     username: OnceCell<String>,
     password: OnceCell<String>,
