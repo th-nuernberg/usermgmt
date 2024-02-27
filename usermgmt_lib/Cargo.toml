@@ -16,7 +16,6 @@ serde = { workspace = true }
 const_format = { workspace = true }
 getset = { workspace = true }
 confy = "0.6.0"
-tempfile = "3.10.1"
 ldap3 = "0.11.3"
 maplit = "1.0.2"
 ssh2 = "0.9.4"

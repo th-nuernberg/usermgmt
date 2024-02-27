@@ -3823,14 +3823,12 @@ dependencies = [
 name = "usermgmt_gui"
 version = "0.1.0"
 dependencies = [
- "const_format",
  "eframe",
  "egui_extras",
  "getset",
  "hotwatch",
  "log",
  "num",
- "once_cell",
  "serde",
  "strum",
  "toml",
@@ -3857,7 +3855,6 @@ dependencies = [
  "prettytable",
  "serde",
  "ssh2",
- "tempfile",
  "toml",
 ]
 
