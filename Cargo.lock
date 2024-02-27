@@ -3855,7 +3855,6 @@ dependencies = [
  "maplit",
  "once_cell",
  "prettytable",
- "rpassword",
  "serde",
  "ssh2",
  "tempfile",
