@@ -27,11 +27,9 @@ fn main() -> Result<(), eframe::Error> {
     let (options, title) = {
         let init = &app_state.init;
         let window_title = init.window_title();
+        let (height, width) = (init.window_start_height(), init.window_start_width());
         let options = eframe::NativeOptions {
-            initial_window_size: Some(egui::vec2(
-                init.window_start_width(),
-                init.window_start_height(),
-            )),
+            viewport: egui::ViewportBuilder::default().with_inner_size([height, width]),
             ..Default::default()
         };
         (options, window_title.clone())

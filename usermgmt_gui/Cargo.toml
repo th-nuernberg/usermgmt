@@ -5,7 +5,7 @@ edition = "2021"
 license-file = "LICENSE"
 description = "GUI for simultaneous Slurm and LDAP user management."
 readme = "README.md"
-rust-version = "1.70.0"
+rust-version = "1.72.0"
 
 [dependencies]
 usermgmt_lib = { path = "../usermgmt_lib" }
@@ -19,8 +19,8 @@ num = { workspace = true }
 const_format = { workspace = true }
 getset = { workspace = true }
 
-eframe = { version = "0.23.0" }
-egui_extras = "0.23.0"
+eframe = { version = "0.26.2" }
+egui_extras = "0.26.2"
 
 # TODO: replace this by crates.io once the PR which is pointed to, is merged.
 hotwatch = { git = "https://github.com/BoolPurist/hotwatch", branch = "toggleable_log", default-features = false }

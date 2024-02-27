@@ -15,12 +15,12 @@ toml = { workspace = true }
 serde = { workspace = true }
 const_format = { workspace = true }
 getset = { workspace = true }
-confy = "0.5.1"
-tempfile = "3.8.0"
+confy = "0.6.0"
+tempfile = "3.10.1"
 ldap3 = "0.11.3"
 maplit = "1.0.2"
 ssh2 = "0.9.4"
-anyhow = { version = "1.0.75", features = ["backtrace"] }
+anyhow = { version = "1.0.80", features = ["backtrace"] }
 rpassword = "7.2.0"
 prettytable = "0.10.0"
 dirs = "5.0.1"
@@ -32,7 +32,7 @@ derive_more = { version = "0.99.17", default-features = false, features = [
   "into_iterator",
   "deref",
 ] }
-flexi_logger = { version = "0.27.3", features = ["async"] }
+flexi_logger = { version = "0.27.4", features = ["async"] }
 
 [dev-dependencies]
-insta = { version = "1.33.0", features = ["yaml"] }
+insta = { version = "1.35.1", features = ["yaml"] }
