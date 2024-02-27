@@ -148,8 +148,11 @@ pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> 
     info!("Loding configuraion file from path at {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
     let config = confy::load_path(&path)
-        .with_context(|| format!("Error in loading or creating config file at {:?}", path))?;
-    let path = path.parent().unwrap().to_path_buf();
+        .with_context(|| format!("Error in loading or creating config file at {:?}", &path))?;
+    let path = path
+        .parent()
+        .ok_or_else(|| anyhow!("{:?} needs to have a parent folder", &path))?
+        .to_path_buf();
     Ok(LoadedMgmtConfig { path, config })
 }
 

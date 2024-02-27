@@ -319,8 +319,18 @@ where
     for elem in search_result.0.iter() {
         let search_result = SearchEntry::construct(elem.to_owned());
         debug!("UID: {:?}", SearchEntry::construct(elem.to_owned()));
-        let uid = &search_result.attrs["uidNumber"][0].parse::<u32>().unwrap();
-        uids.push(*uid);
+        let uid = {
+            const ATTRIBUTE: &str = "uidNumber";
+            let unparsed = &search_result.attrs[ATTRIBUTE].first().ok_or_else(|| {
+                anyhow!(
+                    "No uid under the attribute `{}` in the LDPA search ",
+                    ATTRIBUTE
+                )
+            })?;
+            unparsed.parse::<u32>().with_context(|| format!("Uid `{}` for ldap operation could not be parsed into unsigned integer 32 value", unparsed))?
+        };
+
+        uids.push(uid);
     }
 
     get_new_uid(&uids, group)
@@ -458,5 +468,5 @@ where
         (Some(username), Some(password)) => (username, password),
     };
 
-    return Ok((ldap_user.trim().to_owned(), ldap_pass.trim().to_owned()));
+    Ok((ldap_user.trim().to_owned(), ldap_pass.trim().to_owned()))
 }

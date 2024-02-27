@@ -69,7 +69,9 @@ pub fn get_agent_with_all_entities(session: &mut Session) -> AppResult<EntitiesA
     } else if keys.len() == 1 {
         Ok(EntitiesAndSshAgent::One(
             agent,
-            keys.into_iter().next().unwrap(),
+            keys.into_iter()
+                .next()
+                .expect("Previous check in else if made sure that there is at least one element"),
         ))
     } else {
         Ok(EntitiesAndSshAgent::Many(agent, keys))

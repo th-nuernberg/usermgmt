@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 pub use entity::Entity;
 pub use new_entity::NewEntity;
 
@@ -39,7 +41,6 @@ extern crate confy;
 // TODO: git rid of unwraps. Replace them with expects or better with result if possible.
 // TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
 // A code block as example in the file slurm under function add_slurm_user is repeated quite often
-
 #[derive(Clone, PartialEq, Copy, Debug, Eq)]
 pub enum Group {
     Staff,

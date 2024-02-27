@@ -1,15 +1,20 @@
 use crate::{AppError, AppResult};
+use anyhow::anyhow;
 use ldap3::LdapConn;
-use log::debug;
 
 use crate::config::MgmtConfig;
 use crate::ldap;
 
 use super::{LDAPConfig, LdapCredential};
 
+/// API of the ldap crate requires us to mutate the connection
+/// to establish a session.
+/// We can not work with once_cell here because of it.
+type MutableLdapConnection = Option<AppResult<LdapConn>>;
+
 pub struct LdapSession<T> {
     config: LDAPConfig<T>,
-    connection: Option<AppResult<LdapConn>>,
+    connection: MutableLdapConnection,
 }
 
 impl<T> LdapSession<T>
@@ -36,25 +41,25 @@ where
         action: impl FnOnce(&mut LdapConn, &LDAPConfig<T>) -> AppResult<RT>,
     ) -> Result<RT, AppError> {
         self.establish_connection()?;
-        let connection = self.connection.as_mut().unwrap().as_mut().unwrap();
-        action(connection, &self.config)
+        let config = &self.config;
+        let connection = {
+            let is_there = self
+                .connection
+                .as_mut()
+                .expect("Is Some because of establishing connection");
+            is_there
+                .as_mut()
+                .expect("Is ok because of establishing connection")
+        };
+        action(connection, config)
     }
 
-    pub fn establish_connection(&mut self) -> Result<(), AppError> {
-        match self.connection.as_mut() {
-            Some(Ok(_)) => {
-                debug!("LDAP connection established to {}", self.config.bind());
-                Ok(())
-            }
-            Some(Err(error)) => Err(anyhow::format_err!(
-                "Establishing connection failed\n{:?}",
-                error
-            )),
-            None => {
-                let connection = ldap::make_ldap_connection(&self.config)?;
-                self.connection = Some(Ok(connection));
-                Ok(())
-            }
-        }
+    pub fn establish_connection(&mut self) -> AppResult {
+        let _ = self
+            .connection
+            .get_or_insert_with(|| ldap::make_ldap_connection(&self.config))
+            .as_mut()
+            .map_err(|error| anyhow!("{}", error))?;
+        Ok(())
     }
 }

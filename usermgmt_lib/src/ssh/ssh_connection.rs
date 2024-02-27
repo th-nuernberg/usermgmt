@@ -126,6 +126,7 @@ where
                 .context("Authentication has failed with provided username/password.")?;
             Ok(())
         }
+
         fn direct_key_path_auth<T>(
             session: &mut Session,
             session_connection: &SshConnection<T>,
@@ -207,12 +208,6 @@ where
                     );
                     simple_password_auth(session, connection, username)?;
                 }
-                let key_pair = cred.ssh_paths_pair_key().unwrap();
-                let (private, public) = (key_pair.private_key(), key_pair.pub_key());
-                info!(
-                    "Using ssh key pair. (Private key,public key) at ({:?},{:?})",
-                    private, public
-                );
                 Ok(())
             }
         }
@@ -246,7 +241,12 @@ fn try_authenticate_via_ssh_agent(
                 .collect();
 
             let user_choice = credentails.auth_agent_resolve(choice)?;
-            (agent, to_choose_from.into_iter().nth(user_choice).unwrap())
+            (
+                agent,
+                to_choose_from.into_iter().nth(user_choice).expect(
+                    "Function for getting entities gurantees that we have elements at this point.",
+                ),
+            )
         }
     };
 

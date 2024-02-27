@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::AppResult;
+use anyhow::anyhow;
 use flexi_logger::{
     Cleanup, Criterion, Duplicate, FileSpec, Logger, LoggerHandle, Naming, WriteMode,
 };
@@ -24,9 +25,10 @@ const NUMBER_OF_FILES: usize = 10;
 ///
 pub fn set_up_logging(app_name: &str) -> AppResult<LoggerHandle> {
     let handler = if is_debug() {
-        let project_path_logging_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+        const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
+        let project_path_logging_file = Path::new(CARGO_MANIFEST_DIR)
             .parent()
-            .unwrap()
+            .ok_or_else(|| anyhow!("No parent folder for directory: {}", CARGO_MANIFEST_DIR))?
             .join(app_name);
         set_up_file_logger(&project_path_logging_file, app_name)
     } else {
