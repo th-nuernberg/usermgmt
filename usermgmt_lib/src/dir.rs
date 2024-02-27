@@ -24,7 +24,6 @@ where
     Ok(())
 }
 
-/// TODO: Bubble up errors instead of just logging
 /// Establish SSH connection to each compute node, make user directory and set quota
 fn handle_compute_nodes<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
@@ -125,7 +124,6 @@ where
 }
 
 /// Establish SSH connection to NFS host, make user directory and set quota
-/// TODO: Bubble up errors instead of just logging
 fn handle_nfs<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
     T: SshCredentials,
@@ -207,7 +205,6 @@ where
 }
 
 /// Establish SSH connection to home host, make user directory and set quota
-/// TODO: Bubble up errors instead of just logging
 fn handle_home<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
     T: SshCredentials,

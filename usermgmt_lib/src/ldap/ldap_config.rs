@@ -5,11 +5,10 @@ use crate::{prelude::AppResult, MgmtConfig};
 use super::{ldap_paths::LdapPaths, LdapCredential};
 #[derive(Debug, Default)]
 /// Contains all information for creating/deleting and modifying an user aka writting actions
-/// TODO: consider implementing encapsulation with getters and setters
 pub struct LDAPConfig<T> {
-    pub ldap_server: String,
+    ldap_server: String,
     ldap_credentails: T,
-    pub ldap_paths: LdapPaths,
+    ldap_paths: LdapPaths,
 }
 
 impl<T> LDAPConfig<T>
@@ -90,6 +89,10 @@ where
     }
     pub fn password(&self) -> AppResult<&str> {
         self.ldap_credentails.password()
+    }
+
+    pub fn ldap_server(&self) -> &str {
+        &self.ldap_server
     }
 }
 

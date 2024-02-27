@@ -1,11 +1,13 @@
-use crate::prelude::*;
-use clap::{Args, Parser, Subcommand};
-mod on_which_system;
-
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli, OptFilePath};
 
-use crate::util::TrimmedNonEmptyText;
+mod on_which_system;
+
+use clap::{Args, Parser, Subcommand};
 use const_format::concatcp;
+use derive_more::Into;
+
+use crate::prelude::*;
+use crate::util::TrimmedNonEmptyText;
 
 pub const fn short_about() -> &'static str {
     "Simultaneous user management for Slurm and LDAP"
@@ -79,17 +81,16 @@ pub enum Commands {
 }
 
 /// Defines options that can be modified
-/// TODO: consider encapsulation with getters and setters.
-#[derive(Args, Debug, Clone)]
+#[derive(Args, Debug, Clone, Into)]
 pub struct Modifiable {
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub firstname: Option<TrimmedNonEmptyText>,
+    firstname: Option<TrimmedNonEmptyText>,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub lastname: Option<TrimmedNonEmptyText>,
+    lastname: Option<TrimmedNonEmptyText>,
     #[command(flatten)]
-    pub common_user_fields: CommonUserFields,
+    common_user_fields: CommonUserFields,
 }
 
 impl Modifiable {
@@ -102,20 +103,37 @@ impl Modifiable {
     }
 }
 
-/// TODO: consider encapsulation with getters and setters.
-#[derive(Args, Debug, Clone)]
+#[derive(Args, Debug, Clone, Into)]
 pub struct UserToAdd {
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub firstname: TrimmedNonEmptyText,
+    firstname: TrimmedNonEmptyText,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub lastname: TrimmedNonEmptyText,
+    lastname: TrimmedNonEmptyText,
     #[command(flatten)]
-    pub common_user_fields: CommonUserFields,
+    common_user_fields: CommonUserFields,
 }
 
-#[derive(Args, Debug, Clone)]
+impl UserToAdd {
+    pub fn new(
+        firstname: TrimmedNonEmptyText,
+        lastname: TrimmedNonEmptyText,
+        common_user_fields: CommonUserFields,
+    ) -> Self {
+        Self {
+            firstname,
+            lastname,
+            common_user_fields,
+        }
+    }
+
+    pub fn common_user_fields(&self) -> &CommonUserFields {
+        &self.common_user_fields
+    }
+}
+
+#[derive(Args, Debug, Clone, Into)]
 pub struct CommonUserFields {
     /// Username e.g. wagnerdo.
     #[clap(value_parser = trimmed_non_empty)]

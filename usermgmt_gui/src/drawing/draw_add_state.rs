@@ -95,7 +95,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         {
             let adding_state = &mut window.adding_state;
             let to_add = adding_state.create_user_to_add()?;
-            let username = to_add.common_user_fields.username.to_string();
+            let username = to_add.common_user_fields().username.to_string();
             let _ = adding_state.adding_res_io.spawn_task(
                 move || {
                     operations::add_user(

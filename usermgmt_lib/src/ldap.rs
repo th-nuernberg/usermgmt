@@ -1,5 +1,3 @@
-//! TODO: Implement LDAP credential Struct for centralizing username and password acquisition.
-
 mod ldap_config;
 mod ldap_credential;
 mod ldap_paths;
@@ -30,7 +28,7 @@ pub fn make_ldap_connection<T>(ldap_config: &LDAPConfig<T>) -> AppResult<LdapCon
 where
     T: LdapCredential,
 {
-    let mut ldap = LdapConn::new(&ldap_config.ldap_server)?;
+    let mut ldap = LdapConn::new(ldap_config.ldap_server())?;
     let _ = ldap
         .simple_bind(ldap_config.bind(), ldap_config.password()?)
         .with_context(|| {

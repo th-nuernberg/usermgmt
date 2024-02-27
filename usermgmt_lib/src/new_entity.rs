@@ -56,9 +56,10 @@ impl NewEntity {
         })
     }
 
-    pub fn new_user_addition_conf(modif: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
-        let (firstname, lastname) = (Some(modif.firstname), Some(modif.lastname));
-        let entity = Entity::new(firstname, lastname, modif.common_user_fields, conf)?;
+    pub fn new_user_addition_conf(to_add: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
+        let (firstname, lastname, common_user_fields) = to_add.into();
+        let (firstname, lastname) = (Some(firstname), Some(lastname));
+        let entity = Entity::new(firstname, lastname, common_user_fields, conf)?;
         Self::new(entity, conf)
     }
 }

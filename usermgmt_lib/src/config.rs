@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use crate::{config, prelude::*};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-/// TODO: consider implementing encapsulation with getters and setters
 pub struct MgmtConfig {
     pub student_default_qos: String,
     pub staff_default_qos: String,
