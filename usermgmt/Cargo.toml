@@ -12,7 +12,7 @@ clap = { workspace = true }
 log = { workspace = true }
 once_cell = { workspace = true }
 usermgmt_lib = { path = "../usermgmt_lib" }
-rpassword = "7.2.0"
+rpassword = "7.3.1"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"
