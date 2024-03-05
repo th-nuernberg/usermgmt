@@ -10,7 +10,7 @@ use std::{fs, path::Path, str::FromStr};
 use crate::{config::MgmtConfig, prelude::AppResult, util::TrimmedNonEmptyText, Group};
 
 /// Representation of a user entity.
-/// It contains all information necessary to add/modify/delete the user.
+/// Information necessary to add/modify/delete the user.
 #[derive(Debug, Clone)]
 pub struct Entity {
     pub username: TrimmedNonEmptyText,
@@ -25,6 +25,9 @@ pub struct Entity {
 }
 
 impl Entity {
+    /// # Errors
+    ///
+    /// - If public key file could not be read
     pub fn new(
         firstname: Option<TrimmedNonEmptyText>,
         lastname: Option<TrimmedNonEmptyText>,
@@ -41,6 +44,12 @@ impl Entity {
         })
     }
 
+    /// # Errors
+    ///
+    /// - If group name as text could not be mapped to integer id.
+    /// - If any given quality of service is not valid. See [`TrimmedNonEmptyText`]
+    /// - If the default quality of service is not valid quality of service. See [`ValidQos`]
+    /// - If loading the public key, parameter `on_load_pubkey`, of an user fails.
     pub fn new_inner(
         firstname: Option<TrimmedNonEmptyText>,
         lastname: Option<TrimmedNonEmptyText>,
@@ -48,19 +57,6 @@ impl Entity {
         config: &MgmtConfig,
         on_load_pubkey: impl Fn(&Path) -> AppResult<String>,
     ) -> AppResult<Self> {
-        // group: Option<TrimmedNonEmptyText>,
-        // /// User's e-mail address.
-        // #[clap(short, long, value_parser = trimmed_non_empty)]
-        // mail: Option<TrimmedNonEmptyText>,
-        // /// Slurm default QOS for the user e.g. basic.
-        // #[clap(short, long, value_parser = trimmed_non_empty)]
-        // default_qos: Option<TrimmedNonEmptyText>,
-        // /// Path to SSH publickey.
-        // #[clap(short, long, value_parser = trimmed_non_empty)]
-        // publickey: Option<TrimmedNonEmptyText>,
-        // /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). QOS need to be provided as a whitespace separated list (e.g. interactive basic).
-        // #[clap(short, long, num_args(0..=20))]
-        // qos: Vec<String>,
         let (username, group, mail, default_qos, publickey, qos) = to_add.into();
         let group = group
             .map(|group| {
@@ -114,11 +110,17 @@ impl Entity {
         })
     }
 
+    /// # Errors
+    ///
+    /// See [`Entity::new`]
     pub fn new_modifieble_conf(modif: Modifiable, conf: &MgmtConfig) -> AppResult<Self> {
         let (firstname, lastname, common_user_fields) = modif.into();
         Self::new(firstname, lastname, common_user_fields, conf)
     }
 
+    /// # Errors
+    ///
+    /// See [`Entity::new`]
     pub fn new_user_addition_conf(to_add: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
         let (firstname, lastname, common_user_fields) = to_add.into();
         let (firstname, lastname) = (Some(firstname), Some(lastname));
@@ -138,6 +140,7 @@ mod testing {
 
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn error_for_not_valid_group_of_qos() {
         let mut input = CommonUserFields::new("SomeUser".try_into().unwrap());

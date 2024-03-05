@@ -1,14 +1,18 @@
+pub use path_sources::get_path_to_conf;
+
 mod path_sources;
+
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use log::info;
-pub use path_sources::get_path_to_conf;
-/// Definition of configuration options
 use serde::{Deserialize, Serialize};
 
 use crate::{config, prelude::*};
 
+/// This configuration is read from a configuration file in production.
+/// It contains many options to control this application performs actions the various systems
+/// on the cluster.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MgmtConfig {
     pub student_default_qos: String,
@@ -58,6 +62,11 @@ pub struct MgmtConfig {
     pub ssh_key_path: Option<PathBuf>,
 }
 impl MgmtConfig {
+    /// # Errors
+    ///
+    /// - If the parameter `path` can not be converted into an absolute path.
+    /// - If the content could not converted into the toml format.
+    /// - If writing the new content to file at `path` fails.
     pub fn save(&self, path: &Path) -> AppResult<PathBuf> {
         let file_path = path
             .canonicalize()

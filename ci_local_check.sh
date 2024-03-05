@@ -12,3 +12,4 @@ echo "==================="
 
 echo "Checking unit test"
 cargo test --workspace
+

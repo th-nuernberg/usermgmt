@@ -3,7 +3,7 @@ const SEP: &str = "==============================================";
 /// After calling this, the end of every panic message is appended with a notice of how to report a
 /// bug as an end user, a link to the issue page is included.
 /// In a perfect world, panic messages should not be triggered.
-/// If they occurs however then the end user knows where to report this issue.
+/// If they occur however then the end user knows where to report this issue.
 pub fn set_app_panic_hook() {
     use std::panic;
 

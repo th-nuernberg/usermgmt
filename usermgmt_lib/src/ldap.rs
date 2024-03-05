@@ -11,6 +11,7 @@ pub use ldap_credential::LdapCredential;
 pub use ldap_search_result::LdapSearchResult;
 pub use ldap_session::LdapSession;
 pub use ldap_simple_credential::LdapSimpleCredential;
+use once_cell::sync::Lazy;
 
 #[cfg(test)]
 pub mod testing;
@@ -24,6 +25,12 @@ use log::{debug, info, warn};
 use maplit::hashset;
 use std::collections::HashSet;
 
+/// Tries to connect to a LDAP instance and authenticates as an user there.
+///
+/// # Errors
+///
+/// - If the connection to the LDAP instance fails.
+/// - If the binding as the user fails aka authentication
 pub fn make_ldap_connection<T>(ldap_config: &LDAPConfig<T>) -> AppResult<LdapConn>
 where
     T: LdapCredential,
@@ -40,6 +47,11 @@ where
     Ok(ldap)
 }
 
+/// # Errors
+///
+/// - If the existence of the user can not be checked. See [`username_exists`]
+/// - If determining the next UID fails. See [`find_next_available_uid`]
+/// - If the adding of an user in the LDAP database failed.
 pub fn add_ldap_user<T>(
     entity: &NewEntity,
     config: &MgmtConfig,
@@ -131,6 +143,10 @@ where
     }
 }
 
+/// # Errors
+///
+/// - If finding the LDAP-DN by the UID fails. See [`find_dn_by_uid`]
+/// - If the deletion of an user in the LDAP database failed.
 pub fn delete_ldap_user<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult
 where
     T: LdapCredential,
@@ -159,6 +175,10 @@ where
     Ok(())
 }
 
+/// # Errors
+///
+/// - If finding the DN-LDAP  by the UID fails. See [`find_dn_by_uid`]
+/// - If finding the quality of service by the UID fails. See [`find_qos_by_uid`]
 pub fn modify_ldap_user<T>(
     modifiable: &ChangesToUser,
     ldap_session: &mut LdapSession<T>,
@@ -198,6 +218,11 @@ where
 /// List all LDAP users and some attributes
 ///
 /// It currently outputs all values in line separated by commas.
+///
+/// # Errors
+///
+/// - If the connection to the LDAP instance fails. See [`make_ldap_connection`]
+/// - If the searching in LDAP failed
 pub fn list_ldap_users<T>(ldap_config: LDAPConfig<T>) -> AppResult<LdapSearchResult>
 where
     T: LdapCredential,
@@ -211,33 +236,19 @@ where
         ldap_config.bind(),
         ldap_config.base()
     );
-    let attrs = {
-        // Make sure the keys are sorted alphabetic
-        // This way the order fields in the final output deterministic
-        let mut to_sort = vec![
-            "uid",
-            "uidNumber",
-            "givenName",
-            "sn",
-            "mail",
-            "slurmDefaultQos",
-            "slurmQos",
-        ];
-        to_sort.sort();
-        to_sort
-    };
 
+    let attrs = SORTED_LDAP_LISTING_ATTRIBUTES.as_slice();
     // Search for all entities under base dn
     let search_result = ldap
         .search(
             ldap_config.base(),
             Scope::OneLevel,
             "(objectclass=*)",
-            attrs.clone(),
+            attrs,
         )
         .context("Error during LDAP search!")?;
 
-    let search_result = LdapSearchResult::from_ldap_raw_search(&attrs, &search_result);
+    let search_result = LdapSearchResult::from_ldap_raw_search(attrs.iter(), &search_result);
 
     Ok(search_result)
 }
@@ -284,8 +295,13 @@ fn make_modification_vec<'a>(
     }
 }
 
-/// Do a LDAP search to determine the next available uid
-fn find_next_available_uid<T>(
+/// Does a LDAP search to determine the next available UID
+///
+/// # Errors
+///
+/// - If establishing the connection to the LDAP instance fails.
+/// - If the new UID can not be valid. See [`get_new_uid`] for more details
+pub fn find_next_available_uid<T>(
     ldap_session: &mut LdapSession<T>,
     group: crate::Group,
 ) -> AppResult<u32>
@@ -334,8 +350,16 @@ where
     get_new_uid(&uids, group)
 }
 
-/// Search for a specific uid and return the corresponding dn.
-fn find_dn_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Option<String>>
+/// Search for a specific UID and return the corresponding dn.
+///
+/// # Errors
+///
+/// - If the connection to a LDAP instance can not be established
+/// - If nothing is found in the LDAP query under the given user aka parameter `username`
+pub fn find_dn_by_uid<T>(
+    username: &str,
+    ldap_session: &mut LdapSession<T>,
+) -> AppResult<Option<String>>
 where
     T: LdapCredential,
 {
@@ -368,7 +392,14 @@ where
 }
 
 /// Search for a specific uid and return the corresponding qos.
-fn find_qos_by_uid<T>(username: &str, ldap_session: &mut LdapSession<T>) -> AppResult<Vec<String>>
+/// # Errors
+///
+/// - If the connection to the LDAP instance fails
+/// - If nothing is found in the LDAP query under the given user aka parameter `username`
+pub fn find_qos_by_uid<T>(
+    username: &str,
+    ldap_session: &mut LdapSession<T>,
+) -> AppResult<Vec<String>>
 where
     T: LdapCredential,
 {
@@ -410,7 +441,12 @@ where
 
 /// Check if username already exists in ldap.
 /// Must be an exact match on the uid attribute.
-fn username_exists<T>(username: &String, ldap_config: &LDAPConfig<T>) -> AppResult<bool>
+///
+/// # Errors
+///
+/// - If the connection to the LDAP instance fails
+/// - If nothing is found in the LDAP query under the given user aka parameter `username`
+pub fn username_exists<T>(username: &String, ldap_config: &LDAPConfig<T>) -> AppResult<bool>
 where
     T: LdapCredential,
 {
@@ -451,6 +487,10 @@ fn ldap_is_success(to_check: Result<LdapResult, LdapError>) -> Result<(), LdapEr
     }
 }
 
+/// # Errors
+///
+/// - If the username could not be retrieved
+/// - If the password could not be retrieved
 fn ask_credentials_if_not_provided<T>(
     username: Option<&str>,
     password: Option<&str>,
@@ -468,3 +508,19 @@ where
 
     Ok((ldap_user.trim().to_owned(), ldap_pass.trim().to_owned()))
 }
+
+static SORTED_LDAP_LISTING_ATTRIBUTES: Lazy<Vec<&str>> = Lazy::new(|| {
+    // Make sure the keys are sorted alphabetic
+    // This way the order fields in the final output deterministic
+    let mut to_sort = vec![
+        "uid",
+        "uidNumber",
+        "givenName",
+        "sn",
+        "mail",
+        "slurmDefaultQos",
+        "slurmQos",
+    ];
+    to_sort.sort();
+    to_sort
+});

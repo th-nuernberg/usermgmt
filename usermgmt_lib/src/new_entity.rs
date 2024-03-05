@@ -8,6 +8,7 @@ use crate::{
     Entity, Group,
 };
 
+/// Contains attributes used for adding users in various systems like LDAP or slurm database
 pub struct NewEntity {
     pub username: TrimmedNonEmptyText,
     pub firstname: TrimmedNonEmptyText,
@@ -20,6 +21,9 @@ pub struct NewEntity {
 }
 
 impl NewEntity {
+    /// # Errors
+    ///
+    /// - If first or last name is not provided.
     pub fn new(entity: Entity, config: &MgmtConfig) -> AppResult<Self> {
         let (firstname, lastname) = match (entity.firstname, entity.lastname) {
             (Some(first), Some(last)) => Ok((first, last)),
@@ -56,6 +60,9 @@ impl NewEntity {
         })
     }
 
+    /// # Errors
+    ///
+    /// - If an user entity could not be created. See [`Entity::new`]
     pub fn new_user_addition_conf(to_add: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
         let (firstname, lastname, common_user_fields) = to_add.into();
         let (firstname, lastname) = (Some(firstname), Some(lastname));

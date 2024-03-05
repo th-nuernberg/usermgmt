@@ -21,11 +21,15 @@ impl<T> LdapSession<T>
 where
     T: LdapCredential,
 {
+    /// # Errors
+    ///
+    /// - If username or password for an LDAP session could not be retrieved.
     pub fn new(config: &MgmtConfig, credentials: T) -> AppResult<Self> {
         let config = LDAPConfig::new(config, credentials)?;
         let connection = None;
         Ok(Self { config, connection })
     }
+
     pub fn from_ldap_readonly_config(config: &MgmtConfig, credentials: T) -> AppResult<Self> {
         let config = LDAPConfig::new_readonly(config, credentials)?;
         let connection = None;
@@ -36,6 +40,9 @@ where
         &self.config
     }
 
+    /// # Errors
+    ///
+    /// - If establishing of connection to the LDAP fails
     pub fn action<RT>(
         &mut self,
         action: impl FnOnce(&mut LdapConn, &LDAPConfig<T>) -> AppResult<RT>,

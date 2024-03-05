@@ -88,7 +88,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            operations::list_users(
+            operations::print_list_of_users(
                 &config,
                 on_which_sys,
                 simple_output_for_ldap.unwrap_or(false),

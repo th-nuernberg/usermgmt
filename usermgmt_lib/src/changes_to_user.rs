@@ -5,7 +5,8 @@ pub struct ChangesToUser(Entity);
 
 impl ChangesToUser {
     /// # Error
-    /// - qos and default qos have to be provided together or neither of them.
+    ///
+    /// - if qos and default qos have to be provided together or neither of them.
     pub fn try_new(entity: Entity) -> AppResult<Self> {
         match (&entity.qos, &entity.default_qos) {
             (Some(_), Some(_)) => Ok(Self(entity)),
@@ -17,7 +18,8 @@ impl ChangesToUser {
     }
 
     /// # Returns Some
-    /// - Only if qos and default qos are to be changed together.
+    ///
+    /// Only if `qos` and `default qos` are to be changed together.
     pub fn may_qos_and_default_qos(&self) -> Option<(Vec<String>, String)> {
         let entity = &self.0;
         match (&entity.qos, &entity.default_qos) {

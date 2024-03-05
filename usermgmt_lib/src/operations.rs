@@ -21,7 +21,7 @@ where
     T: LdapCredential + Clone,
     C: SshCredentials + Clone,
 {
-    debug!("Start add_user");
+    debug!("Start adding user");
 
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
@@ -95,7 +95,7 @@ where
     Ok(())
 }
 
-pub fn list_users<T, C>(
+pub fn print_list_of_users<T, C>(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,
@@ -134,6 +134,17 @@ where
     Ok(())
 }
 
+/// Performs an action on all the three systems on the cluster.
+///
+/// - LDAP
+/// - Slurm
+/// - Directory management
+///
+/// # Errors
+///
+/// - If getting of credentials for LDAP fails. See [`LdapSession::new`]
+/// - If establishing the ssh connection fails
+/// - If one of three actions fails `on_ldap_action`, `on_slurm_action` or `on_dir_action`.
 fn perform_action_on_context<T, C>(
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
@@ -170,6 +181,7 @@ where
     Ok(())
 }
 
+/// Same as [`perform_action_on_context`] except no directory management is performed.
 fn perform_action_context_no_dirs<T, C>(
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,

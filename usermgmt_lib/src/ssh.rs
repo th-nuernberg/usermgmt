@@ -37,6 +37,10 @@ pub enum EntitiesAndSshAgent {
 }
 
 /// Executes given command `cmd` on remote machine over ssh
+///
+/// # Errors
+///
+/// - If the execution of remote command fails. See [`SshConnection::exec`].
 pub fn run_remote_command<C>(sess: &SshConnection<C>, cmd: &str) -> AppResult<(i32, String)>
 where
     C: SshCredentials,

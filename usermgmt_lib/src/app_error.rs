@@ -2,6 +2,8 @@ use crate::prelude::*;
 use anyhow::anyhow;
 use std::process::Output;
 
+/// Converts parameter `output` from spawned os process into a result
+/// for easy error propagation
 pub fn output_to_result(output: Output) -> AppResult<Output> {
     let status = output.status;
     if status.success() {

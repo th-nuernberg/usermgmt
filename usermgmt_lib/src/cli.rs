@@ -14,7 +14,7 @@ pub const fn short_about() -> &'static str {
 }
 
 #[rustfmt::skip]
-pub const fn links() -> &'static str {
+pub const fn links_about_project_for_end_users() -> &'static str {
     concatcp!(
         "Wheret to report bugs: ", constants::ISSUE_LINK, ".\n",
         "Source code: ", constants::REPOSITORY_LINK, " .\n",
@@ -24,7 +24,7 @@ pub const fn links() -> &'static str {
 }
 
 pub const fn long_about() -> &'static str {
-    concatcp!(short_about(), ". \n\n", links())
+    concatcp!(short_about(), ". \n\n", links_about_project_for_end_users())
 }
 
 #[derive(Parser, Debug)]
@@ -38,6 +38,7 @@ pub struct GeneralArgs {
 }
 
 #[derive(Subcommand, Debug)]
+/// CLI sub commands for operation on users in LDAP or Slurm database
 pub enum Commands {
     /// Add a user to Slurm and/or LDAP
     #[clap(visible_alias = "a")]
@@ -80,7 +81,7 @@ pub enum Commands {
     GenerateConfig,
 }
 
-/// Defines options that can be modified
+/// Defines options for modifying an user
 #[derive(Args, Debug, Clone, Into)]
 pub struct Modifiable {
     /// Firstname of the user.
@@ -103,6 +104,7 @@ impl Modifiable {
     }
 }
 
+/// Defines options for adding an user
 #[derive(Args, Debug, Clone, Into)]
 pub struct UserToAdd {
     /// Firstname of the user.
@@ -134,6 +136,7 @@ impl UserToAdd {
 }
 
 #[derive(Args, Debug, Clone, Into)]
+/// Attributes which are used  on structs for operations on users (adding, deleting or modifying).
 pub struct CommonUserFields {
     /// Username e.g. wagnerdo.
     #[clap(value_parser = trimmed_non_empty)]
@@ -169,7 +172,7 @@ impl CommonUserFields {
 }
 
 /// Used by argument parser to ensure that
-/// the argument is not empty and white spaces are trimmed off from it
+/// the argument is not empty and white spaces are trimmed off
 pub fn trimmed_non_empty(s: &str) -> AppResult<TrimmedNonEmptyText> {
     let to_validate = TrimmedNonEmptyText::try_from(s)?;
     Ok(to_validate)
