@@ -64,7 +64,7 @@ impl SshCredentials for CliSshCredential {
         let length = many_keys.len();
         let last_index = length.saturating_sub(1);
         println!("Found more than one key in ssh agent !");
-        println!("Chooose one between {} and {} ssh key", 0, last_index);
+        println!("Choose one between {} and {} ssh key", 0, last_index);
         println!("===========================================");
 
         for (index, next) in many_keys.iter().enumerate() {
@@ -77,7 +77,7 @@ impl SshCredentials for CliSshCredential {
             .parse()?;
 
         if last_index < user_choice {
-            bail!("Choice should between {} and {}", 0, last_index);
+            Err(anyhow!("Choice should between {} and {}", 0, last_index))
         } else {
             info!("{}. ssh key is chosen", user_choice);
             Ok(last_index)

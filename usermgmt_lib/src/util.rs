@@ -1,10 +1,10 @@
 mod gid;
-mod result_accumalator;
+mod result_accumulator;
 mod trimmed_non_empty_text;
 mod valid_qos;
 
 pub use gid::ResolvedGid;
-pub use result_accumalator::ResultAccumalator;
+pub use result_accumulator::ResultAccumulator;
 pub use trimmed_non_empty_text::TrimmedNonEmptyText;
 pub use valid_qos::{ValidGroupOfQos, ValidQos};
 

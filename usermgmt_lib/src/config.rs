@@ -144,7 +144,7 @@ impl Default for MgmtConfig {
 pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> {
     let path = config::get_path_to_conf(manual_path)?;
 
-    info!("Loding configuraion file from path at {:?}", path);
+    info!("Loading configuration file from path at {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
     let config = confy::load_path(&path)
         .with_context(|| format!("Error in loading or creating config file at {:?}", &path))?;

@@ -3,11 +3,11 @@ use std::process::Command;
 use anyhow::{anyhow, Context};
 use log::{debug, info};
 
-mod commmand_builder;
+mod command_builder;
 mod listed_user;
 use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
-use self::commmand_builder::CommandBuilder;
+use self::command_builder::CommandBuilder;
 
 use crate::ssh::{SshConnection, SshCredentials};
 use crate::{ChangesToUser, NewEntity};

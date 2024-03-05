@@ -65,7 +65,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         });
     }
 
-    draw_utils::draw_credentails(ui, window, true);
+    draw_utils::draw_credentials(ui, window, true);
     let adding_fields = &mut window.adding_state;
     let last_username = &adding_fields.last_added_username;
     draw_utils::draw_status_msg(

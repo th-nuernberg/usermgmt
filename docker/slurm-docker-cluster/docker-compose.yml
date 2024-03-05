@@ -8,7 +8,7 @@
 # Addressing docker container via hostnames only works within docker containers and not from the host
 # machine by default. 
 # To make hostnames work from host, it would require either changing the host file on the host machine
-# or starting a seperate dns service 
+# or starting a separate dns service 
  
 version: "2.2"
 

@@ -6,7 +6,7 @@ use flexi_logger::{
     Cleanup, Criterion, Duplicate, FileSpec, Logger, LoggerHandle, Naming, WriteMode,
 };
 
-const FILE_NAME: &str = "usermgmt_ouput.log";
+const FILE_NAME: &str = "usermgmt_output.log";
 const MAX_SIZE_MEGA_BYTES: u64 = 10 * 1024 * 1024;
 const NUMBER_OF_FILES: usize = 10;
 

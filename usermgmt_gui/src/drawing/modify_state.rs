@@ -1,13 +1,13 @@
 use usermgmt_lib::operations;
 
 use crate::{
-    current_selected_view::ModifyState, general_utils::PreparationBeforIoTask, prelude::*,
+    current_selected_view::ModifyState, general_utils::PreparationBeforeIoTask, prelude::*,
 };
 
 use super::draw_utils::{GroupDrawing, TextFieldEntry};
 pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     draw_typing_fields(ui, &window.settings, &mut window.modify_state);
-    draw_utils::draw_credentails(ui, window, false);
+    draw_utils::draw_credentials(ui, window, false);
     ui.separator();
     if ui.button("Modify User").clicked() {
         handle_modify_req(window);
@@ -28,7 +28,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
 
 fn handle_modify_req(window: &mut UsermgmtWindow) {
     window.modify_state.last_added_username = window.modify_state.username.clone();
-    if let Ok(PreparationBeforIoTask {
+    if let Ok(PreparationBeforeIoTask {
         ldap_cred,
         ssh_cred,
         config,
@@ -49,7 +49,7 @@ fn handle_modify_req(window: &mut UsermgmtWindow) {
                         )?;
                         Ok(username)
                     },
-                    String::from("Modifing User"),
+                    String::from("Modifying User"),
                 );
             }
             Err(error) => window.modify_state.res_io.set_error(error),

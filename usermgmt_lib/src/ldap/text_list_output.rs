@@ -55,11 +55,11 @@ pub fn ldap_search_to_pretty_table(search_result: &LdapSearchResult) -> String {
 
     return table.to_string();
 
-    fn table_with_title_bar(fiedl_names: &[&str]) -> Table {
+    fn table_with_title_bar(field_names: &[&str]) -> Table {
         let mut table = Table::new();
 
         // Title bar
-        let title_cells = fiedl_names
+        let title_cells = field_names
             .iter()
             .map(|to_cell| Cell::new(to_cell))
             .collect();

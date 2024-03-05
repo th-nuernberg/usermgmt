@@ -16,7 +16,7 @@ fn main() -> ExitCode {
     // Logger handler in variable so background thread for file logging is not stopped until the
     // end of application.
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
-        .expect("Failed to initilize logger");
+        .expect("Failed to initialize logger");
 
     if let Err(error) = execute_command() {
         error!("Error: {:?}", error);

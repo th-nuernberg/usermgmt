@@ -192,10 +192,10 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                 .clicked()
             {
                 if let IoTaskStatus::Successful(mgmt_conf) = &window.conf_state.io_conf.status() {
-                    let lising_state = &window.listin_state;
+                    let listing_state = &window.listin_state;
                     let (username, password) = (
-                        lising_state.rw_user_name.clone().unwrap(),
-                        lising_state.rw_pw.clone().unwrap(),
+                        listing_state.rw_user_name.clone().unwrap(),
+                        listing_state.rw_pw.clone().unwrap(),
                     );
                     let mgmt_conf = mgmt_conf.config.clone();
                     window.listin_state.list_ldap_res.spawn_task(

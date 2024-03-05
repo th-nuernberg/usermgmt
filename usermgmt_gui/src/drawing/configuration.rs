@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc};
 
 type LabelTyp = Rc<str>;
-pub type CacheForConfFiels = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
+pub type CacheForConfFields = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
 use crate::{current_selected_view::ConfigurationState, prelude::*};
 use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
 
@@ -197,7 +197,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
     }
 }
 
-fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
+fn snake_to_label(input: &'static str, repos: CacheForConfFields) -> Rc<str> {
     const SPLIT_BY: char = '_';
     const JOIN_BY: &str = " ";
     let mut repos = repos.borrow_mut();
@@ -216,7 +216,7 @@ fn snake_to_label(input: &'static str, repos: CacheForConfFiels) -> Rc<str> {
     }))
 }
 
-fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFiels) -> Vec<ConfiField> {
+fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFields) -> Vec<ConfiField> {
     macro_rules! create_conf_field {
         ($field:ident, $too_tip:expr) => {
             (

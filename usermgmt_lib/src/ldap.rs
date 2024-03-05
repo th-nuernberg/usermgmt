@@ -247,8 +247,8 @@ fn make_modification_vec<'a>(
     old_qos: &'a Vec<String>,
 ) -> Vec<Mod<&'a str>> {
     macro_rules! may_push_simple_modification {
-        ($name:expr, $modifable:ident, $modification:ident, $field:ident) => {
-            if let Some(val) = &$modifable.$field {
+        ($name:expr, $modifiable:ident, $modification:ident, $field:ident) => {
+            if let Some(val) = &$modifiable.$field {
                 info_log($name);
                 ($modification).push(Mod::Replace($name, HashSet::from([val.as_ref().as_str()])))
             }

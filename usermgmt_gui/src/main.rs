@@ -18,7 +18,7 @@ fn main() -> Result<(), eframe::Error> {
     // Logger handler in variable so background thread for file logging is not stopped until the
     // end of application.
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
-        .expect("Failed to initilize logger");
+        .expect("Failed to initialize logger");
 
     // Construct application state before starting the main window for egui frontend.
     // This default impl for app state panics if set up failed due to invalid setting files

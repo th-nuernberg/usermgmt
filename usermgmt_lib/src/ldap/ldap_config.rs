@@ -4,10 +4,10 @@ use crate::{prelude::AppResult, MgmtConfig};
 
 use super::{ldap_paths::LdapPaths, LdapCredential};
 #[derive(Debug, Default)]
-/// Contains all information for creating/deleting and modifying an user aka writting actions
+/// Contains all information for creating/deleting and modifying an user aka writing actions
 pub struct LDAPConfig<T> {
     ldap_server: String,
-    ldap_credentails: T,
+    ldap_credentials: T,
     ldap_paths: LdapPaths,
 }
 
@@ -46,7 +46,7 @@ where
 
         Ok(Self {
             ldap_paths,
-            ldap_credentails: credentials,
+            ldap_credentials: credentials,
             ldap_server,
         })
     }
@@ -73,7 +73,7 @@ where
 
         Ok(Self {
             ldap_server: ldap_server.to_string(),
-            ldap_credentails: credentials,
+            ldap_credentials: credentials,
             ldap_paths,
         })
     }
@@ -88,7 +88,7 @@ where
         self.ldap_paths.username()
     }
     pub fn password(&self) -> AppResult<&str> {
-        self.ldap_credentails.password()
+        self.ldap_credentials.password()
     }
 
     pub fn ldap_server(&self) -> &str {

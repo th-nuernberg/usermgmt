@@ -264,7 +264,7 @@ pub fn link_box(
     })
 }
 pub fn entry_field(ui: &mut egui::Ui, settings: &Settings, entry_field: &mut TextFieldEntry) {
-    draw_enty_field(ui, settings, entry_field)
+    draw_entry_field(ui, settings, entry_field)
 }
 pub fn whole_pos_number_fields<T>(
     ui: &mut egui::Ui,
@@ -276,7 +276,7 @@ pub fn whole_pos_number_fields<T>(
     T: ToPrimitive + FromPrimitive + Bounded + Copy,
 {
     let mut float: f32 = content.to_f32().unwrap_or_else(|| {
-        warn!("Interger value could not be casted to f32 for gui.");
+        warn!("Integer value could not be casted to f32 for gui.");
         warn!("Using the biggest possible f32 value instead.");
         f32::MAX
     });
@@ -291,8 +291,8 @@ pub fn whole_pos_number_fields<T>(
         let new_value = <T as FromPrimitive>::from_f32(rounded).unwrap_or_else(|| {
             let max = <T as Bounded>::max_value();
 
-            warn!("Floating value from gui could not be casted to interger value.");
-            warn!("Using biggest interger number as new value instead.");
+            warn!("Floating value from gui could not be casted to integer value.");
+            warn!("Using biggest integer number as new value instead.");
             max
         });
         *content = new_value;
@@ -309,7 +309,7 @@ pub fn whole_neg_number_fields<T>(
     T: ToPrimitive + FromPrimitive + Signed + Bounded + Copy,
 {
     let mut float: f32 = content.to_f32().unwrap_or_else(|| {
-        warn!("Interger value could not be casted to f32 for gui.");
+        warn!("Integer value could not be casted to f32 for gui.");
         if content.is_negative() {
             warn!("Using the smallest possible f32 value instead.");
             f32::MIN
@@ -327,12 +327,12 @@ pub fn whole_neg_number_fields<T>(
         let rounded = float.round();
         let new_value = <T as FromPrimitive>::from_f32(rounded).unwrap_or_else(|| {
             let (min, max) = (<T as Bounded>::min_value(), <T as Bounded>::max_value());
-            warn!("Floating value from gui could not be casted to interger value.");
+            warn!("Floating value from gui could not be casted to integer value.");
             if rounded.is_negative() {
-                warn!("Using smallest interger number as new value instead.");
+                warn!("Using smallest integer number as new value instead.");
                 min
             } else {
-                warn!("Using biggest interger number as new value instead.");
+                warn!("Using biggest integer number as new value instead.");
                 max
             }
         });
@@ -384,7 +384,7 @@ pub fn draw_status_msg<T>(
     )
 }
 
-pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports_dir: bool) {
+pub fn draw_credentials(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports_dir: bool) {
     which_systems::draw_which_system(ui, &window.settings, &mut window.which_sys, supports_dir);
     if window.is_ssh_cred_needed(supports_dir) {
         draw_ssh_credentials(ui, &window.settings, &mut window.ssh_state);
@@ -394,7 +394,7 @@ pub fn draw_credentails(ui: &mut egui::Ui, window: &mut UsermgmtWindow, supports
     }
 }
 
-fn draw_enty_field(ui: &mut egui::Ui, settings: &Settings, entry_field: &mut TextFieldEntry) {
+fn draw_entry_field(ui: &mut egui::Ui, settings: &Settings, entry_field: &mut TextFieldEntry) {
     ui.horizontal(|ui| {
         ui.label(entry_field.label);
 

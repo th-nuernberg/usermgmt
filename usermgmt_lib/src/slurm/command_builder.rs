@@ -214,12 +214,13 @@ mod testing {
     }
 
     #[test]
-    fn produce_delete_user_with_seperate_path() {
+    fn produce_delete_user_with_separate_path() {
         let input = CommandBuilder::new_delete("somebody".to_owned())
             .sacctmgr_path("some_path/sacctmgr".to_owned());
         let actual = input.remote_command();
         insta::assert_yaml_snapshot!(actual);
     }
+
     #[test]
     fn produce_delete_user_with_local_command() {
         let input = CommandBuilder::new_delete("somebody".to_owned())
@@ -227,6 +228,7 @@ mod testing {
         let actual = input.local_command();
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn list_user() {
         let input = CommandBuilder::new_show(false).sacctmgr_path("some_path/sacctmgr".to_owned());

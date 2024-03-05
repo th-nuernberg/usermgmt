@@ -74,7 +74,7 @@ where
         let mut output = String::new();
         channel
             .read_to_string(&mut output)
-            .context("Could not read output of executed commmand over ssh channel")?;
+            .context("Could not read output of executed command over ssh channel")?;
         let exit_status = channel
             .exit_status()
             .context("Could not retrieve exit code of executed command over ssh")?;
@@ -130,15 +130,15 @@ where
         fn direct_key_path_auth<T>(
             session: &mut Session,
             session_connection: &SshConnection<T>,
-            credentails: &impl SshCredentials,
+            credentials: &impl SshCredentials,
         ) -> AppResult
         where
             T: SshCredentials,
         {
             info!("Try to authenticate over ssh by using ssh key pair");
-            let username = credentails.username()?;
+            let username = credentials.username()?;
             let password = session_connection.password()?;
-            let pair = credentails
+            let pair = credentials
                 .ssh_paths_pair_key()
                 .ok_or_else(|| anyhow!("No key pair provided"))?;
             let (public, private) = (pair.pub_key(), pair.private_key());
@@ -221,12 +221,12 @@ where
 /// # Errors
 ///
 /// - If no ssh agent is accessible.
-/// - If no key is registered withing ssh agent
-/// - If the selection from user is not within the available range of ssh keys registered withing
+/// - If no key is registered within ssh agent
+/// - If the selection from user is not within the available range of ssh keys registered within
 /// ssh agent .
 fn try_authenticate_via_ssh_agent(
     session: &mut Session,
-    credentails: &impl SshCredentials,
+    credentials: &impl SshCredentials,
     username: &str,
 ) -> AppResult<()> {
     let keys = ssh::get_agent_with_all_entities(session)?;
@@ -240,11 +240,11 @@ fn try_authenticate_via_ssh_agent(
                 .map(SshPublicKeySuggestion::from)
                 .collect();
 
-            let user_choice = credentails.auth_agent_resolve(choice)?;
+            let user_choice = credentials.auth_agent_resolve(choice)?;
             (
                 agent,
                 to_choose_from.into_iter().nth(user_choice).expect(
-                    "Function for getting entities gurantees that we have elements at this point.",
+                    "Function for getting entities guarantees that we have elements at this point.",
                 ),
             )
         }

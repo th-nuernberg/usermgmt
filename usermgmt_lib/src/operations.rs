@@ -124,8 +124,8 @@ where
             println!("{}", &output);
             Ok(())
         },
-        |ssh_connnection| {
-            let output = slurm::list_users(config, ssh_connnection, false)?;
+        |ssh_connection| {
+            let output = slurm::list_users(config, ssh_connection, false)?;
             println!("{}", output);
             Ok(())
         },
