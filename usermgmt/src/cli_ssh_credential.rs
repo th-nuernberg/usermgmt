@@ -13,6 +13,9 @@ use usermgmt_lib::{
 use crate::user_input;
 
 #[derive(Debug, Clone)]
+/// Username are retrieved by a terminal prompt or by a default one if provided in the
+/// configuration.
+/// Password are retrieved by a terminal prompt.
 pub struct CliSshCredential {
     default_ssh_user: String,
     username: OnceCell<String>,
@@ -38,6 +41,10 @@ impl CliSshCredential {
 
 impl SshCredentials for CliSshCredential {
     /// Returns given username of user or the default user name if the user has given no username
+    ///
+    /// # Errors
+    ///
+    /// - If the terminal prompt fails. See [`user_input::ask_for_line_from_user_over_term`].
     fn username(&self) -> AppResult<&str> {
         let username = self.username.get_or_try_init(|| {
             user_input::ask_for_line_from_user_over_term(
@@ -48,6 +55,12 @@ impl SshCredentials for CliSshCredential {
 
         Ok(username)
     }
+
+    /// Password is provided by a terminal prompt.
+    ///
+    /// # Errors
+    ///
+    /// - If the terminal prompt fails. See [`user_input::cli_ask_for_password`].
     fn password(&self) -> AppResult<&str> {
         let password = self.password.get_or_try_init(|| {
             let from_prompt = user_input::cli_ask_for_password("Enter your SSH password: ")?;
@@ -57,6 +70,10 @@ impl SshCredentials for CliSshCredential {
         Ok(password)
     }
 
+    /// # Errors
+    ///
+    /// - If reading the user choice from the terminals fails. See [`user_input::line_input_from_user`].
+    /// - If the user enters a selection index greater than the greatest selection index.
     fn auth_agent_resolve(
         &self,
         many_keys: Vec<usermgmt_lib::ssh::SshPublicKeySuggestion>,

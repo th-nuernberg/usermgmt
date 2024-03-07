@@ -20,9 +20,9 @@ fn main() -> Result<(), eframe::Error> {
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
         .expect("Failed to initialize logger");
 
-    // Construct application state before starting the main window for egui frontend.
-    // This default impl for app state panics if set up failed due to invalid setting files
-    // `Settings` or `Init`.
+    // Construct application state before starting the main window for egui front-end.
+    // This default impl for app state panics if the set up fails due to invalid setting files
+    // aka `Settings` or `Init`.
     let app_state = UsermgmtWindow::default();
     let (options, title) = {
         let init = &app_state.init;

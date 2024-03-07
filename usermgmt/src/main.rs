@@ -34,10 +34,17 @@ fn execute_command() -> AppResult {
 }
 
 /// Main function that handles user management
+///
+/// # Errors
+///
+/// - If the LDAP or SSH session could not be established because of connection problems or invalid
+/// credentials.
+/// - If some arguments in CLI, parameter `args`, for action are not valid.
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
     let ldap_credential = LdapCliCredential::default();
     match args.command {
         Commands::GenerateConfig => {
+            // To StdOut, user can then pipe this default configuration wherever they please.
             println!("{}", config::config_for_save())
         }
         Commands::Add {

@@ -253,6 +253,7 @@ where
     Ok(search_result)
 }
 
+/// Creates modifaction parameters which are used by `ldap3` library to modify an user in LDAP.
 fn make_modification_vec<'a>(
     modifiable: &'a ChangesToUser,
     old_qos: &'a Vec<String>,
@@ -295,7 +296,8 @@ fn make_modification_vec<'a>(
     }
 }
 
-/// Does a LDAP search to determine the next available UID
+/// Does a LDAP search to determine the next available UID needed by a new user.
+/// The parameter `group` determines in which range a next available UID is found.
 ///
 /// # Errors
 ///

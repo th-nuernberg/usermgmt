@@ -101,13 +101,14 @@ impl UsermgmtWindow {
         self.which_sys.is_ldap_needed()
     }
 
+    /// Use this to get the credentials from user before the ssh connection is initialized.
     pub fn create_ssh_credentials(&self) -> Option<SshGivenCredential> {
         if let IoTaskStatus::Successful(conf) = self.conf_state.io_conf.status() {
             let ssh_state = &self.ssh_state;
             let (username, password) = (ssh_state.username.as_ref(), ssh_state.password.as_deref());
             let cred = SshGivenCredential::new(
                 username?,
-                password.unwrap_or(""),
+                password.unwrap_or_default(),
                 usermgmt_lib::ssh::create_ssh_key_pair_conf(ssh_state.ssh_key_pair(), &conf.config),
             );
             Some(cred)
@@ -115,6 +116,8 @@ impl UsermgmtWindow {
             None
         }
     }
+
+    /// Use this to get the credentials from user before a connection to the LDAP is initialized.
     pub fn create_ldap_credentials(&self) -> Option<LdapSimpleCredential> {
         let ldap_state = &self.ldap_state;
         let (username, password) = (ldap_state.username.as_ref(), ldap_state.password.as_ref());
