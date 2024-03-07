@@ -10,6 +10,11 @@ use crate::{
     AppResult, ChangesToUser, NewEntity,
 };
 
+/// # Errors
+///
+/// - If the attributes of the parameter `to_add` is not compatiable with fields of
+/// parameter `config`. See [`NewEntity::new_user_addition_conf`].
+/// - If the execution of adding an users fails. See [`perform_action_on_context`].
 pub fn add_user<T, C>(
     to_add: UserToAdd,
     on_which_sys: &OnWhichSystem,
@@ -40,6 +45,9 @@ where
     Ok(())
 }
 
+/// # Errors
+///
+/// - If the execution of deleting an users fails. See [`perform_action_on_context`].
 pub fn delete_user<T, C>(
     user: &str,
     on_which_sys: &OnWhichSystem,
@@ -67,8 +75,11 @@ where
     Ok(())
 }
 
+/// # Errors
+///
+/// - If the execution of changing an users fails. See [`perform_action_on_context`].
 pub fn modify_user<T, C>(
-    data: ChangesToUser,
+    modifiable: ChangesToUser,
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
@@ -78,9 +89,8 @@ where
     C: SshCredentials,
     T: LdapCredential,
 {
-    debug!("Start modify_user for {}", data.username);
+    debug!("Start modify_user for {}", modifiable.username);
 
-    let modifiable = ChangesToUser::try_new(data.clone())?;
     perform_action_context_no_dirs(
         on_which_sys,
         config,
@@ -95,7 +105,12 @@ where
     Ok(())
 }
 
-pub fn print_list_of_users<T, C>(
+/// # Errors
+///
+/// - If the execution of listing an users fails. See [`perform_action_on_context`].
+/// - If the execution of the slurm command fails. See [`slurm::list_users`].
+/// - If the execution of the LDAP command fails. See [`ldap::list_ldap_users`].
+pub fn print_list_of_users_to_stdout<T, C>(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,
     simple_output_ldap: bool,
@@ -145,7 +160,7 @@ where
 /// - If getting of credentials for LDAP fails. See [`LdapSession::new`]
 /// - If establishing the ssh connection fails
 /// - If one of three actions fails `on_ldap_action`, `on_slurm_action` or `on_dir_action`.
-fn perform_action_on_context<T, C>(
+pub fn perform_action_on_context<T, C>(
     on_which_sys: &OnWhichSystem,
     config: &MgmtConfig,
     ldap_credentials: T,
