@@ -253,7 +253,7 @@ where
     Ok(search_result)
 }
 
-/// Creates modifaction parameters which are used by `ldap3` library to modify an user in LDAP.
+/// Creates modification parameters which are used by `ldap3` library to modify an user in LDAP.
 fn make_modification_vec<'a>(
     modifiable: &'a ChangesToUser,
     old_qos: &'a Vec<String>,

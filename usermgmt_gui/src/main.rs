@@ -1,16 +1,18 @@
-use eframe::egui;
-use prelude::UsermgmtWindow;
-
-mod prelude;
+#![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
 
 pub mod current_selected_view;
 pub mod drawing;
-mod which_systems;
+pub mod general_utils;
+pub mod main_logic;
 
 mod constants;
-pub mod general_utils;
 mod io_resource_manager;
-pub mod main_logic;
+mod prelude;
+mod which_systems;
+
+use eframe::egui;
+use prelude::UsermgmtWindow;
 
 fn main() -> Result<(), eframe::Error> {
     // Set up logging and panic messages with link to issue page

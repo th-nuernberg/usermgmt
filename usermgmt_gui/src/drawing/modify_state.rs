@@ -19,10 +19,12 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         ui,
         &window.settings,
         window.modify_state.res_io.status(),
-        || text.modify_init().to_string(),
-        || format!("{} {}", text.modify_loading(), &last_username),
-        |username| format!("{} {}", text.modify_success(), username),
-        || format!("{} {}", text.modify_failure(), &last_username),
+        (
+            || text.modify_init().to_string(),
+            || format!("{} {}", text.modify_loading(), &last_username),
+            |username: &String| format!("{} {}", text.modify_success(), username),
+            || format!("{} {}", text.modify_failure(), &last_username),
+        ),
     );
 }
 
@@ -104,7 +106,7 @@ fn draw_typing_fields(ui: &mut egui::Ui, settings: &Settings, modify_state: &mut
             ui,
             settings,
             &mut modify_state.qos,
-            &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
+            &GroupDrawing::new(texts.qos()).add_tooltip(tooltips.qos()),
         );
     });
 }

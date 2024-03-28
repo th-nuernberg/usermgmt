@@ -1,11 +1,12 @@
-use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc};
-
-type LabelTyp = Rc<str>;
 pub type CacheForConfFields = Rc<RefCell<HashMap<&'static str, LabelTyp>>>;
-use crate::{current_selected_view::ConfigurationState, prelude::*};
-use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
+
+type ToolTippLabel<'a> = Option<&'a str>;
+type LabelTyp = Rc<str>;
 
 use super::draw_utils::{GroupDrawing, TextFieldEntry};
+use crate::{current_selected_view::ConfigurationState, prelude::*};
+use std::{cell::RefCell, collections::HashMap, path::PathBuf, rc::Rc};
+use usermgmt_lib::config::{LoadedMgmtConfig, MgmtConfig};
 
 pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
     let mut can_reload = true;
@@ -16,19 +17,21 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         settings,
         texts.conf_load_group(),
         window.conf_state.io_conf.status(),
-        || texts.conf_load_init_msg().to_owned(),
-        || {
-            can_reload = false;
-            texts.conf_load_loading_msg().to_owned()
-        },
-        |loaded| {
-            format!(
-                "{}:\n{:?}",
-                texts.conf_load_success_msg().to_owned(),
-                &loaded.path
-            )
-        },
-        || texts.conf_load_err_msg().to_owned(),
+        (
+            || texts.conf_load_init_msg().to_owned(),
+            || {
+                can_reload = false;
+                texts.conf_load_loading_msg().to_owned()
+            },
+            |loaded: &LoadedMgmtConfig| {
+                format!(
+                    "{}:\n{:?}",
+                    texts.conf_load_success_msg().to_owned(),
+                    &loaded.path
+                )
+            },
+            || texts.conf_load_err_msg().to_owned(),
+        ),
     );
 
     draw_utils::draw_status_msg_w_label(
@@ -36,10 +39,12 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         settings,
         texts.conf_save_group(),
         window.conf_state.io_save_conf.status(),
-        || texts.conf_save_init_msg().to_owned(),
-        || texts.conf_save_loading_msg().to_owned(),
-        |path| format!("{}:\n{:?}", texts.conf_save_success_msg().to_owned(), path),
-        || texts.conf_save_err_msg().to_owned(),
+        (
+            || texts.conf_save_init_msg().to_owned(),
+            || texts.conf_save_loading_msg().to_owned(),
+            |path: &PathBuf| format!("{}:\n{:?}", texts.conf_save_success_msg().to_owned(), path),
+            || texts.conf_save_err_msg().to_owned(),
+        ),
     );
 
     draw_utils::draw_file_path(ui, window);
@@ -115,7 +120,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                             draw_utils::entry_field(
                                 ui,
                                 settings,
-                                &mut TextFieldEntry::new_opt(&label, val).tool_tip(tool_tip),
+                                &mut TextFieldEntry::new_opt(&label, val).with_tool_tip(tool_tip),
                             );
                         }
                         ConfiField::Single {
@@ -126,7 +131,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                             draw_utils::entry_field(
                                 ui,
                                 settings,
-                                &mut TextFieldEntry::new(&label, val).tool_tip(tool_tip),
+                                &mut TextFieldEntry::new(&label, val).with_tool_tip(tool_tip),
                             );
                         }
                         ConfiField::List {
@@ -138,7 +143,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                                 ui,
                                 settings,
                                 val,
-                                &GroupDrawing::new(&label).tooltip(tool_tip),
+                                &GroupDrawing::new(&label).with_tooltip(tool_tip),
                             );
                             draw_sep = false;
                         }
@@ -183,7 +188,7 @@ fn draw_fields(window: &mut ConfigurationState, settings: &Settings, ui: &mut eg
                                 ui,
                                 settings,
                                 &mut TextFieldEntry::new_opt(&label, &mut as_string)
-                                    .tool_tip(tool_tip),
+                                    .with_tool_tip(tool_tip),
                             );
                             *val = as_string.map(PathBuf::from);
                         }
@@ -206,9 +211,13 @@ fn snake_to_label(input: &'static str, repos: CacheForConfFields) -> Rc<str> {
             input
                 .split(SPLIT_BY)
                 .map(|word| {
-                    let first = word.chars().next().unwrap().to_uppercase();
-                    let list: String = first.chain(word.chars().skip(1)).collect();
-                    list
+                    let mut chars = word.chars();
+                    if let Some(first) = chars.next() {
+                        let upper_first = first.to_uppercase().next().unwrap_or(first);
+                        std::iter::once(upper_first).chain(chars).collect()
+                    } else {
+                        String::default()
+                    }
                 })
                 .collect::<Vec<String>>()
                 .join(JOIN_BY),
@@ -357,8 +366,6 @@ impl PartialOrd for ConfiField<'_> {
         Some(self.label().cmp(other.label()))
     }
 }
-
-type ToolTippLabel<'a> = Option<&'a str>;
 
 /// Generates conversion from a rust value into ConfiField which
 /// is used to render a value in egui.

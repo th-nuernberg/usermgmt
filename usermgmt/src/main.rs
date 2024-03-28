@@ -1,3 +1,6 @@
+#![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
+
 use clap::Parser;
 use cli_ssh_credential::CliSshCredential;
 use ldap_cli_credential::LdapCliCredential;

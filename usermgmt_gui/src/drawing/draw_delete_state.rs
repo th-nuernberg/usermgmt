@@ -32,10 +32,12 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         ui,
         &window.settings,
         remove_state.remove_res_io.status(),
-        || "No user remove yet".to_owned(),
-        || format!("In the process of removing user ({}).", last_username),
-        |username| format!("Removed user ({}) !", username),
-        || format!("Failed to remove user ({}).", last_username),
+        (
+            || "No user remove yet".to_owned(),
+            || format!("In the process of removing user ({}).", last_username),
+            |username: &String| format!("Removed user ({}) !", username),
+            || format!("Failed to remove user ({}).", last_username),
+        ),
     );
 }
 

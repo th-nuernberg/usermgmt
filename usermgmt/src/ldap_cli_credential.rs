@@ -24,6 +24,8 @@ impl LdapCredential for LdapCliCredential {
 
     fn set_password(&mut self, new: String) {
         self.password = OnceCell::new();
-        self.password.set(new).unwrap();
+        self.password
+            .set(new)
+            .expect("Once cell is cleared the line above");
     }
 }

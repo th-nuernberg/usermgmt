@@ -1,4 +1,5 @@
 #![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
 
 pub use entity::Entity;
 pub use new_entity::NewEntity;
@@ -9,15 +10,14 @@ pub mod cli;
 pub mod config;
 pub mod constants;
 pub mod dir;
-pub mod logging;
-pub mod util;
-
 pub mod entity;
 pub mod ldap;
+pub mod logging;
 pub mod new_entity;
 pub mod operations;
 pub mod slurm;
 pub mod ssh;
+pub mod util;
 
 pub use changes_to_user::ChangesToUser;
 

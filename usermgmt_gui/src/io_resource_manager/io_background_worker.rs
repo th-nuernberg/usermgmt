@@ -76,7 +76,12 @@ where
             .map(|to_bool| to_bool.is_finished())
             .unwrap_or(false)
         {
-            match self.thread.take().unwrap().join() {
+            match self
+                .thread
+                .take()
+                .expect("We have a finished but not yet joined thread")
+                .join()
+            {
                 Ok(result) => Some(result),
                 Err(error) => Some(Err(anyhow!("Task panicked !, details: {:?}", error))),
             }

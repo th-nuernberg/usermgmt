@@ -111,7 +111,7 @@ where
 }
 
 /// Runs the slurm command on a local machine or remotely somewhere else.
-/// Whether run remotely or locally depends on the paramter `config`.
+/// Whether run remotely or locally depends on the parameter `config`.
 ///
 /// # Errors
 ///

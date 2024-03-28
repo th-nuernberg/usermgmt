@@ -60,7 +60,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
                 ui,
                 &window.settings,
                 &mut adding_fields.qos,
-                &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
+                &GroupDrawing::new(texts.qos()).add_tooltip(tooltips.qos()),
             );
         });
     }
@@ -72,10 +72,12 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         ui,
         &window.settings,
         adding_fields.adding_res_io.status(),
-        || "No user added yet".to_string(),
-        || format!("User ({}) is being added", last_username),
-        |username| format!("User ({}) was added", username),
-        || format!("Failed to add user ({})", last_username),
+        (
+            || "No user added yet".to_string(),
+            || format!("User ({}) is being added", last_username),
+            |username: &String| format!("User ({}) was added", username),
+            || format!("Failed to add user ({})", last_username),
+        ),
     );
     let allow_adding_user = adding_fields.all_needed_fields_filled();
 

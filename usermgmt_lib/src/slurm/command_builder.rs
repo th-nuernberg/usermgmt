@@ -65,7 +65,7 @@ fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
 
 /// Builder to construct slurm commands for execution as local process commands or as strings for
 /// ssh remote execution.
-/// One or more commands are added before the call of [`remote_commands`] for remote or [`local_commandd`] for local
+/// One or more commands are added before the call of [`remote_commands`] for remote or [`local_commanded`] for local
 pub struct CommandBuilder {
     sub_commands: Vec<SlurmSubCommand>,
     username: String,
