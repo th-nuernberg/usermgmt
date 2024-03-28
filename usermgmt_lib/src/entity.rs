@@ -10,8 +10,7 @@ use std::{fs, path::Path, str::FromStr};
 use crate::{config::MgmtConfig, prelude::AppResult, util::TrimmedNonEmptyText, Group};
 
 /// Representation of a user entity.
-/// It contains all information necessary to add/modify/delete the user.
-/// TODO: Add proper encapsulation via getter and setters
+/// Information necessary to add/modify/delete the user.
 #[derive(Debug, Clone)]
 pub struct Entity {
     pub username: TrimmedNonEmptyText,
@@ -26,6 +25,9 @@ pub struct Entity {
 }
 
 impl Entity {
+    /// # Errors
+    ///
+    /// - If public key file could not be read
     pub fn new(
         firstname: Option<TrimmedNonEmptyText>,
         lastname: Option<TrimmedNonEmptyText>,
@@ -42,6 +44,12 @@ impl Entity {
         })
     }
 
+    /// # Errors
+    ///
+    /// - If group name as text could not be mapped to integer id.
+    /// - If any given quality of service is not valid. See [`TrimmedNonEmptyText`]
+    /// - If the default quality of service is not valid quality of service. See [`ValidQos`]
+    /// - If loading the public key, parameter `on_load_pubkey`, of an user fails.
     pub fn new_inner(
         firstname: Option<TrimmedNonEmptyText>,
         lastname: Option<TrimmedNonEmptyText>,
@@ -49,8 +57,8 @@ impl Entity {
         config: &MgmtConfig,
         on_load_pubkey: impl Fn(&Path) -> AppResult<String>,
     ) -> AppResult<Self> {
-        let group = to_add
-            .group
+        let (username, group, mail, default_qos, publickey, qos) = to_add.into();
+        let group = group
             .map(|group| {
                 let group_id = Group::from_str(group.as_ref().as_str())
                     .context("Error in mapping name to group id")?;
@@ -58,11 +66,10 @@ impl Entity {
             })
             .transpose()?;
 
-        let qos = if to_add.qos.is_empty() {
+        let qos = if qos.is_empty() {
             None
         } else {
-            let qos = to_add
-                .qos
+            let qos = qos
                 .iter()
                 .map(|to_validate| TrimmedNonEmptyText::try_from(to_validate.as_str()))
                 .collect::<AppResult<_>>()?;
@@ -70,8 +77,7 @@ impl Entity {
             Some(qos)
         };
 
-        let default_qos = to_add
-            .default_qos
+        let default_qos = default_qos
             .map(|to_validate| ValidQos::new(to_validate.into(), &config.valid_qos))
             .transpose()?;
         if let (Some(qos), Some(default_qos)) = (&qos, &default_qos) {
@@ -83,8 +89,7 @@ impl Entity {
             );
         }
 
-        let publickey = to_add
-            .publickey
+        let publickey = publickey
             .map(|path| {
                 debug!("Trying to load the public key from path at {} .", path);
 
@@ -94,29 +99,32 @@ impl Entity {
             .transpose()?;
 
         Ok(Entity {
-            username: to_add.username,
+            username,
             firstname,
             lastname,
             group,
             default_qos,
             publickey,
             qos,
-            mail: to_add.mail,
+            mail,
         })
     }
 
+    /// # Errors
+    ///
+    /// See [`Entity::new`]
     pub fn new_modifieble_conf(modif: Modifiable, conf: &MgmtConfig) -> AppResult<Self> {
-        Self::new(
-            modif.firstname,
-            modif.lastname,
-            modif.common_user_fields,
-            conf,
-        )
+        let (firstname, lastname, common_user_fields) = modif.into();
+        Self::new(firstname, lastname, common_user_fields, conf)
     }
 
-    pub fn new_user_addition_conf(modif: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
-        let (firstname, lastname) = (Some(modif.firstname), Some(modif.lastname));
-        Self::new(firstname, lastname, modif.common_user_fields, conf)
+    /// # Errors
+    ///
+    /// See [`Entity::new`]
+    pub fn new_user_addition_conf(to_add: UserToAdd, conf: &MgmtConfig) -> AppResult<Self> {
+        let (firstname, lastname, common_user_fields) = to_add.into();
+        let (firstname, lastname) = (Some(firstname), Some(lastname));
+        Self::new(firstname, lastname, common_user_fields, conf)
     }
 }
 
@@ -132,6 +140,7 @@ mod testing {
 
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn error_for_not_valid_group_of_qos() {
         let mut input = CommonUserFields::new("SomeUser".try_into().unwrap());
@@ -149,13 +158,15 @@ mod testing {
 
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn ok_with_valid_default_and_group_of_qos_pubkey() {
         let mut input = CommonUserFields::new("Some_User".try_into().unwrap());
+        input.group = Some("staff".try_into().unwrap());
+        input.default_qos = Some("staff".try_into().unwrap());
         input.qos = vec!["valid".into(), "basic".into()];
         input.default_qos = Some("valid".try_into().unwrap());
         input.publickey = Some("Some_path".try_into().unwrap());
-        input.group = Some("staff".try_into().unwrap());
         input.mail = Some("faculty@xxx.de".try_into().unwrap());
         let actual = Entity::new_inner(
             Some("First".try_into().unwrap()),

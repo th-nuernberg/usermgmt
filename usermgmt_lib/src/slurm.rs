@@ -3,18 +3,18 @@ use std::process::Command;
 use anyhow::{anyhow, Context};
 use log::{debug, info};
 
-mod commmand_builder;
+mod command_builder;
 mod listed_user;
 use crate::{config::MgmtConfig, prelude::AppResult, ssh};
 
-use self::commmand_builder::CommandBuilder;
+use self::command_builder::CommandBuilder;
 
 use crate::ssh::{SshConnection, SshCredentials};
 use crate::{ChangesToUser, NewEntity};
 
 pub use listed_user::ListedUser;
 
-/// Creates a user in slurm database on a remote machine over ssh
+/// Creates a user in a slurm database on a remote machine over ssh
 pub fn add_slurm_user<C>(
     entity: &NewEntity,
     config: &MgmtConfig,
@@ -45,7 +45,11 @@ where
     Ok(())
 }
 
-/// Deletes a user in a slurm database  via SSH session on a remote machine
+/// Deletes a user in a slurm database
+///
+/// # Errors
+///
+/// - See [`run_slurm_action`]
 pub fn delete_slurm_user<C>(
     user: &str,
     config: &MgmtConfig,
@@ -63,6 +67,10 @@ where
 
 /// Modifies a user in a slurm database via SSH session on a remote machine
 /// It currently only modifies the quality of services of a user !
+///
+/// # Errors
+///
+/// - See [`run_slurm_action`]
 pub fn modify_slurm_user<C>(
     modifiable: &ChangesToUser,
     config: &MgmtConfig,
@@ -83,7 +91,11 @@ where
     Ok(())
 }
 
-/// Lists all users in slurm database on a remote machine
+/// Lists all users in slurm database
+///
+/// # Errors
+///
+/// See [`run_slurm_action`]
 pub fn list_users<T>(
     config: &MgmtConfig,
     session: &SshConnection<T>,
@@ -98,7 +110,14 @@ where
     Ok(output)
 }
 
-fn run_slurm_action<C>(
+/// Runs the slurm command on a local machine or remotely somewhere else.
+/// Whether run remotely or locally depends on the parameter `config`.
+///
+/// # Errors
+///
+/// - If running the command remotely fails. See [`run_remote_report_slurm_cmd`]
+/// - If running the command on the local machine. See [`run_remote_report_slurm_cmd`]
+pub fn run_slurm_action<C>(
     mut actions: CommandBuilder,
     config: &MgmtConfig,
     session: &SshConnection<C>,
@@ -111,13 +130,13 @@ where
         .immediate(true)
         .sacctmgr_path(config.sacctmgr_path.clone());
     if config.run_slurm_remote {
-        for cmd in actions.remote_command() {
+        for cmd in actions.remote_commands() {
             debug!("Run remote slurm command ({})", &cmd);
             let next_output = run_remote_report_slurm_cmd(session, &cmd)?;
             output.push_str(&next_output);
         }
     } else {
-        for cmd in actions.local_command() {
+        for cmd in actions.local_commands() {
             let next_output = run_local_and_report_slurm_cmd(cmd)?;
             output.push_str(&next_output);
         }
@@ -125,7 +144,11 @@ where
     Ok(output)
 }
 
-fn run_remote_report_slurm_cmd<C>(session: &SshConnection<C>, cmd: &str) -> AppResult<String>
+/// # Errors
+///
+/// - If execution of the command fails. See [`SshConnection::exec`].
+/// - If the exit code of executed command is an error code.
+pub fn run_remote_report_slurm_cmd<C>(session: &SshConnection<C>, cmd: &str) -> AppResult<String>
 where
     C: SshCredentials,
 {
@@ -144,7 +167,10 @@ where
     }
 }
 
-fn run_local_and_report_slurm_cmd(mut command: Command) -> AppResult<String> {
+/// # Errors
+///
+/// - If output of command could not be retrieved
+pub fn run_local_and_report_slurm_cmd(mut command: Command) -> AppResult<String> {
     let output = command.output().context(
         "Unable to execute sacctmgr command. Is the path specified in your config correct?",
     )?;

@@ -6,6 +6,7 @@ use getset::{CopyGetters, Getters};
 use crate::config::MgmtConfig;
 pub type OptFilePath = Option<PathBuf>;
 
+/// Same as [`OnWhichSystem`] except without considering options from a configuration file.
 #[derive(Args, CopyGetters, Debug)]
 pub struct OnWhichSystemCli {
     #[command(flatten)]
@@ -17,6 +18,9 @@ pub struct OnWhichSystemCli {
     dirs: Option<bool>,
 }
 
+/// Same as [`OnWhichSystemCli`] except without directory management.
+/// Actions like deleting an user are not supported for directory management.
+/// For those actions this option struct is used as CLI arguments.
 #[derive(Args, CopyGetters, Getters, Debug)]
 pub struct OnSlurmLdapOnlyCli {
     /// If true then the action will be performed on Slurm too, otherwise nothing happens on Slurm.
@@ -37,8 +41,8 @@ pub struct OnSlurmLdapOnlyCli {
 }
 
 /// Information on which systems an action like creating an user should happen.
-/// Ensures flexibility for user to toggle systems via CLI and config
-/// CLI option have priority over default values from conf.toml
+/// Ensures flexibility for user to toggle systems via CLI and options from configuration file.
+/// CLI option have priority over default values from configuration file.
 #[derive(CopyGetters, Getters, Debug)]
 pub struct OnWhichSystem {
     #[getset(get_copy = "pub")]
@@ -66,6 +70,7 @@ impl OnWhichSystem {
         slurm_ldap.dirs = Self::use_cli_over_config(from_cli.dirs(), config.include_dir_mgmt);
         slurm_ldap
     }
+
     pub fn from_config_for_slurm_ldap(config: &MgmtConfig, from_cli: &OnSlurmLdapOnlyCli) -> Self {
         Self {
             ldap: Self::use_cli_over_config(from_cli.ldap(), config.include_ldap),
@@ -79,15 +84,15 @@ impl OnWhichSystem {
         }
     }
 
+    pub fn needs_ssh(&self) -> bool {
+        self.slurm() || self.ldap()
+    }
+
     fn use_cli_over_config<T>(cli: Option<T>, config_val: T) -> T {
         match cli {
             Some(cli_over_config) => cli_over_config,
             None => config_val,
         }
-    }
-
-    pub fn needs_ssh(&self) -> bool {
-        self.slurm() || self.ldap()
     }
 }
 

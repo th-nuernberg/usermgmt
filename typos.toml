@@ -1,0 +1,7 @@
+[type.rsa_key]
+extend-glob = ["*_rsa_key"]
+check-file = false
+
+[default.extend-words]
+# Don't correct the surname "Teh"
+thn = "thn"

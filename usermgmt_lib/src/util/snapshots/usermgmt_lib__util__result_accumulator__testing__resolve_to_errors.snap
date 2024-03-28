@@ -1,5 +1,5 @@
 ---
-source: usermgmt_lib/src/util/result_accumalator.rs
+source: usermgmt_lib/src/util/result_accumulator.rs
 expression: result.err().unwrap()
 ---
 Error {

@@ -1,4 +1,4 @@
-use crate::util::ResultAccumalator;
+use crate::util::ResultAccumulator;
 /// Module for directory management
 use log::{debug, info, warn};
 
@@ -24,7 +24,6 @@ where
     Ok(())
 }
 
-/// TODO: Bubble up errors instead of just logging
 /// Establish SSH connection to each compute node, make user directory and set quota
 fn handle_compute_nodes<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
@@ -92,7 +91,7 @@ where
     }
 
     let mut errors_from_codes =
-        ResultAccumalator::new("Failed at creating directories on compute nodes.".to_owned());
+        ResultAccumulator::new("Failed at creating directories on compute nodes.".to_owned());
 
     let all_exit_codes_are_zero = mkdir_exit_codes.iter().all(|&x| x == 0);
 
@@ -125,7 +124,6 @@ where
 }
 
 /// Establish SSH connection to NFS host, make user directory and set quota
-/// TODO: Bubble up errors instead of just logging
 fn handle_nfs<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
     T: SshCredentials,
@@ -162,7 +160,7 @@ where
     let (dir_exit_code, _) = make_directory(&sess, &directory)?;
 
     let mut detected_errors =
-        ResultAccumalator::new("Errors in creating directories for NFS occured".to_owned());
+        ResultAccumulator::new("Errors in creating directories for NFS occurred".to_owned());
     let no_error_make_dir = dir_exit_code == 0;
     if no_error_make_dir {
         // Give ownership to user
@@ -207,7 +205,6 @@ where
 }
 
 /// Establish SSH connection to home host, make user directory and set quota
-/// TODO: Bubble up errors instead of just logging
 fn handle_home<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult
 where
     T: SshCredentials,
@@ -241,7 +238,7 @@ where
     }?;
 
     let mut detected_errors =
-        ResultAccumalator::new("Errors in creating the home folder of user occured".to_owned());
+        ResultAccumulator::new("Errors in creating the home folder of user occurred".to_owned());
 
     if dir_exit_code == 0 {
         // Give ownership to user

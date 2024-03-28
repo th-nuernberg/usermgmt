@@ -10,7 +10,7 @@ pub struct ListedUser {
 }
 
 impl ListedUser {
-    /// Turns parse able text from sacctmgr into a rust struct which
+    /// Turns parse-able text from sacctmgr into a rust struct which
     /// can be queried for the headers and fields for slurm query much better.
     /// It assumes that all values in given text are separated by the char '|'
     pub fn new(input: &str) -> Option<Self> {
@@ -23,6 +23,7 @@ impl ListedUser {
             fields.push(row);
         }
         return Some(Self { headers, fields });
+
         fn get_row(line: &str) -> Vec<String> {
             let mut row: Vec<String> = line
                 .trim()
@@ -34,9 +35,11 @@ impl ListedUser {
             row
         }
     }
+
     pub fn fields(&self) -> impl Iterator<Item = &[String]> {
         self.fields.iter().map(|row| row.as_slice())
     }
+
     pub fn headers(&self) -> &[String] {
         self.headers.as_slice()
     }
@@ -48,12 +51,12 @@ mod testing {
 
     #[test]
     fn parses_correctly() {
-        let input = "User|Account|Def QOS|QOS|
-|root||normal|
-dev_user|root||normal|
-root|root||normal|
-|thn||normal|
-|cs||normal|";
+        let input = "User|Account|Def QOS|QOS|\n\
+                    |root||normal|\n\
+                    dev_user|root||normal|\n\
+                    root|root||normal|\n\
+                    |thn||normal|\n\
+                    |cs||normal|";
 
         let actual = ListedUser::new(input);
         insta::assert_debug_snapshot!(actual);

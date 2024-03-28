@@ -1,10 +1,10 @@
 mod gid;
-mod result_accumalator;
+mod result_accumulator;
 mod trimmed_non_empty_text;
 mod valid_qos;
 
 pub use gid::ResolvedGid;
-pub use result_accumalator::ResultAccumalator;
+pub use result_accumulator::ResultAccumulator;
 pub use trimmed_non_empty_text::TrimmedNonEmptyText;
 pub use valid_qos::{ValidGroupOfQos, ValidQos};
 
@@ -24,11 +24,12 @@ where
     data.iter().map(|s| s.as_ref()).collect::<HashSet<&str>>()
 }
 
-/// Returns uid which can be used for a new user.
+/// Returns UID which can be used for a new user.
 ///
 /// # Errors
-/// - if next uid would cause overflow because of its size
-/// - if next staff uid would be so big that it becomes a student id
+///
+/// - if next UID would cause an overflow because of its size
+/// - if next staff UID would be so big that it becomes a student id
 ///  
 pub fn get_new_uid(uids: &[u32], group: crate::Group) -> AppResult<u32> {
     // students start at 10000, staff at 1000

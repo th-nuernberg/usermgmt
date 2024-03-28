@@ -1,3 +1,6 @@
+#![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
+
 pub use entity::Entity;
 pub use new_entity::NewEntity;
 
@@ -7,23 +10,23 @@ pub mod cli;
 pub mod config;
 pub mod constants;
 pub mod dir;
-pub mod logging;
-pub mod util;
-
 pub mod entity;
 pub mod ldap;
+pub mod logging;
 pub mod new_entity;
 pub mod operations;
 pub mod slurm;
 pub mod ssh;
+pub mod util;
 
 pub use changes_to_user::ChangesToUser;
 
 use config::MgmtConfig;
 use log::warn;
 use prelude::*;
-use std::{collections::HashSet, fmt, str::FromStr};
+use std::collections::HashSet;
 
+pub use group::Group;
 pub mod prelude {
     pub use crate::app_error;
     pub use crate::constants;
@@ -33,47 +36,9 @@ pub mod prelude {
     pub type AppResult<T = ()> = Result<T, AnyError>;
 }
 pub mod app_panic_hook;
+mod group;
 
 extern crate confy;
-
-// TODO: git rid of unwraps. Replace them with expects or better with result if possible.
-// TODO: implement struct or function to remove redundancy for opening up tcp/ssh connection
-// A code block as example in the file slurm under function add_slurm_user is repeated quite often
-
-#[derive(Clone, PartialEq, Copy, Debug, Eq)]
-pub enum Group {
-    Staff,
-    Student,
-    Faculty,
-}
-
-impl fmt::Display for Group {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Group::Staff => write!(f, "staff"),
-            Group::Student => write!(f, "student"),
-            Group::Faculty => write!(f, "faculty"),
-        }
-    }
-}
-
-impl Default for Group {
-    fn default() -> Self {
-        Self::Student
-    }
-}
-
-impl FromStr for Group {
-    type Err = AppError;
-    fn from_str(input: &str) -> Result<Group, Self::Err> {
-        match input {
-            "Staff" | "staff" => Ok(Group::Staff),
-            "Student" | "student" => Ok(Group::Student),
-            "Faculty" | "faculty" => Ok(Group::Student),
-            _ => Err(anyhow!("given group name ({}) is not valid", input)),
-        }
-    }
-}
 
 /// Removes all invalid elements of `qos`. An element is valid if `valid_qos` contains it.
 /// Filters out duplicates too.

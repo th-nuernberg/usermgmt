@@ -183,7 +183,7 @@ By using the command generate-config like this
 usermgmt generate-config
 ```
 
-You can acquire a default configuration. This ouput goes to the stdout of the terminal by default. 
+You can acquire a default configuration. This output goes to the stdout of the terminal by default. 
 You can create a local configuration file via piping.
 This example creates a local default configuration file at '/home/foo/conf.toml' via piping
 
@@ -258,7 +258,7 @@ ldap_domain_components = 'cn=department,dc=company,dc=com'
 login_shell = '/bin/bash'
 # Organizational unit in LDAP used to apply operations under
 # This value is combined with ldap_domain_components like
-# Is optional and can be omited.
+# Is optional and can be omitted.
 # '[ldap_org_unit,]{ldap_domain_components}'
 ldap_org_unit = 'people'
 # User bind prefix to be used when establishing LDAP connections. 
@@ -321,10 +321,10 @@ quota_home_softlimit = '20G'
 # Quota hardlimit on user home
 quota_home_hardlimit = '22G'
 # Create/delete/modify user on the slurm data base by default
-# Can be overriden via CLI option for a command
+# Can be overridden via CLI option for a command
 include_slurm = true
 # Create/delete/modify user on the ldap data base by default
-# Can be overriden via CLI option for a command
+# Can be overridden via CLI option for a command
 include_ldap = true
 # Use the directory management module of the application 
 # Note that this is somewhat experimental and quite specific to 
@@ -348,7 +348,8 @@ ssh_agent = false
 ssh_key_path = "~/.shh/some_key_pair"
 ```
 
-The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` are not explicitely set. 
+The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` 
+are not explicitly set. 
 
 ## Usage
 
@@ -508,7 +509,7 @@ tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
 ## Local development with via docker
 
 Development of this app can be done locally via a docker container set up. As moment of writing 
-the functionallity for LDAP and Slurm can be used via docker. Directory management does not work in
+the functionality for LDAP and Slurm can be used via docker. Directory management does not work in
 docker. Read this [Readme](./docker/README.md) for how to set up local development via docker.
 
 ## Changelogs

@@ -25,19 +25,30 @@ impl<T> IoResourceManager<T>
 where
     T: Send + 'static,
 {
+    pub fn success(&self) -> Option<&T> {
+        if let IoTaskStatus::Successful(success) = self.status() {
+            Some(success)
+        } else {
+            None
+        }
+    }
     /// Returns if an IO task is running, has failed or succeeded.
     pub fn status(&self) -> &IoTaskStatus<T> {
         &self.status
     }
+
     pub fn is_loading(&self) -> bool {
         self.status.is_loading()
     }
+
     pub fn is_there(&self) -> bool {
         self.status.is_there()
     }
+
     pub fn status_mut(&mut self) -> &mut IoTaskStatus<T> {
         &mut self.status
     }
+
     pub fn set_error(&mut self, error: AppError) {
         if self.is_loading() {
             warn!("Tried to set failure for loading io resource. Failure is not set because the resource is still loading.");

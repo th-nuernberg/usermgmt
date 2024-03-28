@@ -37,7 +37,7 @@ pub fn start_load_config(conf_state: &mut ConfigurationState, path: Option<PathB
     );
 }
 
-pub struct PreparationBeforIoTask {
+pub struct PreparationBeforeIoTask {
     pub ldap_cred: LdapSimpleCredential,
     pub ssh_cred: SshGivenCredential,
     pub config: MgmtConfig,
@@ -48,14 +48,14 @@ pub fn prep_conf_creds<T: Send + 'static>(
     app: &mut UsermgmtWindow,
     on_error: impl FnOnce(&mut UsermgmtWindow) -> &mut IoResourceManager<T>,
     supports_dir: bool,
-) -> Result<PreparationBeforIoTask, &'static str> {
+) -> Result<PreparationBeforeIoTask, &'static str> {
     return match try_prep(app, supports_dir) {
         Ok(result) => Ok(result),
         Err(error) => {
             on_error(app).set_error(error);
             Err(
                 "Could fetch all needed credentials, config or which system is to be affectd.
-Details of error are embeded within respective io resource state.",
+Details of error are embedded within respective io resource state.",
             )
         }
     };
@@ -63,7 +63,7 @@ Details of error are embeded within respective io resource state.",
     fn try_prep(
         window: &mut UsermgmtWindow,
         supports_dir: bool,
-    ) -> AppResult<PreparationBeforIoTask> {
+    ) -> AppResult<PreparationBeforeIoTask> {
         let which_sys = &window.which_sys;
         let text = window.settings.texts();
         let (ldap_cred_missing, ssh_cred_missing) = (
@@ -89,7 +89,7 @@ Details of error are embeded within respective io resource state.",
             } else {
                 Default::default()
             };
-            return Ok(PreparationBeforIoTask {
+            return Ok(PreparationBeforeIoTask {
                 config,
                 on_which_sys,
                 ldap_cred,

@@ -13,12 +13,12 @@ fn ask_for_line_from_user(
     prompt: &str,
     placeholder: Option<&str>,
 ) -> AppResult<String> {
-    let final_placeholer_prompt = match placeholder {
+    let final_placeholder_prompt = match placeholder {
         Some(value) => format!(" (defaults to ({}))", value),
         None => String::new(),
     };
 
-    let final_prompt = format!("{}{}", prompt, final_placeholer_prompt);
+    let final_prompt = format!("{}{}", prompt, final_placeholder_prompt);
     on_output(final_prompt);
     let received_input = on_input()?;
 

@@ -43,7 +43,10 @@ impl LdapSearchResult {
             let mut row: Vec<Vec<String>> = vec![Default::default(); header.len()];
             for (cell_name, cell_values) in row_to_convert.iter() {
                 if let Some(&index) = header_map.get(cell_name.as_str()) {
-                    let append_to = row.get_mut(index).unwrap();
+                    let append_to = row.get_mut(index).expect(
+                        r#"Index comes from header_map. 
+                        Header map is supposed to yield valid indexes for rows"#,
+                    );
                     append_to.extend_from_slice(cell_values.as_slice());
                 } else {
                     warn!(

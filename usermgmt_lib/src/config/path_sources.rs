@@ -94,7 +94,7 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
                     Ok(stripped) => PathBuf::from(&resolve_dir).join(stripped),
                     Err(error) => {
                         debug!(
-                            "Striping prefix did not occured for {:?}. Details: {}",
+                            "Striping prefix did not occurred for {:?}. Details: {}",
                             to_resolve, error
                         );
                         to_resolve.clone()
@@ -104,7 +104,7 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
         }
         None => {
             debug!(
-                "Could not get any home directory loaction skipping checking for locations {:?}",
+                "Could not get any home directory location skipping checking for locations {:?}",
                 HOME_LOCATIONS
             );
 
@@ -146,7 +146,7 @@ fn may_return_path_to_conf(
         }
         Err(error) => {
             debug!(
-                "Could not check existance for path at {:?}\n. Error: {}",
+                "Could not check existence for path at {:?}\n. Error: {}",
                 to_check, error
             );
             None

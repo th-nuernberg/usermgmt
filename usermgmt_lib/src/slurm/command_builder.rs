@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::Group;
 use std::collections::HashMap;
 use std::iter;
@@ -18,22 +17,6 @@ const ACCOUNT: &str = "Account";
 const DEFAULT_QOS: &str = "DefaultQOS";
 const QOS: &str = "QOS";
 const SLURM_PRASEABLE_ARG: &str = "--parsable";
-
-pub enum Modifier {
-    Qos,
-    DefaultQOS,
-    Account,
-}
-
-impl Modifier {
-    pub fn to_static_ref(&self) -> &'static str {
-        match self {
-            Self::Qos => QOS,
-            Self::DefaultQOS => DEFAULT_QOS,
-            Self::Account => ACCOUNT,
-        }
-    }
-}
 
 enum SlurmSubCommand {
     Add { group: Group },
@@ -79,7 +62,10 @@ fn from_username(value: SlurmSubCommand, username: String) -> Vec<String> {
         }
     }
 }
-// User%30,Account,DefaultQOS,QOS%80
+
+/// Builder to construct slurm commands for execution as local process commands or as strings for
+/// ssh remote execution.
+/// One or more commands are added before the call of [`remote_commands`] for remote or [`local_commanded`] for local
 pub struct CommandBuilder {
     sub_commands: Vec<SlurmSubCommand>,
     username: String,
@@ -88,15 +74,6 @@ pub struct CommandBuilder {
 }
 
 impl CommandBuilder {
-    fn new_inner(username: String, sub_commands: Vec<SlurmSubCommand>) -> Self {
-        Self {
-            sub_commands,
-            username,
-            immediate: false,
-            sacctmgr_path: SACCTMG_NAME.to_owned(),
-        }
-    }
-
     pub fn new_delete(username: String) -> Self {
         Self::new_inner(username, vec![SlurmSubCommand::Delete])
     }
@@ -108,9 +85,12 @@ impl CommandBuilder {
         )
     }
 
+    #[cfg(test)]
     pub fn new_modify(username: String, modifier: HashMap<&'static str, Vec<String>>) -> Self {
         Self::new_inner(username, vec![SlurmSubCommand::Modify(modifier)])
     }
+
+    /// Adds a command to modiy the default quality of service for user aka parameter `username`
     pub fn new_modify_qos_default_qows(
         username: String,
         default_qos: String,
@@ -118,11 +98,6 @@ impl CommandBuilder {
     ) -> Self {
         let command = Self::create_modify_command(default_qos, qos);
         Self::new_inner(username, vec![command])
-    }
-
-    fn create_modify_command(default_qos: String, qos: Vec<String>) -> SlurmSubCommand {
-        let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
-        SlurmSubCommand::Modify(map)
     }
 
     pub fn new_add(username: String, group: Group, default_qos: String, qos: Vec<String>) -> Self {
@@ -136,12 +111,13 @@ impl CommandBuilder {
         self.immediate = immediate;
         self
     }
+
     pub fn sacctmgr_path(mut self, sacctmgr_path: String) -> Self {
         self.sacctmgr_path = sacctmgr_path;
         self
     }
 
-    pub fn remote_command(self) -> Vec<String> {
+    pub fn remote_commands(self) -> Vec<String> {
         let args = Self::construct_args(self.username, self.immediate, self.sub_commands);
         args.into_iter()
             .map(|args| {
@@ -152,7 +128,8 @@ impl CommandBuilder {
             })
             .collect()
     }
-    pub fn local_command(self) -> Vec<Command> {
+
+    pub fn local_commands(self) -> Vec<Command> {
         let args = Self::construct_args(self.username, self.immediate, self.sub_commands);
         args.into_iter()
             .map(|args| {
@@ -161,6 +138,20 @@ impl CommandBuilder {
                 command
             })
             .collect()
+    }
+
+    fn new_inner(username: String, sub_commands: Vec<SlurmSubCommand>) -> Self {
+        Self {
+            sub_commands,
+            username,
+            immediate: false,
+            sacctmgr_path: SACCTMG_NAME.to_owned(),
+        }
+    }
+
+    fn create_modify_command(default_qos: String, qos: Vec<String>) -> SlurmSubCommand {
+        let map = HashMap::from_iter([(DEFAULT_QOS, vec![default_qos]), (QOS, qos)]);
+        SlurmSubCommand::Modify(map)
     }
 
     fn construct_args(
@@ -196,7 +187,7 @@ mod testing {
             vec!["student".into(), "worker".into()],
         );
 
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_yaml_snapshot!(actual);
     }
     #[test]
@@ -209,36 +200,40 @@ mod testing {
         )
         .immediate(true);
 
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_yaml_snapshot!(actual);
     }
 
     #[test]
-    fn produce_delete_user_with_seperate_path() {
+    fn produce_delete_user_with_separate_path() {
         let input = CommandBuilder::new_delete("somebody".to_owned())
             .sacctmgr_path("some_path/sacctmgr".to_owned());
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_yaml_snapshot!(actual);
     }
+
     #[test]
     fn produce_delete_user_with_local_command() {
         let input = CommandBuilder::new_delete("somebody".to_owned())
             .sacctmgr_path("some_path/sacctmgr".to_owned());
-        let actual = input.local_command();
+        let actual = input.local_commands();
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn list_user() {
         let input = CommandBuilder::new_show(false).sacctmgr_path("some_path/sacctmgr".to_owned());
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn list_user_parserable() {
         let input = CommandBuilder::new_show(true).sacctmgr_path("some_path/sacctmgr".to_owned());
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_debug_snapshot!(actual);
     }
+
     #[test]
     fn modify_user() {
         let map: HashMap<&'static str, _> = HashMap::from_iter([
@@ -246,7 +241,7 @@ mod testing {
             (DEFAULT_QOS, vec!["basic".to_string()]),
         ]);
         let input = CommandBuilder::new_modify("somebody".to_owned(), map);
-        let actual = input.remote_command();
+        let actual = input.remote_commands();
         insta::assert_debug_snapshot!(actual);
     }
 }
