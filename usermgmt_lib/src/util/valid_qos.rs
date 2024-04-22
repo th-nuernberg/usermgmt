@@ -7,6 +7,10 @@ use super::TrimmedNonEmptyText;
 pub struct ValidQos(String);
 
 impl ValidQos {
+    /// # Errors
+    ///
+    /// - If parameter `value` is not a valid non-empty text. See [`TrimmedNonEmptyText`]
+    /// - If parameter `value` is not listed within the given valid quality of services aka parameter `valid_qos`
     pub fn new(value: String, valid_qos: &[impl AsRef<str>]) -> AppResult<Self> {
         let trimmed_not_empty: TrimmedNonEmptyText = value.try_into()?;
         if valid_qos

@@ -37,6 +37,10 @@ pub enum EntitiesAndSshAgent {
 }
 
 /// Executes given command `cmd` on remote machine over ssh
+///
+/// # Errors
+///
+/// - If the execution of remote command fails. See [`SshConnection::exec`].
 pub fn run_remote_command<C>(sess: &SshConnection<C>, cmd: &str) -> AppResult<(i32, String)>
 where
     C: SshCredentials,
@@ -69,7 +73,9 @@ pub fn get_agent_with_all_entities(session: &mut Session) -> AppResult<EntitiesA
     } else if keys.len() == 1 {
         Ok(EntitiesAndSshAgent::One(
             agent,
-            keys.into_iter().next().unwrap(),
+            keys.into_iter()
+                .next()
+                .expect("Previous check in else if made sure that there is at least one element"),
         ))
     } else {
         Ok(EntitiesAndSshAgent::Many(agent, keys))

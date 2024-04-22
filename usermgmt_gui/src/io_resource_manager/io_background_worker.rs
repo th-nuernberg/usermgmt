@@ -25,7 +25,7 @@ where
                     thread_name, error
                 ),
                 Err(error_data) => error!(
-                    "Left over Thread ({}) paniced with error {:?}",
+                    "Left over Thread ({}) panicked with error {:?}",
                     thread_name, error_data
                 ),
                 _ => {
@@ -76,9 +76,14 @@ where
             .map(|to_bool| to_bool.is_finished())
             .unwrap_or(false)
         {
-            match self.thread.take().unwrap().join() {
+            match self
+                .thread
+                .take()
+                .expect("We have a finished but not yet joined thread")
+                .join()
+            {
                 Ok(result) => Some(result),
-                Err(error) => Some(Err(anyhow!("Task paniced !, details: {:?}", error))),
+                Err(error) => Some(Err(anyhow!("Task panicked !, details: {:?}", error))),
             }
         } else {
             None

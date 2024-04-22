@@ -42,10 +42,11 @@ impl AddState {
             lastname.try_into()?,
             username.try_into()?,
         );
-        let user = UserToAdd {
+
+        let user = UserToAdd::new(
             firstname,
             lastname,
-            common_user_fields: CommonUserFields {
+            CommonUserFields {
                 username,
                 group: some_if_not_blank_str(&self.group),
                 mail: some_if_not_blank_str(&self.mail),
@@ -53,7 +54,7 @@ impl AddState {
                 publickey: some_if_not_blank_str(&self.publickey),
                 qos,
             },
-        };
+        );
 
         return Ok(user);
         fn some_if_not_blank_str(input: &str) -> Option<TrimmedNonEmptyText> {

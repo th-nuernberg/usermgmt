@@ -94,7 +94,7 @@ RUN set -x \
 # Enable access via ssh from the app
 RUN dnf install openssh-server -y
 # Copy already created ssh rsa host keys 
-# to ensure the known host key file alwasy get the same fingerprint
+# to ensure the known host key file always get the same fingerprint
 COPY ssh_host_rsa_key /etc/ssh/ssh_host_rsa_key 
 COPY ssh_host_rsa_key.pub /etc/ssh/ssh_host_rsa_key.pub
 RUN chmod 600 /etc/ssh/ssh_host_rsa_key /etc/ssh/ssh_host_rsa_key.pub
@@ -114,7 +114,7 @@ COPY dev_user_ed25519.pub /home/dev_user/dev_user_ed25519.pub
 RUN cat /home/dev_user/dev_user_ed25519.pub >> /home/dev_user/.ssh/authorized_keys && rm /home/dev_user/dev_user_ed25519.pub
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-# Copied for providing script which is executed to provide intial specs and data. 
+# Copied for providing script which is executed to provide initial specs and data. 
 # It is invoked by the docker-entrypoint script at runtime
 COPY add_slurm_data.sh /usr/local/bin/add_slurm_data.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

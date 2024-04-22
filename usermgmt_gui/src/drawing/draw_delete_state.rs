@@ -19,11 +19,11 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         });
         !remove_state.username.trim().is_empty()
     };
-    draw_utils::draw_credentails(ui, window, false);
+    draw_utils::draw_credentials(ui, window, false);
     ui.add_enabled_ui(allow_deletion, |ui| {
         let text = window.settings.texts();
         if ui.button(text.btn_action_remove()).clicked() {
-            delte_user(window)
+            delete_user(window)
         }
     });
     let remove_state = &mut window.remove_state;
@@ -32,14 +32,16 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         ui,
         &window.settings,
         remove_state.remove_res_io.status(),
-        || "No user remove yet".to_owned(),
-        || format!("In the process of removing user ({}).", last_username),
-        |username| format!("Removed user ({}) !", username),
-        || format!("Failed to remove user ({}).", last_username),
+        (
+            || "No user remove yet".to_owned(),
+            || format!("In the process of removing user ({}).", last_username),
+            |username: &String| format!("Removed user ({}) !", username),
+            || format!("Failed to remove user ({}).", last_username),
+        ),
     );
 }
 
-fn delte_user(window: &mut UsermgmtWindow) {
+fn delete_user(window: &mut UsermgmtWindow) {
     window.remove_state.last_username = window.remove_state.username.clone();
     if let Ok(prep) =
         general_utils::prep_conf_creds(window, |app| &mut app.remove_state.remove_res_io, false)

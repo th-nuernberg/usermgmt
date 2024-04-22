@@ -60,22 +60,24 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
                 ui,
                 &window.settings,
                 &mut adding_fields.qos,
-                &GroupDrawing::new(texts.qos()).with_tooltip(tooltips.qos()),
+                &GroupDrawing::new(texts.qos()).add_tooltip(tooltips.qos()),
             );
         });
     }
 
-    draw_utils::draw_credentails(ui, window, true);
+    draw_utils::draw_credentials(ui, window, true);
     let adding_fields = &mut window.adding_state;
     let last_username = &adding_fields.last_added_username;
     draw_utils::draw_status_msg(
         ui,
         &window.settings,
         adding_fields.adding_res_io.status(),
-        || "No user added yet".to_string(),
-        || format!("User ({}) is being added", last_username),
-        |username| format!("User ({}) was added", username),
-        || format!("Failed to add user ({})", last_username),
+        (
+            || "No user added yet".to_string(),
+            || format!("User ({}) is being added", last_username),
+            |username: &String| format!("User ({}) was added", username),
+            || format!("Failed to add user ({})", last_username),
+        ),
     );
     let allow_adding_user = adding_fields.all_needed_fields_filled();
 
@@ -95,7 +97,7 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
         {
             let adding_state = &mut window.adding_state;
             let to_add = adding_state.create_user_to_add()?;
-            let username = to_add.common_user_fields.username.to_string();
+            let username = to_add.common_user_fields().username.to_string();
             let _ = adding_state.adding_res_io.spawn_task(
                 move || {
                     operations::add_user(

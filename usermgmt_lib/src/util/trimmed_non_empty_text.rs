@@ -1,10 +1,10 @@
 use std::borrow::Borrow;
 
-use anyhow::bail;
+use anyhow::anyhow;
 
 use crate::prelude::AppError;
 use derive_more::{AsRef, Display, Into};
-/// Contains text which trimmed and is not empty/only white spaces
+/// Contains text which trimmed and is not empty or only white spaces
 #[derive(Clone, Debug, Display, AsRef, Into, PartialEq, Eq, Hash)]
 pub struct TrimmedNonEmptyText(String);
 
@@ -15,7 +15,7 @@ impl TryFrom<String> for TrimmedNonEmptyText {
         let to_validate = value.trim().to_string();
 
         if to_validate.is_empty() {
-            bail!("Must not be empty or only white spaces");
+            Err(anyhow!("Must not be empty or only white spaces"))
         } else {
             Ok(Self(to_validate))
         }

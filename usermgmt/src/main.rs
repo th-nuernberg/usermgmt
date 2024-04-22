@@ -1,3 +1,6 @@
+#![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
+
 use clap::Parser;
 use cli_ssh_credential::CliSshCredential;
 use ldap_cli_credential::LdapCliCredential;
@@ -16,7 +19,7 @@ fn main() -> ExitCode {
     // Logger handler in variable so background thread for file logging is not stopped until the
     // end of application.
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
-        .expect("Failed to initilize logger");
+        .expect("Failed to initialize logger");
 
     if let Err(error) = execute_command() {
         error!("Error: {:?}", error);
@@ -34,10 +37,17 @@ fn execute_command() -> AppResult {
 }
 
 /// Main function that handles user management
+///
+/// # Errors
+///
+/// - If the LDAP or SSH session could not be established because of connection problems or invalid
+/// credentials.
+/// - If some arguments in CLI, parameter `args`, for action are not valid.
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
     let ldap_credential = LdapCliCredential::default();
     match args.command {
         Commands::GenerateConfig => {
+            // To StdOut, user can then pipe this default configuration wherever they please.
             println!("{}", config::config_for_save())
         }
         Commands::Add {
@@ -88,7 +98,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let config = config::load_config(None)?.config;
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            operations::list_users(
+            operations::print_list_of_users_to_stdout(
                 &config,
                 on_which_sys,
                 simple_output_for_ldap.unwrap_or(false),

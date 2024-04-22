@@ -38,7 +38,7 @@ impl Default for DebugSettingWatcher {
         let (tx, rx) = channel::<()>();
         let settings_path = path_to_settings();
         let assets_path = path_to_assets_folder();
-        info!("Developmet: watching file: {:?}", &settings_path);
+        info!("Development: watching file: {:?}", &settings_path);
         hotwatcher
             .watch(&assets_path, {
                 let path = settings_path.clone();

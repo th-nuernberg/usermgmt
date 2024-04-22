@@ -182,7 +182,7 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 - CLI tool now enforces the following:
   - Default Qos must be contained in the collection of Qos for the operations add, remove and modify
   - Default Qos along with the collection of Qos must be given both or none of them for the operations add, remove and modify.
-- This prevents the problem where sacctmgr CLI, slurm CLI, did not update default Qos or colletion of Qos.
+- This prevents the problem where sacctmgr CLI, slurm CLI, did not update default Qos or collection of Qos.
 - The prompt showing allowed number for selection for several keys under ssh agent is now correctly displayed. 
   Before the maximum index selection was too big by one.
 - Fixed faulty determining inside os config folder space. 

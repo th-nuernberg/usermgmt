@@ -1,16 +1,19 @@
+pub use path_sources::get_path_to_conf;
+
 mod path_sources;
+
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use log::info;
-pub use path_sources::get_path_to_conf;
-/// Definition of configuration options
 use serde::{Deserialize, Serialize};
 
 use crate::{config, prelude::*};
 
+/// This configuration is read from a configuration file in production.
+/// It contains many options to control this application performs actions the various systems
+/// on the cluster.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-/// TODO: consider implementing encapsulation with getters and setters
 pub struct MgmtConfig {
     pub student_default_qos: String,
     pub staff_default_qos: String,
@@ -59,6 +62,11 @@ pub struct MgmtConfig {
     pub ssh_key_path: Option<PathBuf>,
 }
 impl MgmtConfig {
+    /// # Errors
+    ///
+    /// - If the parameter `path` can not be converted into an absolute path.
+    /// - If the content could not converted into the toml format.
+    /// - If writing the new content to file at `path` fails.
     pub fn save(&self, path: &Path) -> AppResult<PathBuf> {
         let file_path = path
             .canonicalize()
@@ -145,11 +153,14 @@ impl Default for MgmtConfig {
 pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> {
     let path = config::get_path_to_conf(manual_path)?;
 
-    info!("Loding configuraion file from path at {:?}", path);
+    info!("Loading configuration file from path at {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
     let config = confy::load_path(&path)
-        .with_context(|| format!("Error in loading or creating config file at {:?}", path))?;
-    let path = path.parent().unwrap().to_path_buf();
+        .with_context(|| format!("Error in loading or creating config file at {:?}", &path))?;
+    let path = path
+        .parent()
+        .ok_or_else(|| anyhow!("{:?} needs to have a parent folder", &path))?
+        .to_path_buf();
     Ok(LoadedMgmtConfig { path, config })
 }
 

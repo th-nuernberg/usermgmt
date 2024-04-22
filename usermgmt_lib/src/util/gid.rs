@@ -2,6 +2,8 @@ use crate::{config::MgmtConfig, Group};
 use derive_more::Display;
 use getset::CopyGetters;
 
+/// Compared to [`Group`] it also has the group id as an integer.
+/// This ID is used within the LDAP database.
 #[derive(Debug, CopyGetters, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "{}", id)]
 pub struct ResolvedGid {

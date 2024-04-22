@@ -1,16 +1,18 @@
-use eframe::egui;
-use prelude::UsermgmtWindow;
-
-mod prelude;
+#![deny(clippy::unwrap_used)]
+#![forbid(unsafe_code)]
 
 pub mod current_selected_view;
 pub mod drawing;
-mod which_systems;
+pub mod general_utils;
+pub mod main_logic;
 
 mod constants;
-pub mod general_utils;
 mod io_resource_manager;
-pub mod main_logic;
+mod prelude;
+mod which_systems;
+
+use eframe::egui;
+use prelude::UsermgmtWindow;
 
 fn main() -> Result<(), eframe::Error> {
     // Set up logging and panic messages with link to issue page
@@ -18,11 +20,11 @@ fn main() -> Result<(), eframe::Error> {
     // Logger handler in variable so background thread for file logging is not stopped until the
     // end of application.
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
-        .expect("Failed to initilize logger");
+        .expect("Failed to initialize logger");
 
-    // Construct application state before starting the main window for egui frontend.
-    // This default impl for app state panics if set up failed due to invalid setting files
-    // `Settings` or `Init`.
+    // Construct application state before starting the main window for egui front-end.
+    // This default impl for app state panics if the set up fails due to invalid setting files
+    // aka `Settings` or `Init`.
     let app_state = UsermgmtWindow::default();
     let (options, title) = {
         let init = &app_state.init;

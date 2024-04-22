@@ -16,7 +16,9 @@ pub fn ldap_simple_output(search_results: &LdapSearchResult) -> String {
                 .iter()
                 .enumerate()
                 .map(|(index, next_field)| {
-                    let title = *search_by_in_title.get(index).unwrap();
+                    let title = *search_by_in_title
+                        .get(index)
+                        .expect("Index comes from iterator");
                     format!("{}={}", title, next_field.join("|"))
                 })
                 .collect::<Vec<String>>()
@@ -42,7 +44,10 @@ pub fn ldap_search_to_pretty_table(search_result: &LdapSearchResult) -> String {
         let mut cells = vec![Cell::new(""); headers.len()];
 
         for (field_index, cell_value) in row_to_convert.iter().enumerate() {
-            *cells.get_mut(field_index).unwrap() = Cell::new(&cell_value.join(" | "));
+            let to_mutate = cells
+                .get_mut(field_index)
+                .expect("Index comes from iterator");
+            *to_mutate = Cell::new(&cell_value.join(" | "));
         }
 
         table.add_row(Row::new(cells));
@@ -50,11 +55,11 @@ pub fn ldap_search_to_pretty_table(search_result: &LdapSearchResult) -> String {
 
     return table.to_string();
 
-    fn table_with_title_bar(fiedl_names: &[&str]) -> Table {
+    fn table_with_title_bar(field_names: &[&str]) -> Table {
         let mut table = Table::new();
 
         // Title bar
-        let title_cells = fiedl_names
+        let title_cells = field_names
             .iter()
             .map(|to_cell| Cell::new(to_cell))
             .collect();

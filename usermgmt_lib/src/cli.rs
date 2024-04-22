@@ -1,18 +1,20 @@
-use crate::prelude::*;
-use clap::{Args, Parser, Subcommand};
-mod on_which_system;
-
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli, OptFilePath};
 
-use crate::util::TrimmedNonEmptyText;
+mod on_which_system;
+
+use clap::{Args, Parser, Subcommand};
 use const_format::concatcp;
+use derive_more::Into;
+
+use crate::prelude::*;
+use crate::util::TrimmedNonEmptyText;
 
 pub const fn short_about() -> &'static str {
     "Simultaneous user management for Slurm and LDAP"
 }
 
 #[rustfmt::skip]
-pub const fn links() -> &'static str {
+pub const fn links_about_project_for_end_users() -> &'static str {
     concatcp!(
         "Wheret to report bugs: ", constants::ISSUE_LINK, ".\n",
         "Source code: ", constants::REPOSITORY_LINK, " .\n",
@@ -22,7 +24,7 @@ pub const fn links() -> &'static str {
 }
 
 pub const fn long_about() -> &'static str {
-    concatcp!(short_about(), ". \n\n", links())
+    concatcp!(short_about(), ". \n\n", links_about_project_for_end_users())
 }
 
 #[derive(Parser, Debug)]
@@ -36,6 +38,7 @@ pub struct GeneralArgs {
 }
 
 #[derive(Subcommand, Debug)]
+/// CLI sub commands for operation on users in LDAP or Slurm database
 pub enum Commands {
     /// Add a user to Slurm and/or LDAP
     #[clap(visible_alias = "a")]
@@ -78,18 +81,17 @@ pub enum Commands {
     GenerateConfig,
 }
 
-/// Defines options that can be modified
-/// TODO: consider encapsulation with getters and setters.
-#[derive(Args, Debug, Clone)]
+/// Defines options for modifying an user
+#[derive(Args, Debug, Clone, Into)]
 pub struct Modifiable {
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub firstname: Option<TrimmedNonEmptyText>,
+    firstname: Option<TrimmedNonEmptyText>,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub lastname: Option<TrimmedNonEmptyText>,
+    lastname: Option<TrimmedNonEmptyText>,
     #[command(flatten)]
-    pub common_user_fields: CommonUserFields,
+    common_user_fields: CommonUserFields,
 }
 
 impl Modifiable {
@@ -102,20 +104,39 @@ impl Modifiable {
     }
 }
 
-/// TODO: consider encapsulation with getters and setters.
-#[derive(Args, Debug, Clone)]
+/// Defines options for adding an user
+#[derive(Args, Debug, Clone, Into)]
 pub struct UserToAdd {
     /// Firstname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub firstname: TrimmedNonEmptyText,
+    firstname: TrimmedNonEmptyText,
     /// Lastname of the user.
     #[clap(short, long, value_parser = trimmed_non_empty)]
-    pub lastname: TrimmedNonEmptyText,
+    lastname: TrimmedNonEmptyText,
     #[command(flatten)]
-    pub common_user_fields: CommonUserFields,
+    common_user_fields: CommonUserFields,
 }
 
-#[derive(Args, Debug, Clone)]
+impl UserToAdd {
+    pub fn new(
+        firstname: TrimmedNonEmptyText,
+        lastname: TrimmedNonEmptyText,
+        common_user_fields: CommonUserFields,
+    ) -> Self {
+        Self {
+            firstname,
+            lastname,
+            common_user_fields,
+        }
+    }
+
+    pub fn common_user_fields(&self) -> &CommonUserFields {
+        &self.common_user_fields
+    }
+}
+
+#[derive(Args, Debug, Clone, Into)]
+/// Attributes which are used  on structs for operations on users (adding, deleting or modifying).
 pub struct CommonUserFields {
     /// Username e.g. wagnerdo.
     #[clap(value_parser = trimmed_non_empty)]
@@ -151,7 +172,7 @@ impl CommonUserFields {
 }
 
 /// Used by argument parser to ensure that
-/// the argument is not empty and white spaces are trimmed off from it
+/// the argument is not empty and white spaces are trimmed off
 pub fn trimmed_non_empty(s: &str) -> AppResult<TrimmedNonEmptyText> {
     let to_validate = TrimmedNonEmptyText::try_from(s)?;
     Ok(to_validate)
