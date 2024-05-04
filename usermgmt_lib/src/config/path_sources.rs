@@ -134,7 +134,18 @@ fn may_return_path_to_conf(
     try_exists: impl Fn(&Path) -> io::Result<bool>,
     path: &Path,
 ) -> Option<PathBuf> {
-    let to_check = path.join(constants::NAME_CONFIG_FILE);
+    let to_check = if path.is_file() {
+        debug!("Path at {:?} is dected as a configuration file.", path);
+        path.to_path_buf()
+    } else {
+        debug!(
+            "Path at {0:?} is dected as a directory.\n\
+            A configuration file named {1} is search within this directory.",
+            path,
+            constants::NAME_CONFIG_FILE
+        );
+        path.join(constants::NAME_CONFIG_FILE)
+    };
     match try_exists(&to_check) {
         Ok(exits) => {
             if exits {

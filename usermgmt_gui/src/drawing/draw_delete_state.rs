@@ -42,7 +42,10 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
 }
 
 fn delete_user(window: &mut UsermgmtWindow) {
-    window.remove_state.last_username = window.remove_state.username.clone();
+    window
+        .remove_state
+        .last_username
+        .clone_from(&window.remove_state.username);
     if let Ok(prep) =
         general_utils::prep_conf_creds(window, |app| &mut app.remove_state.remove_res_io, false)
     {
