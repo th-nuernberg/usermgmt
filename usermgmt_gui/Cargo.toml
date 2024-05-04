@@ -5,7 +5,7 @@ edition = "2021"
 license-file = "LICENSE"
 description = "GUI for simultaneous Slurm and LDAP user management."
 readme = "README.md"
-rust-version = "1.72.0"
+rust-version = "1.76.0"
 
 [dependencies]
 usermgmt_lib = { path = "../usermgmt_lib" }

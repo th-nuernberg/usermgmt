@@ -91,7 +91,10 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
     });
 
     fn request_addition_of_user(window: &mut UsermgmtWindow) -> AppResult {
-        window.adding_state.last_added_username = window.adding_state.username.clone();
+        window
+            .adding_state
+            .last_added_username
+            .clone_from(&window.adding_state.username);
         if let Ok(prep) =
             general_utils::prep_conf_creds(window, |app| &mut app.adding_state.adding_res_io, true)
         {
