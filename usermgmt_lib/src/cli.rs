@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 pub use on_which_system::{OnSlurmLdapOnlyCli, OnWhichSystem, OnWhichSystemCli, OptFilePath};
 
 mod on_which_system;
@@ -35,6 +37,11 @@ pub struct GeneralArgs {
     /// Operation to conduct on the user. Either add, delete or modify.
     #[clap(subcommand)]
     pub command: Commands,
+    #[arg(long)]
+    /// Allows to specify a configuration file by providing a file path.
+    /// If absent, the configuration file is searched under certain places like the app config
+    /// folder.
+    pub config_file: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]

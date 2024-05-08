@@ -29,7 +29,10 @@ pub fn draw(ui: &mut egui::Ui, window: &mut UsermgmtWindow) {
 }
 
 fn handle_modify_req(window: &mut UsermgmtWindow) {
-    window.modify_state.last_added_username = window.modify_state.username.clone();
+    window
+        .modify_state
+        .last_added_username
+        .clone_from(&window.modify_state.username);
     if let Ok(PreparationBeforeIoTask {
         ldap_cred,
         ssh_cred,

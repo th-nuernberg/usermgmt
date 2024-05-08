@@ -8,7 +8,7 @@ pub fn query(window: &mut UsermgmtWindow) {
         let ssh_state = &mut window.ssh_state;
         let ldap_cred = &mut window.ldap_state;
         let path = &mut window.conf_path;
-        *path = conf.path.to_owned();
+        path.clone_from(&conf.path);
         let config = &conf.config;
         if listing_state.rw_user_name.is_none() {
             if let Some(rw_user) = config.ldap_readonly_user.as_deref() {

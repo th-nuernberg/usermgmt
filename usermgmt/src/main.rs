@@ -53,7 +53,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             to_add,
             on_which_sys,
         } => {
-            let config = config::load_config(None)?.config;
+            let config = config::load_config(args.config_file)?.config;
             let ldap_credential = LdapCliCredential::new(&config);
             let on_which_sys = &OnWhichSystem::from_config_for_all(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
@@ -66,7 +66,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             )?
         }
         Commands::Modify { data, on_which_sys } => {
-            let config = config::load_config(None)?.config;
+            let config = config::load_config(args.config_file)?.config;
             let ldap_credential = LdapCliCredential::new(&config);
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
@@ -81,7 +81,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             )?
         }
         Commands::Delete { user, on_which_sys } => {
-            let config = config::load_config(None)?.config;
+            let config = config::load_config(args.config_file)?.config;
             let ldap_credential = LdapCliCredential::new(&config);
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
@@ -97,7 +97,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             on_which_sys,
             simple_output_for_ldap,
         } => {
-            let config = config::load_config(None)?.config;
+            let config = config::load_config(args.config_file)?.config;
             let ldap_credential = LdapCliCredential::new(&config);
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
