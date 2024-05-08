@@ -223,7 +223,7 @@ where
 ///
 /// - If the connection to the LDAP instance fails. See [`make_ldap_connection`]
 /// - If the searching in LDAP failed
-pub fn list_ldap_users<T>(ldap_config: LDAPConfig<T>) -> AppResult<LdapSearchResult>
+pub fn list_ldap_users<T>(ldap_config: &LDAPConfig<T>) -> AppResult<LdapSearchResult>
 where
     T: LdapCredential,
 {

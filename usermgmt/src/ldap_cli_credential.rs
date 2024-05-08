@@ -1,19 +1,35 @@
 use once_cell::unsync::OnceCell;
-use usermgmt_lib::{ldap::LdapCredential, prelude::AppResult};
+use usermgmt_lib::{config::MgmtConfig, ldap::LdapCredential, prelude::AppResult};
 
 use crate::cli_user_input;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct LdapCliCredential {
+    default_username: Option<String>,
     username: OnceCell<String>,
     password: OnceCell<String>,
 }
 
+impl LdapCliCredential {
+    pub fn new(conf: &MgmtConfig) -> Self {
+        dbg!();
+        let default_username = conf.ldap_default_user.to_owned();
+        Self {
+            default_username,
+            username: Default::default(),
+            password: Default::default(),
+        }
+    }
+}
+
 impl LdapCredential for LdapCliCredential {
     fn username(&self) -> AppResult<&str> {
-        self.username
-            .get_or_try_init(cli_user_input::ask_cli_username)
-            .map(|string| string.as_str())
+        let a = self
+            .username
+            .get_or_try_init(|| cli_user_input::ask_cli_username(self.default_username.as_deref()))
+            .map(|string| string.as_str());
+        dbg!(self);
+        a
     }
 
     fn password(&self) -> AppResult<&str> {

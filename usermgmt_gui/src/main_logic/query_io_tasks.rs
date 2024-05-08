@@ -6,6 +6,7 @@ pub fn query(window: &mut UsermgmtWindow) {
     if let Some(conf) = window.conf_state.io_conf.query_task() {
         let listing_state = &mut window.listin_state;
         let ssh_state = &mut window.ssh_state;
+        let ldap_cred = &mut window.ldap_state;
         let path = &mut window.conf_path;
         *path = conf.path.to_owned();
         let config = &conf.config;
@@ -22,6 +23,12 @@ pub fn query(window: &mut UsermgmtWindow) {
         if ssh_state.username.is_none() && !config.default_ssh_user.is_empty() {
             debug!("GUI: Ssh user name taken from default ssh user in loaded config");
             ssh_state.username = Some(config.default_ssh_user.to_owned());
+        }
+        if ldap_cred.username.is_none() {
+            if let Some(ldap_user_name) = config.ldap_default_user.as_deref() {
+                debug!("GUI: ldap user name taken from default ldap user in loaded config");
+                ldap_cred.username = Some(ldap_user_name.to_owned());
+            }
         }
     }
     if let Some(path) = window.conf_state.io_save_conf.query_task() {
