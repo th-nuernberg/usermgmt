@@ -250,6 +250,8 @@ staff_gid = 1001
 faculty_gid = 1000
 # Path to sacctmgr binary
 sacctmgr_path = '/usr/local/bin/sacctmgr'
+# Default ldap username used by default if no username for LDAP login is provided.
+ldap_default_user = 'admim'
 # Domain components used for LDAP queries
 # Will be used in combination with ldap_org_unit 
 # and the cn of the username you provided for ldap login
