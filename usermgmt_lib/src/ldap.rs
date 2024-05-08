@@ -229,7 +229,7 @@ where
 {
     // Establish LDAP connection and bind
     let mut ldap =
-        make_ldap_connection(&ldap_config).context("Error while connecting via LDAP !")?;
+        make_ldap_connection(ldap_config).context("Error while connecting via LDAP !")?;
 
     debug!(
         "LDAP connection established to {}. Will search under {}",

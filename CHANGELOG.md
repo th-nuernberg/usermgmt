@@ -10,6 +10,7 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ### Added
 
+- Added configuration field "ldap_default_user". Allows to define username for LDAP login used by default.
 - Added CLI option to specify the configuration file
 - Logging also performed to logging file
 - Ssh key pair can be provided by field within configuration file or as a CLI argument.

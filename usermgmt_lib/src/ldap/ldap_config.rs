@@ -17,7 +17,6 @@ where
 {
     pub fn new_readonly(config: &MgmtConfig, mut credentials: T) -> AppResult<Self> {
         let ldap_server = config.ldap_server.clone();
-        dbg!();
         let (ldap_user, ldap_pass) = super::ask_credentials_if_not_provided(
             config.ldap_readonly_user.as_deref(),
             config.ldap_readonly_pw.as_deref(),

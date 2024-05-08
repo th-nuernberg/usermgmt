@@ -12,7 +12,6 @@ pub struct LdapCliCredential {
 
 impl LdapCliCredential {
     pub fn new(conf: &MgmtConfig) -> Self {
-        dbg!();
         let default_username = conf.ldap_default_user.to_owned();
         Self {
             default_username,
@@ -24,12 +23,9 @@ impl LdapCliCredential {
 
 impl LdapCredential for LdapCliCredential {
     fn username(&self) -> AppResult<&str> {
-        let a = self
-            .username
+        self.username
             .get_or_try_init(|| cli_user_input::ask_cli_username(self.default_username.as_deref()))
-            .map(|string| string.as_str());
-        dbg!(self);
-        a
+            .map(|string| string.as_str())
     }
 
     fn password(&self) -> AppResult<&str> {
