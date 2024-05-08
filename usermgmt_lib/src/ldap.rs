@@ -223,13 +223,13 @@ where
 ///
 /// - If the connection to the LDAP instance fails. See [`make_ldap_connection`]
 /// - If the searching in LDAP failed
-pub fn list_ldap_users<T>(ldap_config: LDAPConfig<T>) -> AppResult<LdapSearchResult>
+pub fn list_ldap_users<T>(ldap_config: &LDAPConfig<T>) -> AppResult<LdapSearchResult>
 where
     T: LdapCredential,
 {
     // Establish LDAP connection and bind
     let mut ldap =
-        make_ldap_connection(&ldap_config).context("Error while connecting via LDAP !")?;
+        make_ldap_connection(ldap_config).context("Error while connecting via LDAP !")?;
 
     debug!(
         "LDAP connection established to {}. Will search under {}",

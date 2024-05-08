@@ -223,7 +223,7 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
                             &mgmt_conf,
                             LdapSimpleCredential::new(username, password),
                         )?;
-                        list_ldap_users(config)
+                        list_ldap_users(&config)
                     },
                     "Listing ldap user".to_owned(),
                 );

@@ -4,7 +4,7 @@ use crate::{
     cli::{OnWhichSystem, UserToAdd},
     config::MgmtConfig,
     dir,
-    ldap::{self, text_list_output, LDAPConfig, LdapCredential, LdapSession},
+    ldap::{self, text_list_output, LdapCredential, LdapSession},
     slurm,
     ssh::{SshConnection, SshCredentials},
     AppResult, ChangesToUser, NewEntity,
@@ -127,8 +127,8 @@ where
         ldap_credentials.clone(),
         &credentials,
         true,
-        |_ldap_session| {
-            let ldap_config = LDAPConfig::new_readonly(config, ldap_credentials)?;
+        |ldap_session| {
+            let ldap_config = ldap_session.config();
             let search_result_data = ldap::list_ldap_users(ldap_config)?;
 
             let output = if simple_output_ldap {
