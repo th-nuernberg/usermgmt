@@ -196,6 +196,11 @@ usermgmt generate-config > /home/foo/conf.toml
 The `conf.toml` file looks as follows:
 
 ```toml
+# If true, a timestamp is created within the LDAP database.
+# Timestamp is when an user was created within LDAP database user entry
+# Make sure to also include the field "'ldapAttributes'" under the array "objectclass_common" 
+# Within the config file. Otherwise one gets an error while creating an user within LDAP.
+ldap_add_created_at = true
 # Default value of the Slurm default QOS for the student group
 student_default_qos = 'basic'
 # Default value of the Slurm default QOS for the staff group
@@ -400,6 +405,16 @@ This project currently consists of 3 crates:
 - usermgmt_lib: Shared code between the binaries, usermgmt and usermgmt_gui. (Location)[./usermgmt_lib]
 
 ## Tips and advanced usage
+
+### LDAP: Create users with a date of their creation
+
+There is a feature of this tool in which a creation date is added to the LDAP user upon creation.
+To preserve the backwards compatibility with earlier versions, this features must be opted in.
+
+You can opt in by the following steps:
+
+1. Set the field value "ldap_add_created_at" to `true` within the configuration file.
+2. Add the value "ldapAttributes" to the array value "objectclass_common" within the configuration file.
 
 ### Use SSH agent for ssh authentication 
 

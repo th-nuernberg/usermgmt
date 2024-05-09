@@ -10,6 +10,9 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ### Added
 
+- Added conf field "ldap_add_created_at" to opt in for creating LDAP users with creation date
+  Note: the field value field "ldapAttributes" under the array field "objectclass_common" is needed
+  within the config file. Otherwise one gets an error while creating an user within LDAP""
 - Added CLI option to specify the configuration file
 - Logging also performed to logging file
 - Ssh key pair can be provided by field within configuration file or as a CLI argument.

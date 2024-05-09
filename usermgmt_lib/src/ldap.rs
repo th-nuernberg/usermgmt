@@ -6,6 +6,7 @@ mod ldap_session;
 mod ldap_simple_credential;
 pub mod text_list_output;
 
+use chrono::Utc;
 pub use ldap_config::LDAPConfig;
 pub use ldap_credential::LdapCredential;
 pub use ldap_search_result::LdapSearchResult;
@@ -115,26 +116,33 @@ where
             .unwrap_or("");
 
         ldap_session.action(|connection, ldap_config| {
+            let mut fields = vec![
+                ("cn", hashset! {un}),
+                (
+                    "objectClass",
+                    hashset_from_vec_str(&config.objectclass_common).to_owned(),
+                ),
+                ("gidNumber", hashset! {gid.as_str()}),
+                ("uidNumber", hashset! {uid.as_str()}),
+                ("uid", hashset! {un}),
+                ("sn", hashset! {ln}),
+                ("givenName", hashset! {gn}),
+                ("mail", hashset! {mail}),
+                ("slurmDefaultQos", hashset! {def_qos}),
+                ("homeDirectory", hashset! {home.as_str()}),
+                ("slurmQos", qos),
+                ("sshPublicKey", hashset! {pubkey}),
+                ("loginShell", hashset! {config.login_shell.as_str()}),
+            ];
+            let created_at = Utc::now().to_rfc3339();
+            if config.ldap_add_created_at {
+                let attr = hashset! {created_at.as_str()};
+                fields.push(("createdAt", attr));
+            }
+
             let result_form_adding = connection.add(
                 &format!("uid={},{}", entity.username, ldap_config.base()),
-                vec![
-                    ("cn", hashset! {un}),
-                    (
-                        "objectClass",
-                        hashset_from_vec_str(&config.objectclass_common).to_owned(),
-                    ),
-                    ("gidNumber", hashset! {gid.as_str()}),
-                    ("uidNumber", hashset! {uid.as_str()}),
-                    ("uid", hashset! {un}),
-                    ("sn", hashset! {ln}),
-                    ("givenName", hashset! {gn}),
-                    ("mail", hashset! {mail}),
-                    ("slurmDefaultQos", hashset! {def_qos}),
-                    ("homeDirectory", hashset! {home.as_str()}),
-                    ("slurmQos", qos),
-                    ("sshPublicKey", hashset! {pubkey}),
-                    ("loginShell", hashset! {config.login_shell.as_str()}),
-                ],
+                fields,
             );
 
             ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
@@ -522,6 +530,7 @@ static SORTED_LDAP_LISTING_ATTRIBUTES: Lazy<Vec<&str>> = Lazy::new(|| {
         "mail",
         "slurmDefaultQos",
         "slurmQos",
+        "createdAt",
     ];
     to_sort.sort();
     to_sort

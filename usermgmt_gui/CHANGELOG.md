@@ -1,6 +1,6 @@
 # Changelog
 
-All changes to the GUI Frontend of the usermgmt project.
+All changes to the GUI Front-End of the usermgmt project.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,6 +11,7 @@ Changelog for binary "usermgmt_gui".
 
 ### Added 
 
+- Added an edit field for "objectclass_common" of configuration file within the configuration window.
 - Logging also performed to logging file
 - Ssh key pair can be provided by field within configuration
 

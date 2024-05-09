@@ -37,6 +37,7 @@ pub struct MgmtConfig {
     pub ldap_readonly_user_prefix: Option<String>,
     pub ldap_bind_prefix: Option<String>,
     pub ldap_bind_org_unit: Option<String>,
+    pub ldap_add_created_at: bool,
     pub home_host: String,
     pub nfs_host: String,
     pub head_node: String,
@@ -82,6 +83,7 @@ impl MgmtConfig {
 impl Default for MgmtConfig {
     fn default() -> Self {
         MgmtConfig {
+            ldap_add_created_at: false,
             student_default_qos: "basic".to_string(),
             staff_default_qos: "advanced".to_string(),
             student_qos: vec!["interactive".to_string(), "basic".to_string()],
