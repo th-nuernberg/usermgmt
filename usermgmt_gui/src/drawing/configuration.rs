@@ -259,6 +259,7 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFields) -> Vec<Con
         create_conf_field!(staff_qos),
         create_conf_field!(valid_slurm_groups),
         create_conf_field!(compute_nodes),
+        create_conf_field!(ldap_default_user),
         create_conf_field!(ldap_domain_components),
         create_conf_field!(ldap_org_unit),
         create_conf_field!(ldap_bind_org_unit),
