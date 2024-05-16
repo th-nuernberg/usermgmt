@@ -92,6 +92,24 @@ where
     where
         T: LdapCredential,
     {
+        fn add_fields<T>(
+            connection: &mut LdapConn,
+            entity: &NewEntity,
+            ldap_config: &LDAPConfig<T>,
+            fields: Vec<(&str, HashSet<&str>)>,
+        ) -> AppResult
+        where
+            T: LdapCredential,
+        {
+            let result_from_adding = connection.add(
+                &format!("uid={},{}", entity.username, ldap_config.base()),
+                fields,
+            );
+
+            ldap_is_success(result_from_adding).context("Unable to create LDAP user!")?;
+            Ok(())
+        }
+
         let un = entity.username.as_ref().as_str();
         let gid = entity.group.gid().to_string();
         let uid = uid.to_string();
@@ -134,19 +152,18 @@ where
                 ("sshPublicKey", hashset! {pubkey}),
                 ("loginShell", hashset! {config.login_shell.as_str()}),
             ];
-            let created_at = Utc::now().to_rfc3339();
+
             if config.ldap_add_created_at {
+                let created_at = Utc::now().to_rfc3339();
                 let attr = hashset! {created_at.as_str()};
                 fields.push(("createdAt", attr));
+
+                add_fields(connection, entity, ldap_config, fields)?;
+                Ok(())
+            } else {
+                add_fields(connection, entity, ldap_config, fields)?;
+                Ok(())
             }
-
-            let result_form_adding = connection.add(
-                &format!("uid={},{}", entity.username, ldap_config.base()),
-                fields,
-            );
-
-            ldap_is_success(result_form_adding).context("Unable to create LDAP user!")?;
-            Ok(())
         })
     }
 }

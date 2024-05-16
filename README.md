@@ -200,6 +200,10 @@ The `conf.toml` file looks as follows:
 # Timestamp is when an user was created within LDAP database user entry
 # Make sure to also include the field "'ldapAttributes'" under the array "objectclass_common" 
 # Within the config file. Otherwise one gets an error while creating an user within LDAP.
+# The timestamp is saved in the format of rfc 3339 with the UTC time zone.
+# Example of date and time 'year: 2024, month: may, day: 9 and hour: 10, minutes: 49 and seconds: 34'
+# 2024-05-09T10:49:34.545686277+00:00
+# Link: To this rfc 3339 => https://www.rfc-editor.org/rfc/rfc3339
 ldap_add_created_at = true
 # Default value of the Slurm default QOS for the student group
 student_default_qos = 'basic'
