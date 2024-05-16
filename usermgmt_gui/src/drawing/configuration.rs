@@ -246,6 +246,8 @@ fn construct_fields(config: &mut MgmtConfig, map: CacheForConfFields) -> Vec<Con
     }
 
     let mut fields: Vec<ConfiField> = vec![
+        create_conf_field!(objectclass_common),
+        create_conf_field!(ldap_add_created_at),
         create_conf_field!(student_default_qos),
         create_conf_field!(staff_default_qos),
         create_conf_field!(default_ssh_user),

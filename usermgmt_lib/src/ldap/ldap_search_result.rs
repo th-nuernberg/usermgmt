@@ -84,6 +84,7 @@ impl LdapSearchResult {
     pub fn headers(&self) -> Vec<&str> {
         self.header.iter().map(|string| string.as_str()).collect()
     }
+
     pub fn fields(&self) -> Vec<Vec<Vec<&str>>> {
         self.fields
             .as_slice()

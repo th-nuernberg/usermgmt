@@ -1,0 +1,13 @@
+dn: cn=ldap_specs,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: ldap_specs
+olcAttributeTypes: {0}( 1.3.6.1.4.1.49213.1.1.30 NAME 'createdAt' 
+    DESC 'When the user was added to the LDAP database' 
+    EQUALITY caseIgnoreMatch 
+    SUBSTR caseIgnoreSubstringsMatch
+    SYNTAX  1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE
+    )
+olcObjectClasses: {0}( 1.3.6.1.4.1.24552.500.200.1.2.17 NAME 'ldapAttributes' SUP top AUXILIARY
+    DESC 'Specific attributes releated to LDAP'
+    MUST ( createdAt )
+    )
