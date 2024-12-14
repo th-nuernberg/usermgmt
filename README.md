@@ -503,6 +503,8 @@ Also change the version numbers in `Cargo.toml` files at `./usermgmt`, `./usermg
 To add a release, you need to tag the branch with the current version and then push the tag:
 
 ```bash
+# Maybe:
+rustup update
 # Make sure the project is formatted properly so the git workflow doesn't fail
 cargo fmt --all
 cargo clippy --fix --all

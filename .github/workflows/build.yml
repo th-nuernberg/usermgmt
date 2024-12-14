@@ -33,15 +33,15 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
             
-      - name: "check formating"
+      - name: "Check formatting"
         run: cargo fmt --check --all
           
       # - name: "Building project to see if it compiles and does not produce any warnings" 
       #   run: cargo clippy --all -- -Dwarnings
       
-      - name: "Building project to see if it compiles" 
+      - name: "Check linting" 
         run: cargo clippy --all
         
-      - name: "Checking if all unit tests pass" 
+      - name: "Run unit tests" 
         run: cargo test --workspace --verbose
           
