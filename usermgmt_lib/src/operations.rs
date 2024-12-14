@@ -13,7 +13,7 @@ use crate::{
 /// # Errors
 ///
 /// - If the attributes of the parameter `to_add` is not compatible with fields of
-/// parameter `config`. See [`NewEntity::new_user_addition_conf`].
+///     parameter `config`. See [`NewEntity::new_user_addition_conf`].
 /// - If the execution of adding an users fails. See [`perform_action_on_context`].
 pub fn add_user<T, C>(
     to_add: UserToAdd,

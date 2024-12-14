@@ -223,7 +223,7 @@ where
 /// - If no ssh agent is accessible.
 /// - If no key is registered within ssh agent
 /// - If the selection from user is not within the available range of ssh keys registered within
-/// ssh agent .
+///     ssh agent .
 fn try_authenticate_via_ssh_agent(
     session: &mut Session,
     credentials: &impl SshCredentials,

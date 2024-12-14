@@ -61,7 +61,7 @@ where
 /// # Errors
 ///
 /// - If agent could not retrieve identities because no agent found, connection could not be
-/// established and so on
+///     established and so on
 pub fn get_agent_with_all_entities(session: &mut Session) -> AppResult<EntitiesAndSshAgent> {
     let mut agent = session.agent()?;
     agent.connect()?;

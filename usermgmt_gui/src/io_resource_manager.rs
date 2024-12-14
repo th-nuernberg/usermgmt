@@ -69,12 +69,12 @@ where
     /// # Parameters
     /// - [`task`]: Closure which will be completed once the IO task finished.
     /// - [`thread_name`]: Name of thread used for IO background task. Useful for logging and
-    /// debugging.
+    ///     debugging.
     ///
     /// ## Returns
     /// - True: if a new task has spawned.
     /// - False: if a task is already running or spawning a new task has failed for other
-    /// reasons.
+    ///     reasons.
     pub fn spawn_task<F>(&mut self, task: F, thread_name: String) -> bool
     where
         F: FnOnce() -> AppResult<T> + Send + 'static,
