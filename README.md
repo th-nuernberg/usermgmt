@@ -143,9 +143,7 @@ cd usermgmt
 cargo deb
 # Install package
 dpkg -i target/debian/*.deb
-# For previously installed packages, don't forget to update your conf.toml,
-# in case there have been config changes
-cp conf.toml /etc/usermgmt
+# Don't forget to update your conf.toml, in case there have been config changes
 ```
 
 ## GUI 
@@ -169,26 +167,24 @@ The programs tries load the configuration file from several places.
 The first found configuration file is loaded.
 The search is conducted in the following order: 
 
-- Under user specific configuration places according to the OS.
-  - Config location depending on the OS, can be looked up [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html)
-    The searched name of the folder is "usermgmt" 
-    within the config location.
+- OS-specific configuration locations.
+  - Config location depending on the OS (locations can be found [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html))
+    The searched name of the folder is "`usermgmt`" within the config location.
   - In Addition under Linux: "~/.usermgmt" 
-- Under the system wide paths in respect to the OS
+- Under the system wide paths in wrt the OS:
   - Under Linux: "/usr/usermgmt"
 - The CWD as the last resort 
 
-The program does not create the configuration file and the locations listed above, automatically !
+The program does not create the configuration file and locations automatically!
 You do not need to create the configuration from scratch though.
-By using the command generate-config like this 
+By using the `generate-config` command like this 
 
 ```sh
 usermgmt generate-config
 ```
 
-You can acquire a default configuration. This output goes to the stdout of the terminal by default. 
-You can create a local configuration file via piping.
-This example creates a local default configuration file at '/home/foo/conf.toml' via piping
+You can generate a default configuration. This output goes to the stdout of the terminal by default. 
+This example creates a local default configuration file at '/home/foo/conf.toml':
 
 ```sh
 usermgmt generate-config > /home/foo/conf.toml
@@ -201,7 +197,7 @@ The `conf.toml` file looks as follows:
 ```toml
 # If true, a timestamp is created within the LDAP database.
 # Timestamp is when an user was created within LDAP database user entry
-# Make sure to also include the field "'ldapAttributes'" under the array "objectclass_common" 
+# Make sure to also include the field `createdAtRole` in the array "`objectclass_common`" 
 # Within the config file. Otherwise one gets an error while creating an user within LDAP.
 # The timestamp is saved in the format of rfc 3339 with the UTC time zone.
 # Example of date and time 'year: 2024, month: may, day: 9 and hour: 10, minutes: 49 and seconds: 34'
@@ -246,6 +242,7 @@ objectclass_common = [
     'posixAccount',
     'shadowAccount',
     'slurmRole',
+    'createdAtRole',
     'top',       
 ]
 # List of compute nodes on your cluster
