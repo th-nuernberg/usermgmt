@@ -142,7 +142,7 @@ cd usermgmt
 # Create Debian package in Debian package target/debian/<project_name>_<version>_<arch>.deb
 cargo deb
 # Install package
-dpkg -i target/debian/*.deb
+dpkg -i ../target/debian/*.deb
 # Don't forget to update your conf.toml, in case there have been config changes
 ```
 
