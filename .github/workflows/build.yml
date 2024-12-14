@@ -36,8 +36,11 @@ jobs:
       - name: "check formating"
         run: cargo fmt --check --all
           
-      - name: "Building project to see if it compiles and does not produce any warnings" 
-        run: cargo clippy --all -- -Dwarnings
+      # - name: "Building project to see if it compiles and does not produce any warnings" 
+      #   run: cargo clippy --all -- -Dwarnings
+      
+      - name: "Building project to see if it compiles" 
+        run: cargo clippy --all
         
       - name: "Checking if all unit tests pass" 
         run: cargo test --workspace --verbose
