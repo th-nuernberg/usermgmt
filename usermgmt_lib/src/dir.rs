@@ -58,7 +58,7 @@ where
     let mut owner_exit_codes = Vec::new();
     let mut quota_exit_codes = Vec::new();
     for server in config.compute_nodes.iter() {
-        info!("Connecting to a compute node");
+        info!("Connecting to compute node");
         let sess = SshConnection::new(server, config, credentials.clone());
         // Create directory
         let directory = format!("{}/{}", config.compute_node_root_dir, entity.username);
@@ -91,7 +91,7 @@ where
     }
 
     let mut errors_from_codes =
-        ResultAccumulator::new("Failed at creating directories on compute nodes.".to_owned());
+        ResultAccumulator::new("Failed to create directories on compute nodes.".to_owned());
 
     let all_exit_codes_are_zero = mkdir_exit_codes.iter().all(|&x| x == 0);
 
@@ -271,8 +271,11 @@ where
             &config.home_filesystem,
         )?;
         detected_errors.add_err_if_false(
-            quota_exit_code != 0,
-            "Home host did not return with exit code 0 during quota setup!".to_owned(),
+            quota_exit_code == 0,
+            format!(
+                "Home host did not return with exit code 0 (actual exit code: {}) during quota setup!",
+                quota_exit_code
+            ),
         );
     }
 

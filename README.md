@@ -65,17 +65,6 @@ Replace `username` by the user you want to execute the commands with and make su
 
 **Note:** Use `sudo visudo` to change the sudoers file!
 
-## GUI 
-
-There is also a GUI frontend version of this tool.
-More information can be found under the following [README](./usermgmt_gui/README.md).
-
-You can start the GUI version via the following command:
-
-```bash
-cargo gui
-```
-
 ## Build and Install 🦀 
 
 You can build the `usermgmt` CLI tool using Cargo:
@@ -117,10 +106,10 @@ cargo cli list --ssh-path "~/.ssh/some_user"
 
 ```
 
-### Install directly from source
+### Install from source
 
 To directly install from source, you must install the rust toolchain locally.
-It is recommended to install it via rustup.
+It is recommended to install it via `rustup`.
 
 Install the CLI version
 
@@ -154,6 +143,17 @@ dpkg -i target/debian/*.deb
 # For previously installed packages, don't forget to update your conf.toml,
 # in case there have been config changes
 cp conf.toml /etc/usermgmt
+```
+
+## GUI 
+
+We also provide a GUI version of this tool.
+More information can be found under the [GUI README](./usermgmt_gui/README.md).
+
+You can start the GUI version via the following command:
+
+```bash
+cargo gui
 ```
 
 ## Configuration
@@ -259,8 +259,8 @@ staff_gid = 1001
 faculty_gid = 1000
 # Path to sacctmgr binary
 sacctmgr_path = '/usr/local/bin/sacctmgr'
-# Default ldap username used by default if no username for LDAP login is provided.
-ldap_default_user = 'admim'
+# LDAP username used by default if no username for LDAP login is provided.
+ldap_default_user = 'admin'
 # Domain components used for LDAP queries
 # Will be used in combination with ldap_org_unit 
 # and the cn of the username you provided for ldap login
@@ -495,7 +495,7 @@ Make sure the user has sufficient rights to add, modify, and delete entities in 
 
 You need to include the current version of your release in the `CHANGELOG.md` because the [github action](https://github.com/taiki-e/upload-rust-binary-action) picks it up from there. 
 
-Also change the version number in `Cargo.toml` and `src/cli.rs` to keep everything consistent. 
+Also change the version numbers in `Cargo.toml` files at `./usermgmt`, `./usermgmt_lib` etc. to keep everything consistent. 
 
 To add a release, you need to tag the branch with the current version and then push the tag:
 

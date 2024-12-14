@@ -21,12 +21,12 @@ pub fn query(window: &mut UsermgmtWindow) {
             }
         }
         if ssh_state.username.is_none() && !config.default_ssh_user.is_empty() {
-            debug!("GUI: Ssh user name taken from default ssh user in loaded config");
+            debug!("GUI: SSH user name taken from default SSH user in loaded config");
             ssh_state.username = Some(config.default_ssh_user.to_owned());
         }
         if ldap_cred.username.is_none() {
             if let Some(ldap_user_name) = config.ldap_default_user.as_deref() {
-                debug!("GUI: ldap user name taken from default ldap user in loaded config");
+                debug!("GUI: ldap user name taken from default LDAP user in loaded config");
                 ldap_cred.username = Some(ldap_user_name.to_owned());
             }
         }

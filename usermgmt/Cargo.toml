@@ -1,6 +1,6 @@
 [package]
 name = "usermgmt"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 license-file = "LICENSE"
 description = "Simultaneous Slurm and LDAP user management CLI Tool"
@@ -16,7 +16,7 @@ rpassword = "7.3.1"
 
 [package.metadata.deb]
 maintainer = "Dominik Wagner <dominik.wagner@th-nuernberg.de>"
-copyright = "2023, Technische Hochschule Nürnberg Georg Simon Ohm"
+copyright = "2024, Technische Hochschule Nürnberg Georg Simon Ohm"
 license-file = ["LICENSE", "4"]
 extended-description = """\
 A simple commandline tool for \

@@ -135,7 +135,7 @@ where
         where
             T: SshCredentials,
         {
-            info!("Try to authenticate over ssh by using ssh key pair");
+            info!("Trying to authenticate over SSH by using key pair");
             let username = credentials.username()?;
             let password = session_connection.password()?;
             let pair = credentials
@@ -143,7 +143,7 @@ where
                 .ok_or_else(|| anyhow!("No key pair provided"))?;
             let (public, private) = (pair.pub_key(), pair.private_key());
             info!(
-                "Ssh key public key at ({:?}) and private key at ({:?}) is used for authentication",
+                "SSH key pair at ({:?}) and ({:?}) is used for authentication",
                 public, private
             );
             session.userauth_pubkey_file(username, Some(public), private, Some(password))?;

@@ -10,19 +10,7 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
 
 ### Added
 
-- Added conf field "ldap_add_created_at" to opt in for creating LDAP users with creation date
-  Note: the field value field "ldapAttributes" under the array field "objectclass_common" is needed
-  within the config file. Otherwise one gets an error while creating an user within LDAP""
-- Added configuration field "ldap_default_user". Allows to define username for LDAP login used by default.
-- Added CLI option to specify the configuration file
-- Logging also performed to logging file
-- Ssh key pair can be provided by field within configuration file or as a CLI argument.
-
-### Changed
-
-- In Cli, connection to LDAP and Slurm is checked before any attempt at performing adding/removing/listing or modifying/listing.
-- In CLI, user can just press enter to provide no password during password prompt for ssh. 
-  Useful for ssh key pair without password.
+Nothing
 
 ## [0.1.0] - 2022-06-20
 
@@ -194,3 +182,27 @@ Changelog for binary "usermgmt" and library "usermgmt_lib".
   Example: before It searched under ~/.config instead of ~/.config/usermgmt
 
 [0.6.0]: https://github.com/th-nuernberg/usermgmt/releases/tag/v0.6.0 
+
+
+## [0.6.1] - 2024-12-14
+
+### Added
+
+- Added conf field "`ldap_add_created_at`" to opt in for creating LDAP users with creation date
+  Note: the field value field "`createdAtRole`" under the array field "`objectclass_common`" is needed
+  in the config file. Otherwise one gets an error while creating an LDAP user. 
+- Added configuration field "`ldap_default_user`". Allows to define username for LDAP login used by default.
+- Added CLI option to specify the configuration file
+- Logging also performed to logging file
+- SSH key pair can be provided by field within configuration file or as a CLI argument.
+
+### Changed
+
+- In CLI, connection to LDAP and Slurm is checked before any attempt at performing adding/removing/listing or modifying/listing.
+- In CLI, user can just press enter to provide no password during password prompt for SSH (useful for ssh key pair without password). 
+
+### Fixed
+
+- Fixed broken Quota creation exit code check in `dir.rs`. 
+- Some typos
+

@@ -94,7 +94,7 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
                     Ok(stripped) => PathBuf::from(&resolve_dir).join(stripped),
                     Err(error) => {
                         debug!(
-                            "Striping prefix did not occurred for {:?}. Details: {}",
+                            "Stripping prefix did not happen for {:?}. Details: {}",
                             to_resolve, error
                         );
                         to_resolve.clone()
@@ -104,7 +104,7 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
         }
         None => {
             debug!(
-                "Could not get any home directory location skipping checking for locations {:?}",
+                "Could not find any home directory location. Skipping checking for locations {:?}",
                 HOME_LOCATIONS
             );
 
@@ -114,12 +114,12 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
 }
 
 fn try_cwd_as_last_resort() -> AppResult<PathBuf> {
-    debug!("No configuration file found in the previous paths. Trying to get configuration file in cwd.");
+    debug!("No configuration file found in previous paths. Trying to get configuration file in cwd.");
     let cwd = std::env::current_dir().context(
                 "No folder found, cwd directory as last alternative could not be retrieved.\n No conf.toml could be found",
             )?;
     let last_resort = may_return_path_to_conf(io_try_exists, &cwd).ok_or(anyhow::anyhow!(
-        "path at {:?} as last alternative does also not exits.\n No conf.toml could be found",
+        "path at {:?} as last alternative does also not exist.\n No conf.toml could be found",
         cwd
     ))?;
     info!(
@@ -135,12 +135,12 @@ fn may_return_path_to_conf(
     path: &Path,
 ) -> Option<PathBuf> {
     let to_check = if path.is_file() {
-        debug!("Path at {:?} is dected as a configuration file.", path);
+        debug!("Path at {:?} is a configuration file.", path);
         path.to_path_buf()
     } else {
         debug!(
-            "Path at {0:?} is dected as a directory.\n\
-            A configuration file named {1} is search within this directory.",
+            "Path at {0:?} is a directory.\n\
+            Looking for a configuration file named {1} within this directory.",
             path,
             constants::NAME_CONFIG_FILE
         );
@@ -151,7 +151,7 @@ fn may_return_path_to_conf(
             if exits {
                 Some(to_check)
             } else {
-                debug!("Path at {:?} does not exits", to_check);
+                debug!("Path at {:?} does not exist!", to_check);
                 None
             }
         }

@@ -152,7 +152,7 @@ impl Default for MgmtConfig {
 ///
 /// # Error
 ///
-/// - Can not ensure if folder exits where conf.toml file exits
+/// - Can not ensure if folder exists where conf.toml file exists
 /// - Can not read or create a configuration file
 pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> {
     let path = config::get_path_to_conf(manual_path)?;

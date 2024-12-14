@@ -18,7 +18,7 @@ pub const fn short_about() -> &'static str {
 #[rustfmt::skip]
 pub const fn links_about_project_for_end_users() -> &'static str {
     concatcp!(
-        "Wheret to report bugs: ", constants::ISSUE_LINK, ".\n",
+        "Bug reports: ", constants::ISSUE_LINK, ".\n",
         "Source code: ", constants::REPOSITORY_LINK, " .\n",
         "License: MIT => ", constants::MIT_LINK, ".\n",
         "Readme: ", constants::README_LINK, ".\n"
@@ -84,7 +84,6 @@ pub enum Commands {
     },
     #[clap(visible_alias = "gc")]
     /// Outputs a default configuration, aka conf.toml, to stdout.
-    /// Pipe it to a path for a file to generate a permanent configuration somewhere.
     GenerateConfig,
 }
 
@@ -179,7 +178,7 @@ impl CommonUserFields {
 }
 
 /// Used by argument parser to ensure that
-/// the argument is not empty and white spaces are trimmed off
+/// the argument is not empty and white spaces are trimmed
 pub fn trimmed_non_empty(s: &str) -> AppResult<TrimmedNonEmptyText> {
     let to_validate = TrimmedNonEmptyText::try_from(s)?;
     Ok(to_validate)
