@@ -106,24 +106,24 @@ mod testing {
     fn should_return_next_uid() {
         // With existing staff and students
         let example_uids = vec![10001, 10002, 10005, 10003, 1001];
-        assert_return_next_uid(&vec![], Group::Staff, 1001);
-        assert_return_next_uid(&vec![], Group::Student, 10001);
+        assert_return_next_uid(&[], Group::Staff, 1001);
+        assert_return_next_uid(&[], Group::Student, 10001);
         // Only with existing staff
-        assert_return_next_uid(&vec![1001, 1002], Group::Student, 10001);
+        assert_return_next_uid(&[1001, 1002], Group::Student, 10001);
         // Only with existing students
-        assert_return_next_uid(&vec![10001, 10002], Group::Staff, 1001);
+        assert_return_next_uid(&[10001, 10002], Group::Staff, 1001);
         assert_return_next_uid(&example_uids, Group::Student, 10006);
         assert_return_next_uid(&example_uids, Group::Staff, 1002);
     }
 
     #[test]
     fn should_return_error_for_overflow() {
-        let actual = get_new_uid(&vec![u32::MAX], Group::Student);
+        let actual = get_new_uid(&[u32::MAX], Group::Student);
         assert!(actual.is_err());
     }
     #[test]
     fn should_return_error_for_staff_into_student() {
-        let actual = get_new_uid(&vec![STUDENT_UID - 1], Group::Staff);
+        let actual = get_new_uid(&[STUDENT_UID - 1], Group::Staff);
         assert!(actual.is_err());
     }
 

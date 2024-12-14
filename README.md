@@ -505,7 +505,7 @@ To add a release, you need to tag the branch with the current version and then p
 ```bash
 # Make sure the project is formatted properly so the git workflow doesn't fail
 cargo fmt --all
-cargo clippy --fix
+cargo clippy --fix --all
 # Verify with: 
 cargo fmt --check --all
 cargo clippy --all

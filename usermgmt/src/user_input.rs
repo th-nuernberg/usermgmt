@@ -62,6 +62,42 @@ fn trim_input(input: &str) -> Option<String> {
         .map(|s| s.to_string())
 }
 
+/// Ask the user for an line until new line is given over the terminal.
+///
+/// # Returns
+///
+/// - None if input is empty or only white spaces
+/// - Some if input has at least on char which is not white space. Inner value is trimmed.
+///
+/// # Errors
+///
+/// - if reading from the terminal does not work. For example terminal is not accessible.
+pub fn line_input_from_user() -> AppResult<Option<String>> {
+    let mut input = String::new();
+
+    io::stdin()
+        .read_line(&mut input)
+        .context("Failed to read user input")?;
+
+    Ok(trim_input(&input))
+}
+
+/// Ask the user for a password until new line is given  over the terminal.
+///
+/// # Returns
+///
+/// - None if input is empty or only white spaces
+/// - Some if input has at least on char which is not white space. Inner value is trimmed.
+///
+/// # Errors
+///
+/// - if reading from the terminal does not work. For example terminal is not accessible.
+pub fn cli_ask_for_password(prompt: &str) -> AppResult<Option<String>> {
+    let password =
+        rpassword::prompt_password(prompt).context("Could not retrieve password from prompt !")?;
+    Ok(trim_input(&password))
+}
+
 #[cfg(test)]
 mod testing {
     use super::*;
@@ -109,7 +145,7 @@ mod testing {
         let actual = ask_for_line_from_user(
             || Ok(Some(input.clone())),
             |output| {
-                let expected = format!("{}", prompt);
+                let expected = prompt.to_string();
                 assert_eq!(expected, output);
             },
             "Some prompt",
@@ -127,7 +163,7 @@ mod testing {
         let actual = ask_for_line_from_user(
             || Ok(input.clone()),
             |output| {
-                let expected = format!("{}", prompt);
+                let expected = prompt.to_string();
                 assert_eq!(expected, output);
             },
             "Some prompt",
@@ -135,40 +171,4 @@ mod testing {
         );
         assert!(actual.is_err());
     }
-}
-
-/// Ask the user for an line until new line is given over the terminal.
-///
-/// # Returns
-///
-/// - None if input is empty or only white spaces
-/// - Some if input has at least on char which is not white space. Inner value is trimmed.
-///
-/// # Errors
-///
-/// - if reading from the terminal does not work. For example terminal is not accessible.
-pub fn line_input_from_user() -> AppResult<Option<String>> {
-    let mut input = String::new();
-
-    io::stdin()
-        .read_line(&mut input)
-        .context("Failed to read user input")?;
-
-    Ok(trim_input(&input))
-}
-
-/// Ask the user for a password until new line is given  over the terminal.
-///
-/// # Returns
-///
-/// - None if input is empty or only white spaces
-/// - Some if input has at least on char which is not white space. Inner value is trimmed.
-///
-/// # Errors
-///
-/// - if reading from the terminal does not work. For example terminal is not accessible.
-pub fn cli_ask_for_password(prompt: &str) -> AppResult<Option<String>> {
-    let password =
-        rpassword::prompt_password(prompt).context("Could not retrieve password from prompt !")?;
-    Ok(trim_input(&password))
 }
