@@ -70,6 +70,9 @@ Replace `username` by the user you want to execute the commands with and make su
 You can build the `usermgmt` CLI tool using Cargo:
 
 ```bash
+# Maybe:
+rustup update
+
 cargo build
 ```
 
@@ -400,17 +403,17 @@ A list of modifiable values can be obtained via `usermgmt modify --help`.
 
 ### Deleting Users
 
-User can be deleted via `usermgmt delete <username>`.  
+A user can be deleted via `usermgmt delete <username>`.  
 
-## Project layout
+## Project Structure
 
 This project currently consists of 3 crates:
 
-- usermgmt: The CLI tool for simultaneous user management for LDAP and Slurm. (Location)[./usermgmt]
-- usermgmt_gui: The GUI frontend for simultaneous user management for LDAP and Slurm. (Location)[./usermgmt_gui]
-- usermgmt_lib: Shared code between the binaries, usermgmt and usermgmt_gui. (Location)[./usermgmt_lib]
+- [`usermgmt`](./usermgmt): The CLI tool for simultaneous user management for LDAP and Slurm. 
+- [`usermgmt_gui`](./usermgmt_gui): The GUI frontend for simultaneous user management for LDAP and Slurm. 
+- [`usermgmt_lib`](./usermgmt_lib): Shared code between the binaries, usermgmt and usermgmt_gui. 
 
-## Tips and advanced usage
+## Tips and Advanced Usage
 
 ### LDAP: Create users with a date of their creation
 
@@ -502,8 +505,10 @@ To add a release, you need to tag the branch with the current version and then p
 ```bash
 # Make sure the project is formatted properly so the git workflow doesn't fail
 cargo fmt --all
+cargo clippy --fix
 # Verify with: 
 cargo fmt --check --all
+cargo clippy --all
 
 git tag <version> main
 
