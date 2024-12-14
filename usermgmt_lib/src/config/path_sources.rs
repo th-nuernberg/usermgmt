@@ -114,7 +114,9 @@ fn try_resolve_paths_with_home(home_folder: Option<PathBuf>, folders: &[PathBuf]
 }
 
 fn try_cwd_as_last_resort() -> AppResult<PathBuf> {
-    debug!("No configuration file found in previous paths. Trying to get configuration file in cwd.");
+    debug!(
+        "No configuration file found in previous paths. Trying to get configuration file in cwd."
+    );
     let cwd = std::env::current_dir().context(
                 "No folder found, cwd directory as last alternative could not be retrieved.\n No conf.toml could be found",
             )?;

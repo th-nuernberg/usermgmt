@@ -500,6 +500,11 @@ Also change the version numbers in `Cargo.toml` files at `./usermgmt`, `./usermg
 To add a release, you need to tag the branch with the current version and then push the tag:
 
 ```bash
+# Make sure the project is formatted properly so the git workflow doesn't fail
+cargo fmt --all
+# Verify with: 
+cargo fmt --check --all
+
 git tag <version> main
 
 git push origin <version>
@@ -525,7 +530,10 @@ cp LICENSE target/aarch64-apple-darwin/release
 
 cd target/aarch64-apple-darwin/release
 tar -cvzf usermgmt-aarch64-apple-darwin.tar.gz usermgmt README.md LICENSE
+tar -cvzf usermgmt_gui-aarch64-apple-darwin.tar.gz usermgmt_gui README.md LICENSE
 ```
+
+Finally, upload the `.tar.gz` files to [releases](https://github.com/th-nuernberg/usermgmt/releases). 
 
 ## Local development with via docker
 
@@ -536,10 +544,10 @@ docker. Read this [Readme](./docker/README.md) for how to set up local developme
 ## Changelogs
 
 The [changelog](CHANGELOG.md) 
-at the project root lists all changes for the usermgmt_lib and usermgmt crate.
+at the project root lists all changes for the `usermgmt_lib` and `usermgmt` crate.
 Changes to the GUI version are documented in its own [changelog](./usermgmt_gui/CHANGELOG.md)
 
 ## License
 
-The whole project is licensed under [MIT](./LICENSE)
+This project is licensed under [MIT](./LICENSE)
 
