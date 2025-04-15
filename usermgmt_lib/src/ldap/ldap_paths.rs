@@ -41,7 +41,7 @@ impl LdapPaths {
 
         info!("LDAP domain components: {}", &ldap_dc);
         info!(
-            "LDAP DN under which a user is created/deleted/modified: {}",
+            "LDAP DN under which users are created/deleted/modified: {}",
             &ldap_base
         );
         info!("LDAP DN binding for user login: {}", &ldap_bind);

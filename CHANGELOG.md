@@ -223,3 +223,20 @@ Nothing
 - Bug in SSH Agent key selection: It always returned `last_index` instead of `user_choice`.  
 
 
+## [0.6.3] - 2025-04-15
+
+### Added
+
+- Improved log outputs in various places.
+
+### Changed
+
+- It is now possible to configure multiple NFS hosts in `conf.toml`.
+
+### Fixed
+
+- Some typos.
+- Bug in SSH Agent key selection: It always returned `last_index` instead of `user_choice`.  
+
+
+
