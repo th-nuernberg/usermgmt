@@ -80,8 +80,8 @@ impl SshCredentials for CliSshCredential {
     ) -> AppResult<usize> {
         let length = many_keys.len();
         let last_index = length.saturating_sub(1);
-        println!("Found more than one key in ssh agent !");
-        println!("Choose one between {} and {} ssh key", 0, last_index);
+        println!("Found more than one key in SSH agent!");
+        println!("Choose a key between {} and {}", 0, last_index);
         println!("===========================================");
 
         for (index, next) in many_keys.iter().enumerate() {
@@ -90,14 +90,14 @@ impl SshCredentials for CliSshCredential {
         }
 
         let user_choice: usize = user_input::line_input_from_user()?
-            .ok_or_else(|| anyhow!("No number supplied"))?
+            .ok_or_else(|| anyhow!("No valid key choice provided"))?
             .parse()?;
 
         if last_index < user_choice {
             Err(anyhow!("Choice should between {} and {}", 0, last_index))
         } else {
-            info!("{}. SSH key is chosen", user_choice);
-            Ok(last_index)
+            info!("SSH key at index {} chosen", user_choice);
+            Ok(user_choice)
         }
     }
 

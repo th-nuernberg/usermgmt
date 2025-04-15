@@ -220,5 +220,6 @@ Nothing
 ### Fixed
 
 - Some typos.
+- Bug in SSH Agent key selection: It always returned `last_index` instead of `user_choice`.  
 
 
