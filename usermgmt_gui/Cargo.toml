@@ -25,4 +25,4 @@ hotwatch = { git = "https://github.com/BoolPurist/hotwatch", branch = "toggleabl
  
 [package.metadata.deb]
 maintainer = "Florian Naumann <naumannfl79974@th-nuernberg.de>"
-copyright = "2024, Technische Hochschule Nürnberg Georg Simon Ohm"
+copyright = "2025, Technische Hochschule Nürnberg Georg Simon Ohm"

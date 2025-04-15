@@ -206,3 +206,19 @@ Nothing
 - Fixed broken Quota creation exit code check in `dir.rs`. 
 - Some typos
 
+
+## [0.6.2] - 2025-04-15
+
+### Added
+
+- Improved log outputs in various places.
+
+### Changed
+
+- It is now possible to configure multiple NFS hosts in `conf.toml`. 
+
+### Fixed
+
+- Some typos.
+
+

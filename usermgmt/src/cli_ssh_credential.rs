@@ -63,7 +63,7 @@ impl SshCredentials for CliSshCredential {
     /// - If the terminal prompt fails. See [`user_input::cli_ask_for_password`].
     fn password(&self) -> AppResult<&str> {
         let password = self.password.get_or_try_init(|| {
-            let from_prompt = user_input::cli_ask_for_password("Enter your SSH password: ")?;
+            let from_prompt = user_input::cli_ask_for_password("Enter your SSH password (leave empty and press enter to attempt key authentication): ")?;
             Ok::<String, AppError>(from_prompt.unwrap_or_default())
         })?;
 
@@ -96,7 +96,7 @@ impl SshCredentials for CliSshCredential {
         if last_index < user_choice {
             Err(anyhow!("Choice should between {} and {}", 0, last_index))
         } else {
-            info!("{}. ssh key is chosen", user_choice);
+            info!("{}. SSH key is chosen", user_choice);
             Ok(last_index)
         }
     }

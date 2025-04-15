@@ -91,7 +91,7 @@ impl Entity {
 
         let publickey = publickey
             .map(|path| {
-                debug!("Trying to load the public key from path at {} .", path);
+                debug!("Trying to load public key at {}.", path);
 
                 let content = on_load_pubkey(Path::new(path.as_ref()))?;
                 TrimmedNonEmptyText::try_from(content)

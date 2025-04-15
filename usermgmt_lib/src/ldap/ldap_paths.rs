@@ -39,12 +39,12 @@ impl LdapPaths {
             concat_by_comma_if_both_not_empty(ldap_prefix_with_user_name, dc_and_bind_org)
         };
 
-        info!("({}) ldap domain components dn.", &ldap_dc);
+        info!("LDAP domain components: {}", &ldap_dc);
         info!(
-            "({}) Ldap dn under which a user is created/deleted/modified.",
+            "LDAP DN under which a user is created/deleted/modified: {}",
             &ldap_base
         );
-        info!("({}) Ldap dn binding for user log in.", &ldap_bind);
+        info!("LDAP DN binding for user login: {}", &ldap_bind);
 
         return Self {
             base: ldap_base,

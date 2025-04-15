@@ -39,8 +39,7 @@ pub struct GeneralArgs {
     pub command: Commands,
     #[arg(long)]
     /// Allows to specify a configuration file by providing a file path.
-    /// If absent, the configuration file is searched under certain places like the app config
-    /// folder.
+    /// If absent, an attempt is made to locate the configuration file in various plausible places.
     pub config_file: Option<PathBuf>,
 }
 

@@ -301,15 +301,15 @@ ldap_readonly_bind = "ou=readonly,ou=realm"
 default_ssh_user = 'serveradmin'
 # Hostname of the server that provides the home directories
 # Assumes that a single host is responsible for home directories 
-# and that they are shared via nfs
+# and that they are shared via NFS
 home_host = 'home.server.de'
-# Hostname of an nfs server to be used by cluster users
-nfs_host = 'nfs.server.de'
+# Hostnames of NFS servers
+nfs_host = ['nfs.server.de']
 # Slurm head node (where sacctmgr is installed)
 # Required when run_slurm_remote=true
 head_node = 'head.node.de'
-# Root directory of the shared folders on the nfs host
-nfs_root_dir = '/mnt/md0/scratch'
+# Root directories of the shared folders on the NFS hosts
+nfs_root_dir = ['/mnt/md0/scratch']
 # Root directory of user folders on each compute node
 # (must be the same on each node)
 compute_node_root_dir = '/mnt/md0/user'
@@ -317,24 +317,24 @@ compute_node_root_dir = '/mnt/md0/user'
 filesystem = '/mnt/md0'
 # Filesystem (or mountpoint) under which user quotas on the user's home directory are to be set
 home_filesystem = '/dev/sdb4'
-# Filesystem (or mountpoint) under which user quotas are to be set on the NFS
-nfs_filesystem = '/dev/sda1'
+# Filesystems (or mountpoints) under which user quotas are to be set on the NFS
+nfs_filesystem = ['/dev/sda1']
 # Quota softlimit on compute nodes
 quota_softlimit = '200G'
 # Quota hardlimit on compute nodes
 quota_hardlimit = '220G'
-# Quota softlimit on nfs
-quota_nfs_softlimit = '200G'
-# Quota hardlimit on compute nfs
-quota_nfs_hardlimit = '220G'
+# Quota softlimit on NFS hosts
+quota_nfs_softlimit = ['200G']
+# Quota hardlimit on NFS hosts
+quota_nfs_hardlimit = ['220G']
 # Quota softlimit on user home
 quota_home_softlimit = '20G'
 # Quota hardlimit on user home
 quota_home_hardlimit = '22G'
-# Create/delete/modify user on the slurm data base by default
+# Create/delete/modify user on the Slurm database by default
 # Can be overridden via CLI option for a command
 include_slurm = true
-# Create/delete/modify user on the ldap data base by default
+# Create/delete/modify user on the LDAP database by default
 # Can be overridden via CLI option for a command
 include_ldap = true
 # Use the directory management module of the application 
@@ -350,13 +350,13 @@ use_homedir_helper = true
 run_slurm_remote = true
 # Port to be used when connecting via ssh to any node
 ssh_port = 22
-# If true, the application will try to authenticate via a ssh agent before the simple password authentication
+# If true, the application will try to authenticate via SSH agent before the simple password authentication
 ssh_agent = false
 # Path to ssh key pair to be used if no ssh agent is used.
 # Path points to base name of the private and public key. 
 # Example: With path "~/.shh/some_key_pair", there should be private key named "~/.shh/some_key_pair" 
 # and public key "~/.shh/some_key_pair.pub"
-ssh_key_path = "~/.shh/some_key_pair"
+ssh_key_path = "~/.ssh/some_key_pair"
 ```
 
 The values for `student_default_qos`, `staff_default_qos`, `student_qos`, and `staff_qos` will be used when `--default-qos` and `--qos` 
@@ -412,40 +412,60 @@ This project currently consists of 3 crates:
 
 ## Tips and Advanced Usage
 
-### LDAP: Create users with a date of their creation
+### LDAP: Add user creation date to LDAP
 
-There is a feature of this tool in which a creation date is added to the LDAP user upon creation.
 To preserve the backwards compatibility with earlier versions, this features must be opted in.
 
-You can opt in by the following steps:
+Setup the use of creation dates in LDAP via:
 
-1. Set the field value "ldap_add_created_at" to `true` within the configuration file.
-2. Add the value "ldapAttributes" to the array value "objectclass_common" within the configuration file.
+1. Set the field value `ldap_add_created_at` to `true` in `conf.toml`.
+2. Add the value `createdAtRole` to `objectclass_common` in `conf.toml`.
 
-### Use SSH agent for ssh authentication 
+### Use SSH agent for authentication 
 
-To save yourself entering password for ssh authentication again and again, 
-you can let the application use a running ssh agent. 
+To save yourself entering passwords for SSH authentication again and again, 
+you can let the application use a running SSH agent. 
 
-Activate this feature via setting the field `ssh_agent` from false to true inside the configuration file.
+Activate this feature via setting the field `ssh_agent` to `true` in `conf.toml`.
 
-Start your ssh agent in the terminal via the command
+Start your SSH agent in the terminal via the command (often started automatically):
 
 ```sh
 ssh-agent
 ```
 
-Then add your private ssh key to the ssh agent via this command. 
+Add your private SSH key to the agent. 
 You might be asked for the password to decrypt this key if a password was set during creation of the key pair. 
+
 ```sh
 ssh-agent <path_to_private_ssh_key>
 ```
 
-If authentication over ssh is requested, 
-the application will try to use one of your keys registered within the ssh agent 
-and does not ask you for a password.
-If more than one key are registered within the agent, 
-you will be asked for which key to use via a prompt in the terminal.
+If authentication over SSH is requested,
+the application will try to use one of your keys registered within the SSH agent
+and does not ask for a password.
+If more than one key is registered within the agent,
+you will be prompted to select the key you want to use.
+
+**Additional steps on macOS:**
+
+Ensure macOS remembers the key (optional, via Keychain): 
+
+```sh
+ssh-add --apple-use-keychain <path_to_private_ssh_key>
+```
+
+Persist keys across reboots (add to config) by editing `~/.ssh/config`:
+
+```sh
+Host *
+  UseKeychain yes
+  AddKeysToAgent yes
+  IdentityFile <path_to_private_ssh_key>
+```
+This integrates with the macOS keychain and ensures the key is added automatically. 
+
+
 
 ### Show more logs
 

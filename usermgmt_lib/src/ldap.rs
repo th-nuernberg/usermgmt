@@ -413,7 +413,7 @@ where
         .with_context(|| format!("No LDAP entry found for user {}", username))?;
 
     let sr = SearchEntry::construct(entry);
-    debug!("SR for deletion: {:?}", sr);
+    debug!("Search result for deletion: {:?}", sr);
 
     Ok(Some(sr.dn))
 }

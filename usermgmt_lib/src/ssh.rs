@@ -45,13 +45,13 @@ pub fn run_remote_command<C>(sess: &SshConnection<C>, cmd: &str) -> AppResult<(i
 where
     C: SshCredentials,
 {
-    debug!("Running command {}", cmd);
+    debug!("Running command: {}", cmd);
 
     let (s, exit_status) = sess.exec(cmd)?;
 
-    debug!("command exit status: {}", exit_status);
+    debug!("Command exit status: {}", exit_status);
     if exit_status != 0 {
-        debug!("command output: {}", s);
+        debug!("Command output: {}", s);
     }
     Ok((exit_status, s))
 }

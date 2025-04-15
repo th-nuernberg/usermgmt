@@ -14,7 +14,7 @@ fn ask_for_line_from_user(
     placeholder: Option<&str>,
 ) -> AppResult<String> {
     let final_placeholder_prompt = match placeholder {
-        Some(value) => format!(" (defaults to ({}))", value),
+        Some(value) => format!(" (defaults to {})", value),
         None => String::new(),
     };
 
@@ -31,7 +31,7 @@ fn ask_for_line_from_user(
     }
 }
 
-/// Ask the user for an line until new line is given over the terminal.
+/// Ask the user for a line until new line is given over the terminal.
 /// A prompt is shown to the user in the terminal.
 /// If no input is given by the user, the placeholder is returned
 ///
@@ -110,7 +110,7 @@ mod testing {
         let actual = ask_for_line_from_user(
             || Ok(None),
             |output| {
-                let expected = format!("{} (defaults to ({}))", prompt, placeholder);
+                let expected = format!("{} (defaults to {})", prompt, placeholder);
                 assert_eq!(expected, output);
             },
             "Some prompt",
@@ -128,7 +128,7 @@ mod testing {
         let actual = ask_for_line_from_user(
             || Ok(Some(input.clone())),
             |output| {
-                let expected = format!("{} (defaults to ({}))", prompt, placeholder);
+                let expected = format!("{} (defaults to {})", prompt, placeholder);
                 assert_eq!(expected, output);
             },
             "Some prompt",
@@ -141,7 +141,7 @@ mod testing {
     fn prompt_without_default_and_input_was_given() {
         let prompt = "Some prompt";
 
-        let input = "Input !".to_owned();
+        let input = "Input!".to_owned();
         let actual = ask_for_line_from_user(
             || Ok(Some(input.clone())),
             |output| {

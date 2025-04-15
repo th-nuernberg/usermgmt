@@ -6,9 +6,9 @@
 ldap_add_created_at = true 
 student_default_qos = 'basic'
 staff_default_qos = 'advanced'
-student_qos = ['interactive', 'basic']
-staff_qos = ['interactive', 'advanced']
-valid_qos = ['interactive', 'basic', 'advanced']
+student_qos = ['interactive', 'basic', 'preemptible']
+staff_qos = ['interactive', 'advanced', 'preemptible']
+valid_qos = ['interactive', 'basic', 'advanced', 'preemptible']
 valid_slurm_groups = ['staff', 'student']
 objectclass_common = [
     'inetOrgPerson',
@@ -21,23 +21,23 @@ objectclass_common = [
     'ldapAttributes',
     'top',
 ]
-compute_nodes = ['m0.host.de', 'ml1.host.de']
+compute_nodes = ['ml0.host.de', 'ml1.host.de']
 # Static ip address of docker container as head node for development
 head_node = '172.25.0.13'
 # Name of user with slurm admin rights in the slurmdb of the development docker set up.
 default_ssh_user = 'dev_user'
 # Static ip address of docker container as head node for development
 home_host = '172.25.0.13'
-nfs_host = 'nfs.server.de'
-nfs_root_dir = '/mnt/md0/scratch'
+nfs_host = ['nfs1.server.de', 'nfs2.server.de']
+nfs_root_dir = ['/mnt/md0/scratch', '/mnt/md0/scratch']
 compute_node_root_dir = '/mnt/md0/user'
 filesystem = '/mnt/md0'
 home_filesystem = '/dev/sdb4'
-nfs_filesystem = '/dev/sda1'
+nfs_filesystem = ['/dev/sda1', '/dev/sda1']
 quota_softlimit = '200G'
 quota_hardlimit = '220G'
-quota_nfs_softlimit = '200G'
-quota_nfs_hardlimit = '220G'
+quota_nfs_softlimit = ['200G', '200G']
+quota_nfs_hardlimit = ['220G', '220G']
 quota_home_softlimit = '20G'
 quota_home_hardlimit = '22G'
 login_shell = '/bin/bash'

@@ -1,4 +1,4 @@
-use log::debug;
+use log::info;
 
 use crate::{
     cli::{OnWhichSystem, UserToAdd},
@@ -26,7 +26,7 @@ where
     T: LdapCredential + Clone,
     C: SshCredentials + Clone,
 {
-    debug!("Start adding user");
+    info!("Start adding user");
 
     let entity = NewEntity::new_user_addition_conf(to_add, config)?;
 
@@ -40,7 +40,7 @@ where
         |_| dir::add_user_directories(&entity, config, &ssh_credentials),
     )?;
 
-    debug!("Finished add_user");
+    info!("Finished adding user");
 
     Ok(())
 }
@@ -59,7 +59,7 @@ where
     T: LdapCredential,
     C: SshCredentials,
 {
-    debug!("Start delete_user");
+    info!("Start deleting user {}", user);
 
     perform_action_context_no_dirs(
         on_which_sys,
@@ -71,7 +71,7 @@ where
         |ssh_connection| slurm::delete_slurm_user(user, config, ssh_connection),
     )?;
 
-    debug!("Finished delete_user");
+    info!("Finished deleting user {}", user);
     Ok(())
 }
 
@@ -89,7 +89,7 @@ where
     C: SshCredentials,
     T: LdapCredential,
 {
-    debug!("Start modify_user for {}", modifiable.username);
+    info!("Start modifying user {}", modifiable.username);
 
     perform_action_context_no_dirs(
         on_which_sys,
@@ -101,7 +101,7 @@ where
         |ssh_connection| slurm::modify_slurm_user(&modifiable, config, ssh_connection),
     )?;
 
-    debug!("Finished modify_user");
+    info!("Finished modifying user {}", modifiable.username);
     Ok(())
 }
 

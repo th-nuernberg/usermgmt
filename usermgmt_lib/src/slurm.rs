@@ -32,13 +32,13 @@ where
 
     run_slurm_action(action, config, session).with_context(|| {
         format!(
-            "Failed to add user {} with account {}",
+            "Failed to add user {} with account {} to Slurm",
             entity.username, entity.group
         )
     })?;
 
     info!(
-        "Added user {} with account {}, qos {:?} and default qos {}",
+        "Added user {} with account {}, QoS {:?} and default QoS {} to Slurm",
         entity.username, entity.group, entity.qos, entity.default_qos
     );
 
@@ -60,8 +60,8 @@ where
 {
     let action = CommandBuilder::new_delete(user.to_string());
     run_slurm_action(action, config, session)
-        .with_context(|| format!("Failed to delete user with name {}", user))?;
-    info!("Deleted user with name {}", user);
+        .with_context(|| format!("Failed to delete user {} from Slurm", user))?;
+    info!("Deleted user {} from Slurm", user);
     Ok(())
 }
 
@@ -131,7 +131,7 @@ where
         .sacctmgr_path(config.sacctmgr_path.clone());
     if config.run_slurm_remote {
         for cmd in actions.remote_commands() {
-            debug!("Run remote slurm command ({})", &cmd);
+            debug!("Running remote Slurm command: {}", &cmd);
             let next_output = run_remote_report_slurm_cmd(session, &cmd)?;
             output.push_str(&next_output);
         }
@@ -153,14 +153,14 @@ where
     C: SshCredentials,
 {
     let (exit_code, output) = ssh::run_remote_command(session, cmd)
-        .with_context(|| format!("Error: For remote slurm command ({}).", cmd,))?;
+        .with_context(|| format!("Error during remote Slurm command execution ({}).", cmd,))?;
 
     if exit_code == 0 {
-        debug!("Success: For remote slurm command ({})", cmd);
+        debug!("Successfully executed remote Slurm command:{}", cmd);
         Ok(output)
     } else {
         Err(anyhow!(
-            "Error: For remote slurm command ({}) with error code {}",
+            "Error during remote Slurm command execution! Command '{}' returned exit code {}",
             cmd,
             exit_code
         ))

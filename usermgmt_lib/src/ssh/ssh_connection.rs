@@ -65,19 +65,19 @@ where
 
         let mut channel = session
             .channel_session()
-            .context("Could not create channel for ssh session")?;
+            .context("Unable to create channel for SSH session")?;
 
         channel
             .exec(cmd)
-            .context("Execution of command on remote machine over ssh has failed.")?;
+            .context("Execution of command on remote machine over SSH has failed.")?;
 
         let mut output = String::new();
         channel
             .read_to_string(&mut output)
-            .context("Could not read output of executed command over ssh channel")?;
+            .context("Could not read output of executed command over SSH channel")?;
         let exit_status = channel
             .exit_status()
-            .context("Could not retrieve exit code of executed command over ssh")?;
+            .context("Could not retrieve exit code of executed command over SSH")?;
 
         Ok((output, exit_status))
     }
@@ -85,7 +85,7 @@ where
     pub fn establish_connection(&self) -> AppResult<Session> {
         info!("Connecting to host {}", self.endpoint);
 
-        let mut sess = Session::new().context("Could not build up ssh session")?;
+        let mut sess = Session::new().context("Unable to build SSH session")?;
         let timeout = constants::SSH_TIME_OUT_MILL_SECS;
         let socket_addr: String = format!("{}:{}", self.endpoint, self.port);
         let socket_addr: SocketAddr = socket_addr
@@ -98,7 +98,7 @@ where
                 TcpStream::connect_timeout(&socket_addr, Duration::from_millis(timeout as u64))
                     .with_context(|| {
                         format!(
-                            "Could not connect over tcp to endpoint: {} over port: {}",
+                            "Unable to connect over tcp to endpoint {} via port {}",
                             self.endpoint, self.port
                         )
                     })?;
@@ -106,7 +106,7 @@ where
         }
 
         sess.handshake()
-            .context("Could not perform ssh handshake")?;
+            .context("Unable to perform SSH handshake")?;
 
         auth(self, &mut sess, &self.credentials)?;
 
@@ -173,13 +173,13 @@ where
                 match try_authenticate_via_ssh_agent(session, &connection.credentials, username) {
                     Ok(_) => {
                         info!(
-                            "Authentication via ssh agent successeded with username {}",
+                            "Authentication via SSH agent succeeded with username {}",
                             username
                         );
                     }
                     Err(agent_error) => {
                         warn!(
-                            "Authentication via ssh agent failed with username ({}).
+                            "Authentication via SSH agent failed with username ({}).
                                 \n Details: {}",
                             username, agent_error
                         );
@@ -203,7 +203,7 @@ where
                 let username = cred.username()?;
                 if let Err(error) = direct_key_path_auth(session, connection, cred) {
                     warn!(
-                        "Could not connect over ssh to via key file's path\n Details: {}",
+                        "Could not connect over SSH via key file's path\n Details: {}",
                         error
                     );
                     simple_password_auth(session, connection, username)?;
@@ -214,16 +214,16 @@ where
     }
 }
 
-/// Tries to authenticate an user via an active ssh agent.
-/// If more than one key is registered in the ssh agent, user is asked which one to use via prompt in the
+/// Tries to authenticate a user via an active SSH agent.
+/// If more than one key is registered in the SSH agent, user is asked which one to use via prompt in the
 /// terminal.
 ///
 /// # Errors
 ///
-/// - If no ssh agent is accessible.
+/// - If no SSH agent is accessible.
 /// - If no key is registered within ssh agent
-/// - If the selection from user is not within the available range of ssh keys registered within
-///     ssh agent .
+/// - If the selection from user is not within the available range of SSH keys registered within
+///     SSH agent .
 fn try_authenticate_via_ssh_agent(
     session: &mut Session,
     credentials: &impl SshCredentials,
@@ -232,7 +232,7 @@ fn try_authenticate_via_ssh_agent(
     let keys = ssh::get_agent_with_all_entities(session)?;
 
     let (agent, chosen_key) = match keys {
-        EntitiesAndSshAgent::None => bail!("No keys could be found on the ssh agent."),
+        EntitiesAndSshAgent::None => bail!("No keys found in SSH agent session."),
         EntitiesAndSshAgent::One(agent, only_key) => (agent, only_key),
         EntitiesAndSshAgent::Many(agent, to_choose_from) => {
             let choice: Vec<SshPublicKeySuggestion> = to_choose_from
@@ -244,16 +244,13 @@ fn try_authenticate_via_ssh_agent(
             (
                 agent,
                 to_choose_from.into_iter().nth(user_choice).expect(
-                    "Function for getting entities guarantees that we have elements at this point.",
+                    "Function for retrieving entities guarantees that we have elements at this point.",
                 ),
             )
         }
     };
 
-    info!(
-        "Using the sh key with comment ({}) from the ssh agent",
-        chosen_key.comment()
-    );
+    info!("Using SSH key '{}' from SSH agent", chosen_key.comment());
 
     agent.userauth(username, &chosen_key)?;
     Ok(())
