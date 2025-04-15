@@ -103,7 +103,7 @@ RUST_LOG=warn cargo cli -- delete teststaff123
 # Add user in LDAP only
 cargo cli --ldap true --slurm false --dirs false add teststaff123 --group staff --firstname Martina --lastname Musterfrau
 
-# Specify key pair for ssh connection
+# Specify key pair for SSH connection
 # Example of listing all users while using key pair at "~/.ssh/some_user.pub" and "~/.ssh/some_user"
 cargo cli list --ssh-path "~/.ssh/some_user"
 
@@ -148,7 +148,7 @@ dpkg -i ../target/debian/*.deb
 
 ## GUI 
 
-We also provide a GUI version of this tool.
+We also provide an experimental GUI version.
 More information can be found under the [GUI README](./usermgmt_gui/README.md).
 
 You can start the GUI version via the following command:
@@ -352,10 +352,9 @@ run_slurm_remote = true
 ssh_port = 22
 # If true, the application will try to authenticate via SSH agent before the simple password authentication
 ssh_agent = false
-# Path to ssh key pair to be used if no ssh agent is used.
+# Path to SSH key pair to be used if no SSH agent is used.
 # Path points to base name of the private and public key. 
-# Example: With path "~/.shh/some_key_pair", there should be private key named "~/.shh/some_key_pair" 
-# and public key "~/.shh/some_key_pair.pub"
+# Example: For private key ~/.ssh/some_key_pair, there should be a corresponding public key "~/.ssh/some_key_pair.pub"
 ssh_key_path = "~/.ssh/some_key_pair"
 ```
 
@@ -382,7 +381,7 @@ usermgmt delete teststaff123
 ### Adding Users
 
 The uid integer value will be automatically determined based on the `--group` parameter provided. 
-Currently you can choose between the two groups *staff* and *student*. 
+Currently, you can choose between the two groups *staff* and *student*. 
 
 The uid for a new user will be determined based on the following rules:
 - Uids for *staff* start with 1000
@@ -416,19 +415,19 @@ This project currently consists of 3 crates:
 
 To preserve the backwards compatibility with earlier versions, this features must be opted in.
 
-Setup the use of creation dates in LDAP via:
+Set up the use of creation dates in LDAP via:
 
 1. Set the field value `ldap_add_created_at` to `true` in `conf.toml`.
 2. Add the value `createdAtRole` to `objectclass_common` in `conf.toml`.
 
 ### Use SSH agent for authentication 
 
-To save yourself entering passwords for SSH authentication again and again, 
+To save yourself from entering passwords for SSH authentication over and over again, 
 you can let the application use a running SSH agent. 
 
 Activate this feature via setting the field `ssh_agent` to `true` in `conf.toml`.
 
-Start your SSH agent in the terminal via the command (often started automatically):
+Start your SSH agent in the terminal via the command (often started automatically during system boot):
 
 ```sh
 ssh-agent
@@ -447,7 +446,7 @@ and does not ask for a password.
 If more than one key is registered within the agent,
 you will be prompted to select the key you want to use.
 
-**Additional steps on macOS:**
+**Additional optional steps on macOS:**
 
 Ensure macOS remembers the key (optional, via Keychain): 
 
@@ -466,7 +465,6 @@ Host *
 This integrates with the macOS keychain and ensures the key is added automatically. 
 
 
-
 ### Show more logs
 
 The log-level can be changed using the `RUST_LOG` environment variable. 
@@ -480,24 +478,16 @@ You'll receive the most verbose output when you set it to *debug*.
 RUST_LOG=debug usermgmt delete teststaff123
 ```
 
-The application also tries to write logs to logging file. 
-The application writes to a logs file within the data folder of the application according to the convention of the used OS.
-If this is not possible, it tries to log within the same folder of the executable of this application.
-If that fails too, the application only writes to the terminal via stderr.
-See the [docs](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) of this rust crate for details about this convention.
+The application also tries to write logs to a log file. 
+Logs are written in the data folder of the application according to the convention of the used OS.
+If this is not possible, it tries to log to the location of the executable.
+If this also fails, the application only writes to the terminal via stderr.
+See the [docs of this crate](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) for details.
 
 ### Show stack trace in case of error
 
-Many of the errors, reported by the application, can also shown with their stack trace.
-The stack trace is quite useful for locating the place in the code where the error was caused.
-This is especially handy for debugging.
-By default the stack trace in Rust is disabled though.
-You need to set the environmental variable named "RUST_BACKTRACE" to 1.
-This can be accomplished via this command in the terminal.
-
-```bash 
-export RUST_BACKTRACE=1
-```
+Errors reported by the application, can be displayed including their stack trace.
+Since the stack trace is disabled by default, you need to set the environment variable `RUST_BACKTRACE=1`.
 
 ## Pitfalls 
 

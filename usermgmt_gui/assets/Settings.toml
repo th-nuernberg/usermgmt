@@ -1,4 +1,4 @@
-# This file contains all settings which are set at the start of the GUI application 
+# This file contains all settings that are set at the start of the GUI application
 # and reloaded if content changes during development.
 
 box_label_font_size = 28.0
@@ -10,23 +10,23 @@ tooltip_size = 20.0
 tooltip_symbol = "?"
 
 [tooltiptexts]
-ldap_creds = "Credentials for logging in to manage of LDAP users"
-ldap_readonly_creds = "Credentials for logging in to perform readonly operation on LDAP users"
-ssh_creds = "Credentials for logging in to manage SLURM users"
-list_ldap_btn = "List users saved within LDAP database"
-list_ssh_btn = "List users saved within Slurm database"
-username = "Name which is used as the identifier to determine a specific user in the LDAP/Slurm database. Note: This must be unique among all users"
-firstname = "Firstname of an user"
-lastname = "Lastname of an user"
-email = "Email which is to be used to contact an user"
-pub_key = "Public ssh key which needs to be saved to LDPA database so an user can log into the cluster"
-group = "Name of group which an user belongs to"
-default_qos = "Default quility of service of an user"
-qos = "All the quilities of services under which an user can run a job"
-conf_student_qos = "Which quality of services are applied for a student by default"
+ldap_creds = "LDAP credentials"
+ldap_readonly_creds = "LDAP readonly credentials"
+ssh_creds = "SSH credentials"
+list_ldap_btn = "List users stored in LDAP database"
+list_ssh_btn = "List users stored in Slurm database"
+username = "Name used as the identifier to determine a specific user in the LDAP/Slurm database. Note: This must be unique among all users"
+firstname = "Firstname of a user"
+lastname = "Lastname of a user"
+email = "Email address of the user"
+pub_key = "SSH public key that is to be stored in LDAP"
+group = "Name of group the user belongs to"
+default_qos = "Default quality of service (QoS) of a user"
+qos = "All QoS the user can use to run jobs"
+conf_student_qos = "Default QoS for students"
 conf_student_default_qos = "Which default Quality of service are used for a student"
 conf_run_slurm_remote = "Run slurm command on remote nodes instead on your own local computer."
-conf_ssh_port = "Port used for ssh connection"
+conf_ssh_port = "Port used for SSH connection"
 conf_staff_default_qos = "Default value of the Slurm default QOS for the staff group"
 conf_default_ssh_user = "Default user for SSH login during directory management"
 conf_head_node = """Slurm head node (where sacctmgr is installed, remote or locally on the machine).
@@ -113,7 +113,7 @@ dir_conf_path = "Path to directory with the file called conf.toml"
 general_status = "Status"
 required = "Required"
 optional = "Optional"
-readonly_ldap_cred = "Ldap readonly credentials"
+readonly_ldap_cred = "LDAP readonly credentials"
 status_list_slurm = "Status of listing Slurm users"
 status_list_ldap = "Status of listing LDAP users"
 username = "Username"
