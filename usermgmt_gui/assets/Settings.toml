@@ -15,30 +15,30 @@ ldap_readonly_creds = "LDAP readonly credentials"
 ssh_creds = "SSH credentials"
 list_ldap_btn = "List users stored in LDAP database"
 list_ssh_btn = "List users stored in Slurm database"
-username = "Name used as the identifier to determine a specific user in the LDAP/Slurm database. Note: This must be unique among all users"
+username = "Unique username used in LDAP/Slurm databases"
 firstname = "Firstname of a user"
 lastname = "Lastname of a user"
 email = "Email address of the user"
-pub_key = "SSH public key that is to be stored in LDAP"
-group = "Name of group the user belongs to"
-default_qos = "Default quality of service (QoS) of a user"
+pub_key = "SSH public key to be stored in LDAP"
+group = "Name of group the user belongs to (e.g. student or staff)"
+default_qos = "Default Quality of Service (QoS) of a user"
 qos = "All QoS the user can use to run jobs"
 conf_student_qos = "Default QoS for students"
-conf_student_default_qos = "Which default Quality of service are used for a student"
-conf_run_slurm_remote = "Run slurm command on remote nodes instead on your own local computer."
+conf_student_default_qos = "Which default QoS are used for a student"
+conf_run_slurm_remote = "Run Slurm command on remote nodes instead of local machine."
 conf_ssh_port = "Port used for SSH connection"
 conf_staff_default_qos = "Default value of the Slurm default QOS for the staff group"
-conf_default_ssh_user = "Default user for SSH login during directory management"
+conf_default_ssh_user = "Default user for SSH login"
 conf_head_node = """Slurm head node (where sacctmgr is installed, remote or locally on the machine).
 This is required if run_slurm_remote is true
 """
-conf_nfs_host = "Hostname of an nfs server to be used by cluster users"
-conf_nfs_root_dir = "Root directory of the shared folders on the nfs, aka network, host"
+conf_nfs_host = "Addresses or hostnames of NFS servers"
+conf_nfs_root_dir = "Root directory of the shared folders on the NFS"
 conf_valid_qos = """
-A list of QOS against which user inputs are validated. 
-Note that the set values must also exist as actual QOS in Slurm. 
+A list of QoS against which user inputs are validated.
+Note that the set values must also exist as actual QoS in Slurm.
 """
-conf_staff_qos = "Default value of the Slurm QOS for the staff group"
+conf_staff_qos = "Default value of the Slurm QoS for the staff group"
 conf_valid_slurm_groups = """A list of groups against which user inputs are validated. 
 Note that the set values must also exist as actual Accounts in Slurm
 """
@@ -49,82 +49,80 @@ and the cn of the username you provided for ldap login
 conf_ldap_org_unit = """Organizational unit used in the ID path within the LDAP tree.
 This entry is combined with ldap_domain_components. 
 Example: '[ldap_org_unit,]{ldap_domain_components}'.
-Note: It is optional and can be omitted
+Note: Optional and can be omitted
 """
-conf_ldap_bind_org_unit = """Used for a different OU for establishing connections to you LDAP server.
-Note: Is optional and can be omitted.
-The resulting ldap path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] 
+conf_ldap_bind_org_unit = """Used for a different OU for establishing connections to LDAP server.
+Note: Optional and can be omitted.
+The resulting LDAP path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components]
 """
 conf_ldap_bind_prefix = """User bind prefix to be used when establishing LDAP connections. 
 Example of binding: \"cn=admin\" or \"uid=someuser\" .
 """
-conf_ldap_readonly_user_prefix = """It is used for connection which have only read access.
-Note: it is optional and can be omitted.
+conf_ldap_readonly_user_prefix = """Used for read-only LDAP connections.
+Note: optional and can be omitted.
 It is the user bind prefix to be used when establishing LDAP connections. 
 Example of binding : cn=admin. or uid=someuser.
 """
 conf_ldap_readonly_bind = """
-It is used for connection with read access only.
-The resulting ldap path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] .
-Note: It is optional and can be omitted
+Used for connections with read-only access.
+The resulting LDAP path for logging is: {ldap_bind_prefix}=<ldap_user_name>,[ldap_bind_prefix,][ldap_domain_components] .
+Note: Optional and can be omitted
 """
-conf_ldap_server = "Protocol, host and port of your LDAP server"
-conf_ldap_readonly_user = """Read only user for ldap search queries (e.g. usermgmt list ldap).
-Note: Is optional and can be omitted
+conf_ldap_server = "Protocol, host and port of LDAP server"
+conf_ldap_readonly_user = """Read only user for LDAP search queries (e.g. usermgmt list ldap).
+Note: Optional and can be omitted
 """
-conf_ldap_readonly_pw = "Read only user password and note it is optional and can be omitted"
-conf_include_ldap = "If true then creating, deleting or modifying an user is also preformed on the LDAP data base"
-conf_include_slurm = """If true then creating, deleting or modifying an user is also preformed on the slurm data base"""
+conf_ldap_readonly_pw = "Read only user password. Note: Optional and can be omitted"
+conf_include_ldap = "If true then creating, deleting or modifying users is also preformed on the LDAP database"
+conf_include_slurm = """If true then creating, deleting or modifying an user is also preformed on the Slurm database"""
 conf_include_dir_mgmt = "Use the directory management module of the application"
 conf_use_homedir_helper = "Use the mkhomedir_helper tool to create the user home directory (recommended)"
 conf_ssh_agent = "If true, the application will try to authenticate via a ssh agent before the simple password authentication"
-conf_compute_node_root_dir = "Root directory of user folders on each compute node (must be the same on each node)"
-conf_filesystem = "Filesystem (or mountpoint) under which user quotas are to be set on the compute nodes"
-conf_home_filesystem = "Filesystem (or mountpoint) under which user quotas on the user's home directory are to be set"
-conf_nfs_filesystem = "Filesystem (or mountpoint) under which user quotas are to be set on the NFS"
-conf_quota_softlimit = "Soft storage limit on the space for an user on compute nodes"
-conf_quota_hardlimit = "Maximum amount of storage space that an user can use on compute nodes"
-conf_quota_nfs_softlimit = """Amount of storage space which is not supposed to be exceeded within nfs, aka network, folder of an user. 
-Storage usage is definitely capped at the value of quota_nfs_hardlimit"""
-conf_quota_nfs_hardlimit = "Maximum amount of storage space within nfs, aka network, folder of an user"
-conf_quota_home_softlimit = """Amount of storage space which is not supposed to be exceeded within the home folder of an user. 
-Storage usage is definitely capped at the value of quota_home_hardlimit"""
-conf_quota_home_hardlimit = "Maximum amount of storage space within the home folder of an user"
-conf_login_shell = "Which shell is used for running LDAP/Slurm commands. Bash or fish is an examples of a shell"
-conf_staff_gid = "Number to identify the group called \"Staff\""
-conf_student_gid = "Number to identify the group called \"Student\""
-conf_faculty_gid = "Number  value to identify the group called \"Faculty\""
-conf_sacctmgr_path = "Path of the program usually named sacctmgr. That program is used to run the SLURM commands on your machine locally"
+conf_compute_node_root_dir = "Root directory of user directories on each compute node (must be the same on each node)"
+conf_filesystem = "Filesystem (or mountpoint) to set user quotas on compute nodes"
+conf_home_filesystem = "Filesystem (or mountpoint) to set quotas on the user's home directory"
+conf_nfs_filesystem = "Filesystems (or mountpoints) to set quotas on shared filesystems"
+conf_quota_softlimit = "Soft storage limit for user on compute nodes"
+conf_quota_hardlimit = "Maximum amount of storage space that users can occupy on compute nodes"
+conf_quota_nfs_softlimit = "Soft storage limit for user on shared filesystems"
+conf_quota_nfs_hardlimit = "Maximum amount of storage space that users can occupy on shared filesystems"
+conf_quota_home_softlimit = "Soft storage limit for user's home directory"
+conf_quota_home_hardlimit = "Maximum amount of storage space that users can occupy in their home directory"
+conf_login_shell = "Login shell given to the user"
+conf_staff_gid = "GID to identify the \"staff\" group"
+conf_student_gid = "GID to identify the \"student\" group"
+conf_faculty_gid = "GID to identify the \"faculty\" group"
+conf_sacctmgr_path = "Path to the sacctmgr binary on the cluster. Used to execute operations in Slurm database"
 
 [texts]
-conf_load_init_msg = "No configuration loaded yet"
-conf_load_success_msg = "Configuration successfully loaded"
+conf_load_init_msg = "No configuration loaded"
+conf_load_success_msg = "Configuration loaded successfully"
 conf_load_err_msg = "Failed to load configuration."
 conf_load_loading_msg = "Loading configuration"
-conf_save_init_msg = "No configuration saved yet"
-conf_save_success_msg = "Configuration successfully saved"
+conf_save_init_msg = "No configuration saved"
+conf_save_success_msg = "Configuration saved successfully"
 conf_save_err_msg = "Failed to save configuration"
 conf_save_loading_msg = "Saving configuration"
-conf_load_group = "Load Progress"
-conf_save_group = "Save Progress"
+conf_load_group = "Config Load Status"
+conf_save_group = "Config Save Status"
 ssh_cred = "SSH credentials"
 ldap_cred = "LDAP credentials"
-dir_conf_path = "Path to directory with the file called conf.toml"
+dir_conf_path = "Configuration File Path"
 general_status = "Status"
 required = "Required"
 optional = "Optional"
 readonly_ldap_cred = "LDAP readonly credentials"
-status_list_slurm = "Status of listing Slurm users"
-status_list_ldap = "Status of listing LDAP users"
+status_list_slurm = "Slurm user listing status"
+status_list_ldap = "LDAP user listing status"
 username = "Username"
 password = "Password"
 firstname = "Firstname"
 lastname = "Lastname"
 mail = "Email"
-qos = "Quality of Services"
-default_qos = "Default Quality of Services"
+qos = "Quality of Service"
+default_qos = "Default Quality of Service"
 public_key = "Public Key"
-group = "User group"
+group = "User Group"
 btn_action_conf_load = "Load"
 btn_action_conf_save = "Save"
 btn_action_conf_default = "Default"
@@ -134,26 +132,26 @@ btn_action_modify = "Modify User"
 btn_list_ldap_users = "List LDAP Users"
 btn_list_slurm_users = "List Slurm Users"
 btn_list_remove = "Remove"
-btn_new_item = "Add new Item"
-listing_slurm_init = "No slurm user listed yet"
-listing_slurm_loading = "Fetching slurm users"
-listing_slurm_success = "Fetched Slurm users successfully"
+btn_new_item = "Add New Item"
+listing_slurm_init = "No Slurm user listed"
+listing_slurm_loading = "Fetching Slurm users"
+listing_slurm_success = "Slurm users fetched successfully"
 listing_slurm_failure = "Failed to fetch Slurm users"
-listing_ldap_init = "No LDAP user listed yet"
+listing_ldap_init = "No LDAP users listed"
 listing_ldap_loading = "Fetching LDAP users"
-listing_ldap_success = "Fetched LDAP users successfully"
+listing_ldap_success = "LDAP users fetched successfully"
 listing_ldap_failure = "Failed to fetch LDAP users"
-modify_init = "No user modified yet:"
-modify_loading = "Modifying user :"
+modify_init = "No user modified:"
+modify_loading = "Modifying user:"
 modify_success = "Modified user successfully:"
-modify_failure = "Failed to modify user :"
-mode_main_title = "On which System"
+modify_failure = "Failed to modify user:"
+mode_main_title = "Apply Modifications"
 mode_ldap = "LDAP"
 mode_slurm = "Slurm"
 mode_directory = "Directory"
-failed_parsing_slurm = "Could not parse slurm users to a table"
+failed_parsing_slurm = "Unable to parse Slurm users into table"
 ldap_cred_missing = "LDAP credentials are missing"
-ssh_cred_missing = "Ssh credentials are missing"
+ssh_cred_missing = "SSH credentials are missing"
 
 [colors]
 # [<red>, <green>, <blue>, <alpha>] all values 0-255.

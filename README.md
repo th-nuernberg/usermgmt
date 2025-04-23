@@ -56,6 +56,7 @@ One way to accomplish this is by adding these commands to the `/etc/sudoers` fil
 ```bash
 # /etc/sudoers
 username ALL = (root) NOPASSWD: /usr/bin/mkdir
+username ALL = (root) NOPASSWD: /usr/bin/rm
 username ALL = (root) NOPASSWD: /usr/bin/chown
 username ALL = (root) NOPASSWD: /usr/sbin/setquota
 username ALL = (root) NOPASSWD: /usr/sbin/mkhomedir_helper
@@ -109,7 +110,7 @@ cargo cli list --ssh-path "~/.ssh/some_user"
 
 ```
 
-### Install from source
+### Install From Source
 
 To directly install from source, you must install the rust toolchain locally.
 It is recommended to install it via `rustup`.

@@ -14,19 +14,19 @@ pub fn draw(window: &mut UsermgmtWindow, ui: &mut egui::Ui) {
         settings,
         "License",
         usermgmt_lib::constants::MIT_LINK,
-        Some("MIT"),
+        None,
     );
     draw_utils::link_box(
         ui,
         settings,
-        "Where to report bugs",
+        "Report Issues",
         usermgmt_lib::constants::ISSUE_LINK,
         None,
     );
     draw_utils::link_box(
         ui,
         settings,
-        "Link to source code",
+        "Source Code",
         usermgmt_lib::constants::REPOSITORY_LINK,
         None,
     );
