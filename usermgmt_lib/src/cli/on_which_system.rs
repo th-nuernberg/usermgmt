@@ -6,43 +6,41 @@ use getset::{CopyGetters, Getters};
 use crate::config::MgmtConfig;
 pub type OptFilePath = Option<PathBuf>;
 
-/// Same as [`OnWhichSystem`] except without considering options from a configuration file.
+/// Same as [`OnWhichSystem`] but without considering options from a configuration file.
 #[derive(Args, CopyGetters, Debug)]
 pub struct OnWhichSystemCli {
     #[command(flatten)]
     ldap_slurm: OnSlurmLdapOnlyCli,
     #[getset(get_copy = "pub")]
-    /// If true then the action will be performed on user directory too, otherwise nothing happens on user directory.
+    /// If true then the action will be performed on user directories.
     /// Overrides the default which is provided by the conf.toml
     #[clap(long, verbatim_doc_comment)]
     dirs: Option<bool>,
 }
 
-/// Same as [`OnWhichSystemCli`] except without directory management.
-/// Actions like deleting an user are not supported for directory management.
-/// For those actions this option struct is used as CLI arguments.
+/// Same as [`OnWhichSystemCli`] but without directory management.
 #[derive(Args, CopyGetters, Getters, Debug)]
 pub struct OnSlurmLdapOnlyCli {
-    /// If true then the action will be performed on Slurm too, otherwise nothing happens on Slurm.
-    /// Overrides the default which is provided by the conf.toml
+    /// If true, the action will be performed on Slurm. 
+    /// Overrides the default provided by conf.toml. 
     #[clap(long, verbatim_doc_comment)]
     #[getset(get_copy = "pub")]
     slurm: Option<bool>,
-    /// If true then the action will be performed on LDAP too, otherwise nothing happens on Ldap.
-    /// Overrides the default which is provided by the conf.toml
+    /// If true, the action will be performed on LDAP. 
+    /// Overrides the default provided by conf.toml. 
     #[clap(long, verbatim_doc_comment)]
     #[getset(get_copy = "pub")]
     ldap: Option<bool>,
-    /// Path where to find key pair to be used for ssh connection.
-    /// Has priority over the path from the configuration file.
+    /// Path to key pair used to establish the SSH connection.
+    /// Has priority over `ssh_key_path` provided in conf.toml.
     #[arg(long, verbatim_doc_comment)]
     #[getset(get = "pub")]
     ssh_path: Option<PathBuf>,
 }
 
-/// Information on which systems an action like creating an user should happen.
+/// Toggle the systems (Slurm, LDAP, Directories) that will be affected by actions such as user creation.
 /// Ensures flexibility for user to toggle systems via CLI and options from configuration file.
-/// CLI option have priority over default values from configuration file.
+/// CLI options have priority over default values from configuration file.
 #[derive(CopyGetters, Getters, Debug)]
 pub struct OnWhichSystem {
     #[getset(get_copy = "pub")]

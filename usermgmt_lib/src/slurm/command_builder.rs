@@ -90,8 +90,8 @@ impl CommandBuilder {
         Self::new_inner(username, vec![SlurmSubCommand::Modify(modifier)])
     }
 
-    /// Adds a command to modiy the default quality of service for user aka parameter `username`
-    pub fn new_modify_qos_default_qows(
+    /// Adds a command to modify the default quality of service for user aka parameter `username`
+    pub fn new_modify_qos_default_qos(
         username: String,
         default_qos: String,
         qos: Vec<String>,

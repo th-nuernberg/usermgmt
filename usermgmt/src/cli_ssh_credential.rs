@@ -40,7 +40,7 @@ impl CliSshCredential {
 }
 
 impl SshCredentials for CliSshCredential {
-    /// Returns given username of user or the default user name if the user has given no username
+    /// Returns given username of user or the default username if the user has not provided a username
     ///
     /// # Errors
     ///
@@ -72,7 +72,7 @@ impl SshCredentials for CliSshCredential {
 
     /// # Errors
     ///
-    /// - If reading the user choice from the terminals fails. See [`user_input::line_input_from_user`].
+    /// - If reading the user choice from the terminal fails. See [`user_input::line_input_from_user`].
     /// - If the user enters a selection index greater than the greatest selection index.
     fn auth_agent_resolve(
         &self,

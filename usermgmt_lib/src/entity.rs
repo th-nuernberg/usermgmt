@@ -113,7 +113,7 @@ impl Entity {
     /// # Errors
     ///
     /// See [`Entity::new`]
-    pub fn new_modifieble_conf(modif: Modifiable, conf: &MgmtConfig) -> AppResult<Self> {
+    pub fn new_modifiable_conf(modif: Modifiable, conf: &MgmtConfig) -> AppResult<Self> {
         let (firstname, lastname, common_user_fields) = modif.into();
         Self::new(firstname, lastname, common_user_fields, conf)
     }

@@ -80,7 +80,7 @@ where
     C: SshCredentials,
 {
     if let Some((qos, default_qos)) = modifiable.may_qos_and_default_qos() {
-        let action = CommandBuilder::new_modify_qos_default_qows(
+        let action = CommandBuilder::new_modify_qos_default_qos(
             modifiable.username.to_string(),
             default_qos,
             qos,

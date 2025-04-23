@@ -17,7 +17,7 @@ mod user_input;
 fn main() -> ExitCode {
     usermgmt_lib::app_panic_hook::set_app_panic_hook();
     // Logger handler in variable so background thread for file logging is not stopped until the
-    // end of application.
+    // application terminates.
     let _keep_logger_handler = usermgmt_lib::logging::set_up_logging(env!("CARGO_PKG_NAME"))
         .expect("Failed to initialize logger");
 
@@ -29,7 +29,7 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Executes action adding/deleting/changing user with arguments from CLI and values from
+/// Executes action adding/deleting/modifying user with arguments from CLI and values from
 /// configuration file
 fn execute_command() -> AppResult {
     let args = GeneralArgs::parse();
@@ -40,13 +40,13 @@ fn execute_command() -> AppResult {
 ///
 /// # Errors
 ///
-/// - If the LDAP or SSH session could not be established because of connection problems or invalid
+/// - When LDAP or SSH session could not be established due to connection problems or invalid
 ///     credentials.
-/// - If some arguments in CLI, parameter `args`, for action are not valid.
+/// - When some arguments in CLI, parameter `args`, for action are not valid.
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
     match args.command {
         Commands::GenerateConfig => {
-            // To StdOut, user can then pipe this default configuration wherever they please.
+            // Print config to stdout.
             println!("{}", config::config_for_save())
         }
         Commands::Add {
@@ -70,7 +70,7 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
             let ldap_credential = LdapCliCredential::new(&config);
             let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
-            let data = Entity::new_modifieble_conf(data, &config)?;
+            let data = Entity::new_modifiable_conf(data, &config)?;
             let data = ChangesToUser::try_new(data)?;
             operations::modify_user(
                 data,
@@ -83,7 +83,8 @@ pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
         Commands::Delete { user, on_which_sys } => {
             let config = config::load_config(args.config_file)?.config;
             let ldap_credential = LdapCliCredential::new(&config);
-            let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
+            // let on_which_sys = &OnWhichSystem::from_config_for_slurm_ldap(&config, &on_which_sys);
+            let on_which_sys = &OnWhichSystem::from_config_for_all(&config, &on_which_sys);
             let cli_ssh_credential = CliSshCredential::new(&config, on_which_sys.ssh_path());
             operations::delete_user(
                 user.as_ref(),

@@ -34,19 +34,19 @@ pub const fn long_about() -> &'static str {
             about = long_about(), long_about = Some(long_about()))]
 /// Add, delete, or modify users in LDAP and Slurm simultaneously
 pub struct GeneralArgs {
-    /// Operation to conduct on the user. Either add, delete or modify.
+    /// Operation to perform on the user. Either add, delete or modify.
     #[clap(subcommand)]
     pub command: Commands,
     #[arg(long)]
-    /// Allows to specify a configuration file by providing a file path.
-    /// If absent, an attempt is made to locate the configuration file in various plausible places.
+    /// Provide the path to a .toml configuration file.
+    /// If absent, an attempt is made to locate the configuration file in various places on your system.
     pub config_file: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]
-/// CLI sub commands for operation on users in LDAP or Slurm database
+/// CLI sub commands for operations on users in LDAP and Slurm database
 pub enum Commands {
-    /// Add a user to Slurm and/or LDAP
+    /// Add user to Slurm and/or LDAP and/or create user directories
     #[clap(visible_alias = "a")]
     Add {
         #[command(flatten)]
@@ -54,7 +54,7 @@ pub enum Commands {
         #[command(flatten)]
         on_which_sys: OnWhichSystemCli,
     },
-    /// Modify a user in Slurm and/or LDAP
+    /// Modify user in Slurm and/or LDAP
     #[clap(visible_alias = "m")]
     Modify {
         #[command(flatten)]
@@ -62,31 +62,30 @@ pub enum Commands {
         #[command(flatten)]
         on_which_sys: OnSlurmLdapOnlyCli,
     },
-    /// Delete a user from Slurm and/or LDAP
+    /// Delete user from Slurm and/or LDAP and/or delete user directories
     #[clap(visible_alias = "d")]
     Delete {
         /// A valid username e.g. wagnerdo.
         #[clap(value_parser = trimmed_non_empty)]
         user: TrimmedNonEmptyText,
         #[command(flatten)]
-        on_which_sys: OnSlurmLdapOnlyCli,
+        on_which_sys: OnWhichSystemCli,
     },
     /// List users in Slurm and/or LDAP
     #[clap(visible_alias = "l")]
     List {
         #[command(flatten)]
         on_which_sys: OnSlurmLdapOnlyCli,
-        /// Prints out comma separated list instead of table
-        /// Is meant to be used for automation
+        /// Print a comma separated list of LDAP users instead of formatted table
         #[clap(long, verbatim_doc_comment)]
         simple_output_for_ldap: Option<bool>,
     },
     #[clap(visible_alias = "gc")]
-    /// Outputs a default configuration, aka conf.toml, to stdout.
+    /// Prints a default configuration (conf.toml) to stdout.
     GenerateConfig,
 }
 
-/// Defines options for modifying an user
+/// Defines options for modifying a user
 #[derive(Args, Debug, Clone, Into)]
 pub struct Modifiable {
     /// Firstname of the user.
@@ -109,7 +108,7 @@ impl Modifiable {
     }
 }
 
-/// Defines options for adding an user
+/// Defines options for adding a user
 #[derive(Args, Debug, Clone, Into)]
 pub struct UserToAdd {
     /// Firstname of the user.
@@ -141,7 +140,7 @@ impl UserToAdd {
 }
 
 #[derive(Args, Debug, Clone, Into)]
-/// Attributes which are used  on structs for operations on users (adding, deleting or modifying).
+/// User attributes required for operations on users (adding, deleting or modifying).
 pub struct CommonUserFields {
     /// Username e.g. wagnerdo.
     #[clap(value_parser = trimmed_non_empty)]
@@ -158,7 +157,7 @@ pub struct CommonUserFields {
     /// Path to SSH publickey.
     #[clap(short, long, value_parser = trimmed_non_empty)]
     pub publickey: Option<TrimmedNonEmptyText>,
-    /// List of QOS assigned to the user (must be valid QOS i.e. they must exist in valid_qos of conf.toml). QOS need to be provided as a whitespace separated list (e.g. interactive basic).
+    /// List of QoS assigned to the user (must be valid QoS i.e., they must exist in valid_qos of conf.toml). Arguments must be provided as a whitespace separated list (e.g. interactive basic).
     #[clap(short, long, num_args(0..=20))]
     pub qos: Vec<String>,
 }

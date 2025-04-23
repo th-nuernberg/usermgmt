@@ -14,7 +14,7 @@ use crate::{
 ///
 /// - If the attributes of the parameter `to_add` is not compatible with fields of
 ///     parameter `config`. See [`NewEntity::new_user_addition_conf`].
-/// - If the execution of adding an users fails. See [`perform_action_on_context`].
+/// - If adding a user fails. See [`perform_action_on_context`].
 pub fn add_user<T, C>(
     to_add: UserToAdd,
     on_which_sys: &OnWhichSystem,
@@ -47,7 +47,7 @@ where
 
 /// # Errors
 ///
-/// - If the execution of deleting an users fails. See [`perform_action_on_context`].
+/// - When user deletion fails. See [`perform_action_on_context`].
 pub fn delete_user<T, C>(
     user: &str,
     on_which_sys: &OnWhichSystem,
@@ -61,14 +61,14 @@ where
 {
     info!("Start deleting user {}", user);
 
-    perform_action_context_no_dirs(
+    perform_action_on_context(
         on_which_sys,
         config,
-        ldap_credentials,
+        ldap_credentials.clone(),
         &credentials,
-        false,
         |ldap_session| ldap::delete_ldap_user(user, ldap_session),
         |ssh_connection| slurm::delete_slurm_user(user, config, ssh_connection),
+        |_| dir::delete_user_directories(user, config, &credentials),
     )?;
 
     info!("Finished deleting user {}", user);
@@ -77,7 +77,7 @@ where
 
 /// # Errors
 ///
-/// - If the execution of changing an users fails. See [`perform_action_on_context`].
+/// - If changing a user fails. See [`perform_action_on_context`].
 pub fn modify_user<T, C>(
     modifiable: ChangesToUser,
     on_which_sys: &OnWhichSystem,
@@ -107,9 +107,9 @@ where
 
 /// # Errors
 ///
-/// - If the execution of listing an users fails. See [`perform_action_on_context`].
-/// - If the execution of the slurm command fails. See [`slurm::list_users`].
-/// - If the execution of the LDAP command fails. See [`ldap::list_ldap_users`].
+/// - When listing users fails. See [`perform_action_on_context`].
+/// - When the execution of the Slurm command fails. See [`slurm::list_users`].
+/// - When the execution of the LDAP command fails. See [`ldap::list_ldap_users`].
 pub fn print_list_of_users_to_stdout<T, C>(
     config: &MgmtConfig,
     on_which_sys: &OnWhichSystem,

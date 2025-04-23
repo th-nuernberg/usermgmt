@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{config, prelude::*};
 
-/// This configuration is read from a configuration file in production.
-/// It contains many options to control this application performs actions the various systems
+/// This is the main configuration. The values are usually stored in a configuration file (conf.toml).
+/// It enables control over various features of the application and the way operations are performed 
 /// on the cluster.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MgmtConfig {
@@ -148,22 +148,22 @@ impl Default for MgmtConfig {
     }
 }
 
-/// Tries to load  config.toml for application.
+/// Attempts to load config.toml.
 ///
 /// # Error
 ///
-/// - Can not ensure if folder exists where conf.toml file exists
-/// - Can not read or create a configuration file
+/// - Can not check if directory exists where conf.toml is located
+/// - Can not read or create a conf.toml file
 pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> {
     let path = config::get_path_to_conf(manual_path)?;
 
-    info!("Loading configuration file from path at {:?}", path);
+    info!("Loading configuration file from path: {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
     let config = confy::load_path(&path)
-        .with_context(|| format!("Error in loading or creating config file at {:?}", &path))?;
+        .with_context(|| format!("Error during loading or creating config file at {:?}", &path))?;
     let path = path
         .parent()
-        .ok_or_else(|| anyhow!("{:?} needs to have a parent folder", &path))?
+        .ok_or_else(|| anyhow!("{:?} must have a parent folder", &path))?
         .to_path_buf();
     Ok(LoadedMgmtConfig { path, config })
 }
@@ -178,5 +178,5 @@ impl LoadedMgmtConfig {}
 
 pub fn config_for_save() -> String {
     toml::to_string_pretty(&MgmtConfig::default())
-        .expect("Could not turn default configuration into the toml format")
+        .expect("Unable to convert default configuration into .toml format")
 }

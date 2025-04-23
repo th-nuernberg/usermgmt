@@ -11,6 +11,5 @@ expression: actual
             "User",
             "somebody",
         ],
-        create_pidfd: false,
     },
 ]
