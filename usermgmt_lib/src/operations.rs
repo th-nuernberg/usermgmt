@@ -190,7 +190,7 @@ where
             on_dir_action(&ssh_session)?;
         }
     }
-    
+
     Ok(())
 }
 

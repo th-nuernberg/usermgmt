@@ -21,13 +21,13 @@ pub struct OnWhichSystemCli {
 /// Same as [`OnWhichSystemCli`] but without directory management.
 #[derive(Args, CopyGetters, Getters, Debug)]
 pub struct OnSlurmLdapOnlyCli {
-    /// If true, the action will be performed on Slurm. 
-    /// Overrides the default provided by conf.toml. 
+    /// If true, the action will be performed on Slurm.
+    /// Overrides the default provided by conf.toml.
     #[clap(long, verbatim_doc_comment)]
     #[getset(get_copy = "pub")]
     slurm: Option<bool>,
-    /// If true, the action will be performed on LDAP. 
-    /// Overrides the default provided by conf.toml. 
+    /// If true, the action will be performed on LDAP.
+    /// Overrides the default provided by conf.toml.
     #[clap(long, verbatim_doc_comment)]
     #[getset(get_copy = "pub")]
     ldap: Option<bool>,

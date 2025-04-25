@@ -1,10 +1,10 @@
 /// Module for directory management
 use log::{debug, info, warn};
 
-use crate::util::ResultAccumulator;
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
 use crate::ssh::{self, SshConnection, SshCredentials};
+use crate::util::ResultAccumulator;
 use crate::{Group, NewEntity};
 
 pub fn add_user_directories<T>(
@@ -24,11 +24,7 @@ where
     Ok(())
 }
 
-pub fn delete_user_directories<T>(
-    username: &str,
-    config: &MgmtConfig,
-    credentials: &T,
-) -> AppResult
+pub fn delete_user_directories<T>(username: &str, config: &MgmtConfig, credentials: &T) -> AppResult
 where
     T: SshCredentials,
 {
@@ -59,10 +55,16 @@ where
         warn!("No root directory on compute nodes provided in config. Unable to delete user directories on nodes.");
         return Ok(());
     }
-    
+
     let mut rm_exit_codes = Vec::new();
     for server in config.compute_nodes.iter() {
-        info!("{}", format!("Connecting to compute node {} for directory deletion", server));
+        info!(
+            "{}",
+            format!(
+                "Connecting to compute node {} for directory deletion",
+                server
+            )
+        );
         let sess = SshConnection::new(server, config, credentials.clone());
         // Delete directory
         let directory = format!("{}/{}", config.compute_node_root_dir, username);
@@ -79,16 +81,19 @@ where
         all_exit_codes_are_zero,
         "Not all compute nodes returned exit code 0 during directory deletion!".to_owned(),
     );
-    
+
     if !errors_from_codes.errs.is_empty() {
-        warn!("{}: {}", errors_from_codes.base_err_msg, errors_from_codes.errs.join("\n"));
+        warn!(
+            "{}: {}",
+            errors_from_codes.base_err_msg,
+            errors_from_codes.errs.join("\n")
+        );
     } else {
         info!("Successfully deleted directories on compute nodes.");
     }
-    
+
     Ok(())
 }
-
 
 /// Establish SSH connection to NFS hosts and delete user directory
 fn delete_nfs_dir<T>(username: &str, config: &MgmtConfig, credentials: &T) -> AppResult
@@ -112,15 +117,23 @@ where
         let current_nfs_host = &config.nfs_host[i];
         let current_nfs_root_dir = &config.nfs_root_dir[i];
 
-        info!("Connecting to NFS host {} for directory deletion", current_nfs_host);
+        info!(
+            "Connecting to NFS host {} for directory deletion",
+            current_nfs_host
+        );
         let sess = SshConnection::new(current_nfs_host, config, credentials.clone());
 
         // Infer user group
         let mut group_dir = "staff";
-        if username.chars().last().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+        if username
+            .chars()
+            .last()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+        {
             group_dir = "students";
         }
-        
+
         let directory = format!("{}/{}/{}", current_nfs_root_dir, group_dir, username);
         let (dir_exit_code, _) = delete_directory(&sess, &directory)?;
 
@@ -131,17 +144,21 @@ where
             ));
         } else {
             info!(
-                    "{}",
-                    format!(
-                        "Successfully deleted user directory on NFS host {}.",
-                        current_nfs_host
-                    )
-                );
+                "{}",
+                format!(
+                    "Successfully deleted user directory on NFS host {}.",
+                    current_nfs_host
+                )
+            );
         }
     }
 
     if !detected_errors.errs.is_empty() {
-        warn!("{}: {}", detected_errors.base_err_msg, detected_errors.errs.join("\n"));
+        warn!(
+            "{}: {}",
+            detected_errors.base_err_msg,
+            detected_errors.errs.join("\n")
+        );
     }
 
     Ok(())
@@ -158,10 +175,13 @@ where
         warn!("No home host provided in config. Unable to delete user home directory.");
         return Ok(());
     }
-    
+
     info!(
         "{}",
-        format!("Connecting to home host {} for directory deletion", &config.home_host)
+        format!(
+            "Connecting to home host {} for directory deletion",
+            &config.home_host
+        )
     );
     let sess = SshConnection::new(&config.home_host, config, credentials.clone());
 
@@ -171,15 +191,15 @@ where
 
     if dir_exit_code == 0 {
         info!("Successfully deleted user home directory.");
-        
     } else {
-        warn!("{}", format!("Failed to delete user home directory: {}", &directory));
+        warn!(
+            "{}",
+            format!("Failed to delete user home directory: {}", &directory)
+        );
     }
-    
+
     Ok(())
 }
-
-
 
 /// Establish SSH connection to each compute node, make user directory and set quota
 fn handle_compute_nodes<T>(entity: &NewEntity, config: &MgmtConfig, credentials: &T) -> AppResult

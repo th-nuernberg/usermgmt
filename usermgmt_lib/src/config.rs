@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{config, prelude::*};
 
 /// This is the main configuration. The values are usually stored in a configuration file (conf.toml).
-/// It enables control over various features of the application and the way operations are performed 
+/// It enables control over various features of the application and the way operations are performed
 /// on the cluster.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MgmtConfig {
@@ -159,8 +159,12 @@ pub fn load_config(manual_path: Option<PathBuf>) -> AppResult<LoadedMgmtConfig> 
 
     info!("Loading configuration file from path: {:?}", path);
     // Load (or create if nonexistent) configuration file conf.toml
-    let config = confy::load_path(&path)
-        .with_context(|| format!("Error during loading or creating config file at {:?}", &path))?;
+    let config = confy::load_path(&path).with_context(|| {
+        format!(
+            "Error during loading or creating config file at {:?}",
+            &path
+        )
+    })?;
     let path = path
         .parent()
         .ok_or_else(|| anyhow!("{:?} must have a parent folder", &path))?
