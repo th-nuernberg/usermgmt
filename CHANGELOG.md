@@ -238,5 +238,17 @@ Nothing
 - Some typos.
 - Bug in SSH Agent key selection: It always returned `last_index` instead of `user_choice`.  
 
+## [0.6.4] - 2025-04-25
 
+### Added
+
+- Optional directory deletion for the `delete` operation with `--dirs`.
+
+### Changed
+
+- LDAP and SSH authentication only when it's actually needed.
+
+### Fixed
+
+- Some typos (mostly in GUI).
 

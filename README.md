@@ -162,48 +162,34 @@ cargo gui
 
 ### Location of configuration file
 
-A basic configuration file (`conf.toml`) is loaded during runtime. 
-This file determines a large portion of the behaviour of the program. 
-The programs tries load the configuration file from several places.
-The first found configuration file is loaded.
+A configuration file (`conf.toml`) is loaded during runtime, determining most of the behaviour. 
+The program searches for the configuration file in several places.
+The configuration file that is first found is loaded.
 The search is conducted in the following order: 
 
 - OS-specific configuration locations.
-  - Config location depending on the OS (locations can be found [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html))
-    The searched name of the folder is "`usermgmt`" within the config location.
-  - In Addition under Linux: "~/.usermgmt" 
-- Under the system wide paths in wrt the OS:
-  - Under Linux: "/usr/usermgmt"
-- The CWD as the last resort 
+  - Config location depending on the OS (see [here](https://docs.rs/dirs/latest/dirs/fn.config_dir.html))
+    The name of the folder is `usermgmt` within the config location.
+  -  Mac/Linux: `~/.usermgmt` 
+- OS-specific system-wide locations:
+  - Linux: `/usr/usermgmt`
+- The `CWD` as the last resort 
 
-The program does not create the configuration file and locations automatically!
-You do not need to create the configuration from scratch though.
-By using the `generate-config` command like this 
-
-```sh
-usermgmt generate-config
-```
-
-You can generate a default configuration. This output goes to the stdout of the terminal by default. 
-This example creates a local default configuration file at '/home/foo/conf.toml':
+Note that the configuration file is not created automatically!
+However, you can use the `generate-config` command to generate a default configuration file:
 
 ```sh
 usermgmt generate-config > /home/foo/conf.toml
 ```
 
-### Structure and content of configuration file
+### Content of Configuration File
 
 The `conf.toml` file looks as follows:
 
 ```toml
-# If true, a timestamp is created within the LDAP database.
-# Timestamp is when an user was created within LDAP database user entry
-# Make sure to also include the field `createdAtRole` in the array "`objectclass_common`" 
-# Within the config file. Otherwise one gets an error while creating an user within LDAP.
-# The timestamp is saved in the format of rfc 3339 with the UTC time zone.
-# Example of date and time 'year: 2024, month: may, day: 9 and hour: 10, minutes: 49 and seconds: 34'
-# 2024-05-09T10:49:34.545686277+00:00
-# Link: To this rfc 3339 => https://www.rfc-editor.org/rfc/rfc3339
+# If true, a timestamp is created in LDAP, showing the creation date of the user entry. 
+# Make sure to also include the field `createdAtRole` in the array "`objectclass_common`" in the config file. 
+# The timestamp is saved in the format of RFC 3339 (https://www.rfc-editor.org/rfc/rfc3339) with the UTC time zone (e.g. 2024-05-09T10:49:34.545686277+00:00)
 ldap_add_created_at = true
 # Default value of the Slurm default QOS for the student group
 student_default_qos = 'basic'
@@ -378,7 +364,6 @@ usermgmt modify teststaff123 --firstname Martha --mail bla@blubb.de --default-qo
 usermgmt delete teststaff123
 ```
 
-
 ### Adding Users
 
 The uid integer value will be automatically determined based on the `--group` parameter provided. 
@@ -404,15 +389,15 @@ A user can be deleted via `usermgmt delete <username>`.
 
 ## Project Structure
 
-This project currently consists of 3 crates:
+This project consists of 3 crates:
 
 - [`usermgmt`](./usermgmt): The CLI tool for simultaneous user management for LDAP and Slurm. 
 - [`usermgmt_gui`](./usermgmt_gui): The GUI frontend for simultaneous user management for LDAP and Slurm. 
-- [`usermgmt_lib`](./usermgmt_lib): Shared code between the binaries, usermgmt and usermgmt_gui. 
+- [`usermgmt_lib`](./usermgmt_lib): Shared code between the binaries, `usermgmt` and `usermgmt_gui`. 
 
 ## Tips and Advanced Usage
 
-### LDAP: Add user creation date to LDAP
+### Add User Creation Date to LDAP
 
 To preserve the backwards compatibility with earlier versions, this features must be opted in.
 
@@ -421,7 +406,7 @@ Set up the use of creation dates in LDAP via:
 1. Set the field value `ldap_add_created_at` to `true` in `conf.toml`.
 2. Add the value `createdAtRole` to `objectclass_common` in `conf.toml`.
 
-### Use SSH agent for authentication 
+### Use SSH Agent for Authentication 
 
 To save yourself from entering passwords for SSH authentication over and over again, 
 you can let the application use a running SSH agent. 
@@ -441,11 +426,8 @@ You might be asked for the password to decrypt this key if a password was set du
 ssh-agent <path_to_private_ssh_key>
 ```
 
-If authentication over SSH is requested,
-the application will try to use one of your keys registered within the SSH agent
-and does not ask for a password.
-If more than one key is registered within the agent,
-you will be prompted to select the key you want to use.
+If authentication over SSH is requested, the application will try to use one of your keys registered within the SSH agent and does not ask for a password.
+If more than one key is registered within the agent, you will be prompted to select the key you want to use.
 
 **Additional optional steps on macOS:**
 
@@ -466,7 +448,7 @@ Host *
 This integrates with the macOS keychain and ensures the key is added automatically. 
 
 
-### Show more logs
+### Show More Log Output
 
 The log-level can be changed using the `RUST_LOG` environment variable. 
 Available log-levels are *error*, *warn*, *info*, *debug*, and *trace*. 
@@ -479,13 +461,12 @@ You'll receive the most verbose output when you set it to *debug*.
 RUST_LOG=debug usermgmt delete teststaff123
 ```
 
-The application also tries to write logs to a log file. 
-Logs are written in the data folder of the application according to the convention of the used OS.
+Logs are also written to the data folder of the application according to OS-specific conventions.
 If this is not possible, it tries to log to the location of the executable.
 If this also fails, the application only writes to the terminal via stderr.
-See the [docs of this crate](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) for details.
+See the [docs](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) for details.
 
-### Show stack trace in case of error
+### Show Stacktrace in Case of Error
 
 Errors reported by the application, can be displayed including their stack trace.
 Since the stack trace is disabled by default, you need to set the environment variable `RUST_BACKTRACE=1`.
