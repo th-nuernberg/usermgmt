@@ -20,7 +20,7 @@ getset = { workspace = true }
 eframe = { version = "0.26.2" }
 egui_extras = "0.26.2"
 
-# TODO: replace this by crates.io once the PR which is pointed to, is merged.
+# TODO: replace this by crates.io once the PR is merged.
 hotwatch = { git = "https://github.com/BoolPurist/hotwatch", branch = "toggleable_log", default-features = false }
  
 [package.metadata.deb]

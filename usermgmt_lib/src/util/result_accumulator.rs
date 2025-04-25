@@ -4,8 +4,8 @@ use anyhow::{anyhow, Context};
 /// Allows to collect several errors messages which can be later combined into one error variant for
 /// error propagation. If no error message is collected, it resolves to an Ok variant.
 pub struct ResultAccumulator {
-    errs: Vec<String>,
-    base_err_msg: String,
+    pub errs: Vec<String>,
+    pub base_err_msg: String,
 }
 
 impl ResultAccumulator {

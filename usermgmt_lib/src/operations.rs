@@ -167,32 +167,30 @@ pub fn perform_action_on_context<T, C>(
     ssh_credentials: &C,
     on_ldap_action: impl FnOnce(&mut LdapSession<T>) -> AppResult,
     on_slurm_action: impl FnOnce(&SshConnection<C>) -> AppResult,
-    on_dir_action: impl FnOnce(&SshConnection<C>) -> AppResult,
+    mut on_dir_action: impl FnMut(&SshConnection<C>) -> AppResult,
 ) -> AppResult
 where
     T: LdapCredential,
     C: SshCredentials,
 {
-    let ssh_session = SshConnection::from_head_node(config, ssh_credentials.clone());
-    let mut ldap_session = LdapSession::new(config, ldap_credentials)?;
-
-    if on_which_sys.slurm() {
-        ssh_session.establish_connection()?;
-    }
-
     if on_which_sys.ldap() {
+        let mut ldap_session = LdapSession::new(config, ldap_credentials)?;
         ldap_session.establish_connection()?;
         on_ldap_action(&mut ldap_session)?;
     }
 
-    if on_which_sys.slurm() {
-        on_slurm_action(&ssh_session)?;
-    }
+    if on_which_sys.slurm() || on_which_sys.dirs() {
+        let ssh_session = SshConnection::from_head_node(config, ssh_credentials.clone());
+        ssh_session.establish_connection()?;
+        if on_which_sys.slurm() {
+            on_slurm_action(&ssh_session)?;
+        }
 
-    if on_which_sys.dirs() {
-        on_dir_action(&ssh_session)?;
+        if on_which_sys.dirs() {
+            on_dir_action(&ssh_session)?;
+        }
     }
-
+    
     Ok(())
 }
 

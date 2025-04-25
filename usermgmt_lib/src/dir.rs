@@ -1,7 +1,7 @@
-use crate::util::ResultAccumulator;
 /// Module for directory management
 use log::{debug, info, warn};
 
+use crate::util::ResultAccumulator;
 use crate::config::MgmtConfig;
 use crate::prelude::AppResult;
 use crate::ssh::{self, SshConnection, SshCredentials};
@@ -32,10 +32,10 @@ pub fn delete_user_directories<T>(
 where
     T: SshCredentials,
 {
-    delete_node_local_dir(username, config, credentials)?;
-    delete_nfs_dir(username, config, credentials)?;
     delete_home_dir(username, config, credentials)?;
-    
+    delete_nfs_dir(username, config, credentials)?;
+    delete_node_local_dir(username, config, credentials)?;
+
     Ok(())
 }
 
@@ -71,7 +71,7 @@ where
     }
 
     let mut errors_from_codes =
-        ResultAccumulator::new("Failed to delete directories on compute nodes.".to_owned());
+        ResultAccumulator::new("Failed to delete all directories on compute nodes".to_owned());
 
     let all_exit_codes_are_zero = rm_exit_codes.iter().all(|&x| x == 0);
 
@@ -80,10 +80,12 @@ where
         "Not all compute nodes returned exit code 0 during directory deletion!".to_owned(),
     );
     
-    AppResult::from(errors_from_codes)?;
-
-    info!("Successfully deleted directories on compute nodes.");
-
+    if !errors_from_codes.errs.is_empty() {
+        warn!("{}: {}", errors_from_codes.base_err_msg, errors_from_codes.errs.join("\n"));
+    } else {
+        info!("Successfully deleted directories on compute nodes.");
+    }
+    
     Ok(())
 }
 
@@ -105,7 +107,7 @@ where
     }
 
     let mut detected_errors =
-        ResultAccumulator::new("Errors during NFS directory deletion occurred!".to_owned());
+        ResultAccumulator::new("Errors during NFS directory deletion occurred".to_owned());
     for i in 0..config.nfs_host.len() {
         let current_nfs_host = &config.nfs_host[i];
         let current_nfs_root_dir = &config.nfs_root_dir[i];
@@ -138,7 +140,9 @@ where
         }
     }
 
-    AppResult::from(detected_errors)?;
+    if !detected_errors.errs.is_empty() {
+        warn!("{}: {}", detected_errors.base_err_msg, detected_errors.errs.join("\n"));
+    }
 
     Ok(())
 }
@@ -164,23 +168,14 @@ where
     // Delete directory
     let directory = format!("/home/{}", username);
     let (dir_exit_code, _) = delete_directory(&sess, &directory)?;
-    
-    let mut detected_errors = ResultAccumulator::new(format!(
-        "Errors during home directory deletion occurred on host {}",
-        &config.home_host
-    ));
 
     if dir_exit_code == 0 {
         info!("Successfully deleted user home directory.");
         
     } else {
-        detected_errors.add_err(
-            "Home host did not return with exit code 0 during directory deletion!".to_owned(),
-        );
+        warn!("{}", format!("Failed to delete user home directory: {}", &directory));
     }
     
-    AppResult::from(detected_errors)?;
-
     Ok(())
 }
 
