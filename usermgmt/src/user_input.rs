@@ -39,7 +39,7 @@ fn ask_for_line_from_user(
 ///
 /// - None if input is empty or only white spaces
 /// - Some if input has at least on char which is not white space. Inner value is trimmed or the
-///     placeholder if no input was provided.
+///  placeholder if no input is provided.
 ///
 /// # Errors
 ///

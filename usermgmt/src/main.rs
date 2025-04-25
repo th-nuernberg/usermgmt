@@ -41,7 +41,7 @@ fn execute_command() -> AppResult {
 /// # Errors
 ///
 /// - When LDAP or SSH session could not be established due to connection problems or invalid
-///     credentials.
+///  credentials.
 /// - When some arguments in CLI, parameter `args`, for action are not valid.
 pub fn run_mgmt(args: cli::GeneralArgs) -> AppResult {
     match args.command {
