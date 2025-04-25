@@ -252,3 +252,31 @@ Nothing
 
 - Some typos (mostly in GUI).
 
+## [0.6.5] - 2025-04-25
+
+### Added
+
+- Optional directory deletion for the `delete` operation with `--dirs`.
+
+### Changed
+
+- LDAP and SSH authentication only when it's actually needed.
+
+### Fixed
+
+- Some typos (mostly in GUI).
+
+## [0.6.6] - 2025-04-25
+
+### Added
+
+- Optional directory deletion for the `delete` operation with `--dirs`.
+
+### Changed
+
+- LDAP and SSH authentication only when it's actually needed.
+
+### Fixed
+
+- Some typos (mostly in GUI).
+

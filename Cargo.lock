@@ -3812,7 +3812,7 @@ dependencies = [
 
 [[package]]
 name = "usermgmt"
-version = "0.6.4"
+version = "0.6.6"
 dependencies = [
  "clap",
  "log",
@@ -3839,7 +3839,7 @@ dependencies = [
 
 [[package]]
 name = "usermgmt_lib"
-version = "0.6.4"
+version = "0.6.6"
 dependencies = [
  "anyhow",
  "chrono",
