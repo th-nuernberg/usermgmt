@@ -38,7 +38,7 @@ The `sacctmgr` tool should be available on the control host of your cluster.
 
 You need to point to the `sacctmgr` binary location in the `/etc/usermgmt/conf.toml` file. 
 
-### Directory management
+### Directory Management
 
 The application relies on SSH and common commands such as `mkdir` and `setquota` to be available on each target node. 
 During execution of the directory management module, you will be prompted for a username and password to establish SSH connections with. 
@@ -48,6 +48,7 @@ Also make sure that the user can execute the following commands using sudo privi
 
 - `mkdir`
 - `chown`
+- `rm`
 - `setquota`
 - `mkhomedir_helper`
 
@@ -160,7 +161,7 @@ cargo gui
 
 ## Configuration
 
-### Location of configuration file
+### Location of Configuration File
 
 A configuration file (`conf.toml`) is loaded during runtime, determining most of the behaviour. 
 The program searches for the configuration file in several places.
@@ -466,7 +467,7 @@ If this is not possible, it tries to log to the location of the executable.
 If this also fails, the application only writes to the terminal via stderr.
 See the [docs](https://docs.rs/dirs/latest/dirs/fn.data_dir.html) for details.
 
-### Show Stacktrace in Case of Error
+### Show Stacktrace
 
 Errors reported by the application, can be displayed including their stack trace.
 Since the stack trace is disabled by default, you need to set the environment variable `RUST_BACKTRACE=1`.
@@ -501,6 +502,8 @@ cargo clippy --fix --all
 cargo fmt --check --all
 cargo clippy --all
 
+git add .
+git commit -m "my commit"
 git tag <version> main
 
 git push origin <version>
@@ -531,7 +534,7 @@ tar -cvzf usermgmt_gui-aarch64-apple-darwin.tar.gz usermgmt_gui README.md LICENS
 
 Finally, upload the `.tar.gz` files to [releases](https://github.com/th-nuernberg/usermgmt/releases). 
 
-## Local development with via docker
+## Local Development with Docker
 
 Development of this app can be done locally via a docker container set up. As moment of writing 
 the functionality for LDAP and Slurm can be used via docker. Directory management does not work in
