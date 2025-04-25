@@ -39,8 +39,7 @@ static SYSTEM_LOCATIONS: Lazy<Vec<PathBuf>> = Lazy::new(|| {
 /// # Errors
 ///
 /// - If no configuration file could be found anywhere.
-/// - If CWD can not be determined after the configuration file could not be found under the home and
-///     system paths.
+/// - If CWD can not be determined after the configuration file could not be found under the home and system paths.
 ///
 pub fn get_path_to_conf(manual_path: Option<PathBuf>) -> AppResult<PathBuf> {
     get_path_to_conf_with_dep(
@@ -245,7 +244,7 @@ mod testing {
             None,
             |_, _| Vec::new(),
             |to_match| {
-                if to_match == &expected {
+                if to_match == expected {
                     Some(to_match.to_owned())
                 } else {
                     None
@@ -264,7 +263,7 @@ mod testing {
             None,
             |_, _| vec![expected.clone()],
             |to_match| {
-                if to_match == &expected {
+                if to_match == expected {
                     Some(to_match.to_owned())
                 } else {
                     None
