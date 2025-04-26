@@ -23,6 +23,14 @@ Currently, `usermgmt` expects the following `AttributeTypes` to present in your 
 - `slurmDefaultQos`: Specifies the user's default QOS. Can only exist once per user. 
 - `slurmQos`: Specifies the QOS available to the user. Can be added multiple times to a specific user. 
 
+## Project Structure
+
+This project consists of 3 crates:
+
+- [`usermgmt`](./usermgmt): The CLI tool for simultaneous user management for LDAP and Slurm.
+- [`usermgmt_gui`](./usermgmt_gui): The GUI frontend for simultaneous user management for LDAP and Slurm.
+- [`usermgmt_lib`](./usermgmt_lib): Shared code between the binaries, `usermgmt` and `usermgmt_gui`.
+
 ## Requirements
 
 ### LDAP
@@ -161,7 +169,7 @@ cargo gui
 
 ## Configuration
 
-### Location of Configuration File
+### Configuration File Location
 
 A configuration file (`conf.toml`) is loaded during runtime, determining most of the behaviour. 
 The program searches for the configuration file in several places.
@@ -387,14 +395,6 @@ A list of modifiable values can be obtained via `usermgmt modify --help`.
 ### Deleting Users
 
 A user can be deleted via `usermgmt delete <username>`.  
-
-## Project Structure
-
-This project consists of 3 crates:
-
-- [`usermgmt`](./usermgmt): The CLI tool for simultaneous user management for LDAP and Slurm. 
-- [`usermgmt_gui`](./usermgmt_gui): The GUI frontend for simultaneous user management for LDAP and Slurm. 
-- [`usermgmt_lib`](./usermgmt_lib): Shared code between the binaries, `usermgmt` and `usermgmt_gui`. 
 
 ## Tips and Advanced Usage
 
