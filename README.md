@@ -121,8 +121,7 @@ cargo cli list --ssh-path "~/.ssh/some_user"
 
 ### Install From Source
 
-To directly install from source, you must install the rust toolchain locally.
-It is recommended to install it via `rustup`.
+To directly install from source, you must install the Rust toolchain locally, which can be installed via [rustup](https://rustup.rs/).
 
 Install the CLI version
 
