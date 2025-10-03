@@ -77,7 +77,7 @@ Replace `username` by the user you want to execute the commands with and make su
 
 ## Build and Install 🦀 
 
-You can build the `usermgmt` CLI tool using Cargo:
+You can build the `usermgmt` CLI tool using Cargo (install the Rust toolchain via [rustup](https://rustup.rs/) first):
 
 ```bash
 # Maybe:
@@ -137,6 +137,10 @@ cd usermgmt_gui
 cargo install --path '.' --force
 ```
 
+- `cargo install` normally installs a crate binary into `~/.cargo/bin`
+- `--path '.'` installs from the local crate at the current directory instead of from `crates.io`. 
+- `--force` overwrites any existing installation of the same binary. 
+
 ### Create Debian Package
 
 We use [cargo-deb](https://github.com/kornelski/cargo-deb) to automatically create a Debian package for production usage. 
@@ -154,6 +158,11 @@ cargo deb
 dpkg -i ../target/debian/*.deb
 # Don't forget to update your conf.toml, in case there have been config changes
 ```
+
+### Install Prebuilt Binary
+
+You can use the `install.sh` script to download and install one of the prebuilt binaries provided under [releases](https://github.com/th-nuernberg/usermgmt/releases). 
+Check `install.sh --help` for usage infos. 
 
 ## GUI 
 
