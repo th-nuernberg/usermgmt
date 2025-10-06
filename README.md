@@ -1,4 +1,4 @@
-![Build](https://github.com/th-nuernberg/usermgmt/actions/workflows/build.yml/badge.svg) ![Release](https://github.com/th-nuernberg/usermgmt/actions/workflows/release.yml/badge.svg)
+![Checks](https://github.com/th-nuernberg/usermgmt/actions/workflows/check.yml/badge.svg) ![Release](https://github.com/th-nuernberg/usermgmt/actions/workflows/release.yml/badge.svg)
 
 # Simultaneous User Management for LDAP and Slurm
 
@@ -496,7 +496,7 @@ Make sure the user has sufficient rights to add, modify, and delete entities in 
 
 You need to include the current version of your release in the `CHANGELOG.md` because the [github action](https://github.com/taiki-e/upload-rust-binary-action) picks it up from there. 
 
-Also change the version numbers in `Cargo.toml` files at `./usermgmt`, `./usermgmt_lib` etc. to keep everything consistent. 
+Also change the version numbers in `Cargo.toml` files at [`./usermgmt`](./usermgmt/Cargo.toml), [`./usermgmt_lib`](./usermgmt_lib/Cargo.toml), and [`./usermgmt_gui`](./usermgmt_gui/Cargo.toml) to keep everything consistent. 
 
 To add a release, you need to tag the branch with the current version and then push the tag:
 
@@ -512,9 +512,9 @@ cargo clippy --all
 
 git add .
 git commit -m "my commit"
-git tag <version> main
+git tag <version>
 
-git push origin <version>
+git push --follow-tags
 ```
 
 `<version>` is the version of your release (e.g. `v0.3.0`). 

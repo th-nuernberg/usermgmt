@@ -319,3 +319,14 @@ Nothing
 - release.yml RustRover
 
 
+## [0.6.11] - 2025-10-06
+
+### Added
+### Changed
+
+- `build.yml` is now `check.yml`
+- Remove comments from `release.yml`
+- Correct version numbers in `Cargo.toml` files
+
+### Fixed
+

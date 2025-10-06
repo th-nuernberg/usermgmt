@@ -1,6 +1,6 @@
 [package]
 name = "usermgmt"
-version = "0.6.6"
+version = "0.6.11"
 edition = "2021"
 license-file = "LICENSE"
 description = "Simultaneous Slurm and LDAP user management CLI Tool"
