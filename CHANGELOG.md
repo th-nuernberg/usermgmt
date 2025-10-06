@@ -286,3 +286,14 @@ Nothing
 ### Changed
 ### Fixed
 - MacOS release action (vendoring OpenSSL)
+
+## [0.6.8] - 2025-10-06
+
+### Added
+
+- Ubuntu 22 release
+
+### Changed
+### Fixed
+
+
