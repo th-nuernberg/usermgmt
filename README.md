@@ -514,16 +514,16 @@ git add .
 git commit -m "my commit"
 git tag <version>
 
-git push --follow-tags
+git push <version>
 ```
 
-`<version>` is the version of your release (e.g. `v0.3.0`). 
+`<version>` is the version of your release (e.g. `v0.6.0`). 
 
 **Note:** Don't forget to merge into main and push your commits to main. 
 
 ### Build for Mac M1
 
-Cross compilation for the M1 target via github actions currently fails due to missing dependencies for OpenSSL, but you can build the application natively on an M1:
+You can build the application natively on a Mac M1:
 
 ```bash
 cargo build --release --target aarch64-apple-darwin
