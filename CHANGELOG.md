@@ -307,5 +307,15 @@ Nothing
 
 - release.yml
 
+## [0.6.10] - 2025-10-06
+
+### Added
+
+- Ubuntu 22 release
+
+### Changed
+### Fixed
+
+- release.yml RustRover
 
 
