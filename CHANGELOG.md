@@ -296,4 +296,16 @@ Nothing
 ### Changed
 ### Fixed
 
+## [0.6.9] - 2025-10-06
+
+### Added
+
+- Ubuntu 22 release
+
+### Changed
+### Fixed
+
+- release.yml
+
+
 
