@@ -25,7 +25,7 @@ Currently, `usermgmt` expects the following `AttributeTypes` to present in your 
 
 ## Project Structure
 
-This project consists of 3 crates:
+This project consists of three crates:
 
 - [`usermgmt`](./usermgmt): The CLI tool for simultaneous user management for LDAP and Slurm.
 - [`usermgmt_gui`](./usermgmt_gui): The GUI frontend for simultaneous user management for LDAP and Slurm.
@@ -161,7 +161,7 @@ dpkg -i ../target/debian/*.deb
 
 ### Install Prebuilt Binary
 
-You can use the `install.sh` script to download and install one of the prebuilt binaries provided under [releases](https://github.com/th-nuernberg/usermgmt/releases). 
+You can use the [`install.sh`](install.sh) script to download and install one of the prebuilt binaries provided under [releases](https://github.com/th-nuernberg/usermgmt/releases). 
 Check `install.sh --help` for usage infos. 
 
 ## GUI 
