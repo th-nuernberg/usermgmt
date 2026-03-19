@@ -485,6 +485,8 @@ Since the stack trace is disabled by default, you need to set the environment va
 Make sure you execute the `usermgmt` tool with a user who has **administrative rights** for `sacctmgr`. 
 You can check available users and their admin level via `sacctmgr list user`. 
 
+The admin level of a user can be set via `sacctmgr modify user name=<username> set adminlevel=Admin`.
+
 When you attempt LDAP operations, you will be prompted for a username and a password. 
 Make sure the user has sufficient rights to add, modify, and delete entities in LDAP. 
 
