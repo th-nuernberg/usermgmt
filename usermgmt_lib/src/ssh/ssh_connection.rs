@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use once_cell::unsync::OnceCell;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 use ssh2::Session;
 
 use crate::config::MgmtConfig;
@@ -71,15 +71,23 @@ where
             .exec(cmd)
             .context("Execution of command on remote machine over SSH has failed.")?;
 
-        let mut output = String::new();
+        let mut stdout = String::new();
         channel
-            .read_to_string(&mut output)
-            .context("Could not read output of executed command over SSH channel")?;
+            .read_to_string(&mut stdout)
+            .context("Could not read stdout of executed command over SSH channel")?;
+        let mut stderr = String::new();
+        channel
+            .stderr()
+            .read_to_string(&mut stderr)
+            .context("Could not read stderr of executed command over SSH channel")?;
+        if !stderr.is_empty() {
+            debug!("Command stderr: {}", stderr);
+        }
         let exit_status = channel
             .exit_status()
             .context("Could not retrieve exit code of executed command over SSH")?;
 
-        Ok((output, exit_status))
+        Ok((stdout, exit_status))
     }
 
     pub fn establish_connection(&self) -> AppResult<Session> {
